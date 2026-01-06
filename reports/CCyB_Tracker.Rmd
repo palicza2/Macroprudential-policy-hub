@@ -1,0 +1,361 @@
+---
+title: "EU Macroprudential Policy Report: CCyB Tracker"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output: 
+  html_document:
+    theme: lumen
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    self_contained: true
+---
+
+```{r setup, include=FALSE}
+source("scripts/data_loader.R")
+library(plotly)
+library(DT)
+library(reactable)
+library(ggrepel)
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10)
+
+# Export Data for Downloads (now using output_dir from data_loader.R)
+write_xlsx(agg_trend, paste0(output_dir, "data_diffusion.xlsx"))
+write_xlsx(latest_df %>% filter(date >= (Sys.Date() - years(1))), paste0(output_dir, "data_latest_decisions.xlsx"))
+write_xlsx(latest_df, paste0(output_dir, "data_snapshot.xlsx"))
+write_xlsx(neutral_df, paste0(output_dir, "data_pn_ccyb.xlsx"))
+write_xlsx(df, paste0(output_dir, "data_historical.xlsx"))
+write_xlsx(latest_df %>% filter(!is.na(credit_gap)), paste0(output_dir, "data_risk_analysis.xlsx"))
+```
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #2d3436;
+  line-height: 1.8;
+  font-size: 19px; 
+}
+h1 { font-size: 2.75rem; margin-top: 3rem; margin-bottom: 2rem; font-weight: 700; color: #1e272e; }
+h2 { font-size: 2.1rem; margin-top: 2.5rem; margin-bottom: 1.5rem; font-weight: 700; color: #1e272e; }
+h3 { font-size: 1.6rem; margin-top: 2rem; margin-bottom: 1.25rem; font-weight: 700; color: #1e272e; }
+
+.report-container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 40px 20px;
+}
+
+/* --- MOBILE OPTIMIZATION --- */
+@media (max-width: 768px) {
+  body { font-size: 17px; }
+  h1 { font-size: 2.1rem; }
+  h2 { font-size: 1.7rem; }
+  h3 { font-size: 1.3rem; }
+  
+  .report-container { padding: 20px 15px; }
+  
+  .download-btn { 
+    float: none; 
+    display: block; 
+    margin: 20px auto;
+    width: 80%;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  
+  .analysis-text {
+    font-size: 1.25rem;
+    padding: 20px;
+    margin: 25px 0;
+  }
+
+  /* Force bscols to stack */
+  .crosstalk-bscols {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .crosstalk-bscols > div {
+    width: 100% !important;
+    margin-bottom: 20px;
+  }
+}
+
+.download-btn {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+  background-color: #0984e3;
+  text-decoration: none;
+  padding: 10px 22px;
+  border-radius: 50px;
+  display: inline-block;
+  margin-top: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(9, 132, 227, 0.2);
+  border: none;
+}
+.download-btn:hover {
+  background: #0773c5;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(9, 132, 227, 0.3);
+  text-decoration: none;
+}
+.analysis-text {
+  font-size: 1.45rem;
+  color: #2d3748;
+  margin: 45px 0;
+  padding: 40px;
+  background-color: #f8fafc;
+  border-left: 8px solid #0984e3;
+  border-radius: 0 20px 20px 0;
+  line-height: 1.8;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+.analysis-title {
+  font-weight: 800;
+  color: #1a202c;
+  display: block;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  letter-spacing: 0.15em;
+}
+hr {
+  margin: 90px 0;
+  border: 0;
+  border-top: 2px solid #edf2f7;
+}
+.sidebar-filter {
+  background: #f8fafc;
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  border: 1px solid #e2e8f0;
+}
+/* Ensure tables don't break layout on tiny screens */
+.reactable {
+  overflow-x: auto;
+}
+.rt-td, .rt-th {
+  font-size: 1.05rem !important;
+  white-space: nowrap; /* Prevent messy wrapping in small cells */
+}
+/* Allow reasoning to wrap while others stay neat */
+.rt-td:last-child {
+  white-space: normal;
+  min-width: 250px;
+}
+</style>
+
+<div class="report-container">
+
+# Executive Summary
+
+This report provides a comprehensive tracking and analysis of the implementation of the Countercyclical Capital Buffer (CCyB) across the European Union and the European Economic Area (EEA). Based on the latest data provided by the European Systemic Risk Board (ESRB) as of **`r format(Sys.Date(), '%B %Y')`**, the macroprudential landscape in Europe is characterized by a significant and sustained effort to rebuild capital cushions following the pandemic-induced releases. Currently, **`r active_buffers` out of `r num_countries`** tracked jurisdictions maintain a positive CCyB rate, signaling a collective shift toward a more conservative and pre-emptive regulatory stance intended to safeguard the banking sector against potential future shocks.
+
+A defining trend in the current reporting period is the widespread transition from a purely "cyclical" application of the CCyB toward the adoption of "Positive Neutral" frameworks. Under this paradigm, national macroprudential authorities set a baseline, non-zero buffer rate even during periods when traditional indicators, such as the credit-to-GDP gap, remain subdued or negative. This strategic shift reflects a growing consensus that structural vulnerabilities and systemic risks can accumulate in ways not fully captured by cyclical metrics, and that having a pre-positioned capital buffer provides essential loss-absorption capacity that can be quickly released to support lending during unexpected downturns.
+
+Looking forward, the coordination and transparency of these macroprudential measures remain critical for the stability of the European single market. The heterogeneity in rates across the continent—ranging from 0% in several economies to as high as 2.5% or more in others—highlights the diverse nature of financial cycles and localized risks, particularly in residential and commercial real estate markets. This report serves as a diagnostic tool for policymakers, analysts, and market participants to monitor these developments and understand the drivers behind the evolving capital requirements in the European banking sector.
+
+---
+
+# Macroprudential Diffusion
+
+```{r}
+p_agg <- agg_trend %>%
+  ggplot(aes(x = date, y = n_positive)) +
+  geom_step(color = "#0984e3", linewidth = 1.2) +
+  geom_area(fill = "#0984e3", alpha = 0.05) +
+  labs(y = "Number of Countries", x = "Date") +
+  theme_minimal(base_family = "Inter") +
+  theme(panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 11, face = "bold"))
+
+ggplotly(p_agg) %>% 
+  config(displayModeBar = FALSE) %>% 
+  layout(autosize = TRUE)
+```
+
+<div class="analysis-text">
+<span class="analysis-title">Strategic Diffusion Analysis</span>
+The macroprudential diffusion trend illustrates a profound structural shift in the European regulatory approach over the last decade. Following the initial implementation of the CRD IV/CRR framework, we observed a gradual buildup that was abruptly interrupted by the COVID-19 pandemic, during which buffers were released globally to support the flow of credit. However, the subsequent recovery phase has seen an unprecedented "re-tightening" cycle. The sharp upward trajectory in the count of positive rates since 2021 indicates not just a response to inflationary pressures and rising interest rates, but also a fundamental change in philosophy. The speed at which countries have returned to positive buffer levels suggests that authorities are now more willing to act pre-emptively, using the CCyB as a primary tool to build resilience long before a financial crisis becomes imminent. This "re-normalisation" phase marks the transition of the CCyB from an occasionally used cyclical lever to a central pillar of the capital stack.
+
+<a href="data_diffusion.xlsx" class="download-btn">Download Diffusion Data (Excel)</a>
+</div>
+
+---
+
+# Latest Policy Decisions
+
+```{r}
+latest_df %>%
+  filter(date >= (Sys.Date() - years(1))) %>%
+  select(country, date, rate, type_of_setting, reasoning) %>%
+  arrange(desc(date)) %>%
+  reactable(
+    columns = list(
+      country = colDef(name = "Country", maxWidth = 150, style = list(fontWeight = 600)),
+      date = colDef(name = "Effective Date", maxWidth = 130),
+      rate = colDef(name = "Rate (%)", maxWidth = 100, format = colFormat(suffix = "%")),
+      type_of_setting = colDef(name = "Decision", maxWidth = 150),
+      reasoning = colDef(name = "Key Drivers", minWidth = 300)
+    ),
+    compact = TRUE,
+    borderless = TRUE,
+    theme = reactableTheme(
+      style = list(fontFamily = "Inter"),
+      headerStyle = list(background = "#f8fafc", fontWeight = 700, color = "#4a5568", textTransform = "uppercase", fontSize = "0.75rem", letterSpacing = "0.05em")
+    )
+  )
+```
+
+<div class="analysis-text">
+<span class="analysis-title">Policy Driver Analysis</span>
+The policy decisions recorded over the past 12 months reveal a remarkably consistent focus on "Systemic Resilience" and the formalization of "Positive Neutral Frameworks" across the EU. Even in jurisdictions where credit growth has stabilized or slowed due to tighter monetary conditions, macroprudential authorities have frequently opted to maintain or even increase buffer rates. This suggests that the current policy cycle is less about cooling an overheated credit market and more about ensuring that banks possess sufficient capital "dry powder" to absorb losses if economic conditions deteriorate unexpectedly. The prevalence of terms like "baseline resilience" and "standard risk environment" in national justifications indicates that the CCyB is increasingly viewed as a permanent, albeit releasable, feature of the capital stack rather than a temporary cyclical add-on. This paradigm shift reflects a lessons-learned approach from previous crises where buffers were often deemed too small or implemented too late.
+
+<a href="data_latest_decisions.xlsx" class="download-btn">Download Latest Decisions (Excel)</a>
+</div>
+
+---
+
+# Current Landscape
+
+## Cross-sectional Snapshot
+
+```{r}
+p_bar <- latest_df %>%
+  arrange(desc(rate)) %>%
+  mutate(country = factor(country, levels = country)) %>%
+  ggplot(aes(x = country, y = rate, fill = rate, text = paste("Country:", country, "<br>Rate:", rate, "%"))) +
+  geom_bar(stat = "identity", width = 0.7) +
+  scale_fill_gradient(low = "#74b9ff", high = "#0984e3") +
+  labs(y = "CCyB Rate (%)", x = "") +
+  theme_minimal(base_family = "Inter") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+        panel.grid.major.x = element_blank(),
+        axis.title.y = element_text(size = 11, face = "bold"))
+
+ggplotly(p_bar, tooltip = "text") %>% 
+  config(displayModeBar = FALSE) %>% 
+  layout(autosize = TRUE)
+```
+
+<div class="analysis-text">
+<span class="analysis-title">Jurisdictional Heterogeneity</span>
+The cross-sectional snapshot highlights the diverse macro-financial realities across Europe. The significant dispersion in CCyB rates—with several countries maintaining rates at or above 2.0% while others remain at 0%—reflects the non-synchronized nature of financial cycles and varying levels of risk appetite among national regulators. High-rate countries, particularly in the Nordics and Central Europe, often cite structural vulnerabilities such as high household indebtedness or specific risks in the commercial real estate sector as justification for their robust cushions. Conversely, countries with 0% rates often point to a lack of immediate cyclical pressure or the need to preserve lending capacity in a sluggish growth environment. This variation underscores the importance of the "comply or explain" principle within the ESRB framework, allowing for essential national flexibility while maintaining a common European oversight mechanism that ensures risk assessments remain transparent and comparable.
+
+<a href="data_snapshot.xlsx" class="download-btn">Download Snapshot (Excel)</a>
+</div>
+
+## Positive Neutral Frameworks
+
+```{r}
+neutral_df %>%
+  reactable(
+    columns = list(
+      country = colDef(name = "Country", style = list(fontWeight = 600)),
+      date = colDef(name = "Since Date"),
+      rate = colDef(name = "Neutral/Current Rate (%)", format = colFormat(suffix = "%"))
+    ),
+    compact = TRUE,
+    theme = reactableTheme(
+      style = list(fontFamily = "Inter"),
+      headerStyle = list(background = "#f8fafc", fontWeight = 700, color = "#4a5568", textTransform = "uppercase", fontSize = "0.75rem", letterSpacing = "0.05em")
+    )
+  )
+```
+
+<div class="analysis-text">
+<span class="analysis-title">Structural Framework Innovation</span>
+The adoption of Positive Neutral CCyB frameworks by **`r nrow(neutral_df)`** countries represents one of the most significant macroprudential innovations in the post-Basel III era. This framework addresses the inherent difficulty of timing buffer increases during the early stages of a credit cycle, when risks are often building but traditional indicators remain deceptively calm. By setting a baseline rate during "normal" times, authorities ensure that a minimum level of resilience is always present and can be released immediately upon the occurrence of a shock. This analysis shows that this approach is becoming the standard for major European economies, including Germany, France, and the Netherlands. The transition to this model effectively raises the floor for bank capital across the region, potentially reducing the need for aggressive, pro-cyclical tightening in the future and providing a more stable and predictable regulatory environment for financial institutions.
+
+<a href="data_pn_ccyb.xlsx" class="download-btn">Download Framework Data (Excel)</a>
+</div>
+
+---
+
+# Historical Evolution
+
+<div class="sidebar-filter">
+```{r}
+filter_select("country", "Select Countries to Compare", shared_df, ~country)
+```
+</div>
+
+```{r}
+p_hist <- ggplot(shared_df, aes(x = date, y = rate, color = country, group = country, 
+                                 text = paste("Country:", country, "<br>Date:", date, "<br>Rate:", rate, "%"))) +
+  geom_step(linewidth = 1) +
+  labs(y = "CCyB Rate (%)", x = "Effective Date") +
+  theme_minimal(base_family = "Inter") +
+  theme(legend.position = "none",
+        axis.title = element_text(size = 11, face = "bold"))
+
+ggplotly(p_hist, tooltip = "text") %>% 
+  config(displayModeBar = FALSE) %>% 
+  layout(autosize = TRUE)
+```
+
+<div class="analysis-text">
+<span class="analysis-title">Long-term Policy Trajectories</span>
+Examining the historical evolution of CCyB rates through an interactive lens allows for a deeper understanding of national policy responses to major economic events over the last decade. Most notable is the "V-shaped" recovery of buffer rates following the synchronized releases during the 2020 pandemic. While the initial release was a coordinated global effort to ensure liquidity and support the real economy during lockdowns, the subsequent paths have diverged based on national recovery speeds, inflationary environments, and localized risk factors. This historical perspective reveals that several jurisdictions are now operating with significantly higher capital requirements than they were in the 2017-2019 period. This suggests a long-term upward shift in macroprudential stringency, as regulators have prioritized a "higher for longer" approach to capital buffers to ensure the continuity of lending through various economic cycles and unexpected systemic stresses.
+
+<a href="data_historical.xlsx" class="download-btn">Download Historical Data (Excel)</a>
+</div>
+
+---
+
+# Risk Analysis
+
+## Credit vs. CCyB Setting
+
+```{r, fig.height=7}
+latest_df %>%
+  filter(!is.na(credit_gap), !is.na(rate)) %>%
+  ggplot(aes(x = credit_gap, y = rate)) +
+  geom_vline(xintercept = 2, linetype = "dashed", color = "#dfe6e9") +
+  geom_hline(yintercept = 0, color = "#2d3436", alpha = 0.3) +
+  geom_point(aes(size = credit_to_gdp, fill = rate), shape = 21, color = "white", alpha = 0.8) +
+  geom_text_repel(aes(label = iso2), 
+                  box.padding = 0.5, 
+                  point.padding = 0.3,
+                  segment.color = '#636e72',
+                  size = 4.5,
+                  fontface = "bold") +
+  scale_fill_gradient(low = "#0984e3", high = "#d63031") +
+  scale_size_continuous(range = c(5, 18)) +
+  labs(
+    x = "Credit-to-GDP Gap (percentage points)",
+    y = "CCyB Rate (%)",
+    size = "Credit/GDP Ratio",
+    fill = "Rate"
+  ) +
+  theme_minimal(base_family = "Inter") +
+  theme(axis.title = element_text(size = 11, face = "bold"),
+        panel.grid.minor = element_blank())
+```
+
+<div class="analysis-text">
+<span class="analysis-title">Indicator Decoupling Analysis</span>
+The relationship between the credit-to-GDP gap and actual CCyB settings provides a stark visualization of the decoupling between traditional cyclical indicators and modern macroprudential policy. In the original Basel III design, a credit gap above 2 percentage points was the primary signal for buffer activation. However, this scatter plot demonstrates that a large cluster of European countries now maintain positive buffer rates—often as high as 1.5% or 2.0%—even while their credit gaps remain negative. This reflects the "Positive Neutral" shift discussed throughout this report; authorities are moving away from reactive, gap-based models toward more holistic, resilience-oriented frameworks where the "standard" Basel III guide has become less influential than national assessments of structural risk. This decoupling marks a fundamental change in how macroprudential risk is managed, prioritizing the constant availability of capital cushions over the precise timing of cyclical buildup.
+
+<a href="data_risk_analysis.xlsx" class="download-btn">Download Risk Data (Excel)</a>
+</div>
+
+---
+
+# About this Report
+
+**Data Transparency**
+This report is dynamically generated from the [European Systemic Risk Board (ESRB) Countercyclical Capital Buffer Database](https://www.esrb.europa.eu/national_policy/ccb/html/index.en.html). 
+
+**Methodological Notes**
+- **Date Conversion**: All Excel numeric timestamps are converted to standard R date objects (origin: 1899-12-30).
+- **Driver Mapping**: Policy justifications are parsed for keywords to categorize decisions into themes like "Systemic Resilience" and "Credit Growth".
+- **ISO Codes**: Country names are mapped to ISO-3166-1 alpha-2 codes for precise visualization.
+- **Interactivity**: Visualizations are built using `plotly` and `reactable` to allow for deep-dive analysis by the reader.
+
+</div>

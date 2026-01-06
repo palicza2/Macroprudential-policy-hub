@@ -1,0 +1,70 @@
+---
+title: "Countercyclical Capital Buffer (CCyB) Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+source("scripts/data_loader.R")
+
+# Get latest rates for summary boxes from the shared data_loader.R
+latest_data <- df %>%
+  group_by(country) %>%
+  filter(date == max(date)) %>%
+  slice(1) %>%
+  ungroup()
+
+avg_rate <- mean(latest_data$rate, na.rm = TRUE)
+num_countries <- n_distinct(latest_data$country)
+```
+
+Row {data-height=150}
+-----------------------------------------------------------------------
+
+### Countries Tracked
+
+```{r}
+valueBox(num_countries, icon = "fa-globe")
+```
+
+### Average Current CCyB Rate
+
+```{r}
+valueBox(paste0(round(avg_rate, 2), "%"), icon = "fa-percent", color = "warning")
+```
+
+### Data Source
+
+```{r}
+valueBox("ESRB", icon = "fa-download", color = "primary")
+```
+
+Row {data-height=650}
+-----------------------------------------------------------------------
+
+### CCyB Rate Evolution by Country
+
+```{r}
+df %>%
+  ggplot(aes(x = application_since, y = ccy_b_rate, color = country)) +
+  geom_step(linewidth = 1) + 
+  labs(y = "CCyB Rate (%)", x = "Date") +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+Row {data-height=200}
+-----------------------------------------------------------------------
+
+### Latest Policy Decisions (Top 10)
+
+```{r}
+latest_data %>%
+  arrange(desc(application_since)) %>%
+  head(10) %>%
+  select(country, application_since, ccy_b_rate, type_of_setting) %>%
+  knitr::kable()
+```
