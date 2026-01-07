@@ -11,7 +11,6 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-source("scripts/data_loader.R")
 library(plotly)
 library(DT)
 library(reactable)
@@ -20,12 +19,12 @@ library(ggrepel)
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10)
 
 # Export Data for Downloads (now using output_dir from data_loader.R)
-write_xlsx(agg_trend, paste0(output_dir, "data_diffusion.xlsx"))
+write_xlsx(agg_trend, "data_diffusion.xlsx")
 write_xlsx(latest_df %>% filter(date >= (Sys.Date() - years(1))), paste0(output_dir, "data_latest_decisions.xlsx"))
-write_xlsx(latest_df, paste0(output_dir, "data_snapshot.xlsx"))
-write_xlsx(neutral_df, paste0(output_dir, "data_pn_ccyb.xlsx"))
-write_xlsx(df, paste0(output_dir, "data_historical.xlsx"))
-write_xlsx(latest_df %>% filter(!is.na(credit_gap)), paste0(output_dir, "data_risk_analysis.xlsx"))
+write_xlsx(latest_df, "data_snapshot.xlsx")
+write_xlsx(neutral_df, "data_pn_ccyb.xlsx")
+write_xlsx(df, "data_historical.xlsx")
+write_xlsx(latest_df %>% filter(!is.na(credit_gap)), "data_risk_analysis.xlsx")
 ```
 
 <style>

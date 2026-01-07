@@ -1,5 +1,3 @@
-source("scripts/config.R")
-
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(curl, readxl, dplyr, janitor, lubridate, countrycode, stringr, writexl, crosstalk)
 
