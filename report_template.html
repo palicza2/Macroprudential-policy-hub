@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EU Macroprudential Policy Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --bg: #f4f6f9;
+            --card-bg: #ffffff;
+            --text: #2d3436;
+            --text-muted: #7f8c8d;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        /* Kártya Design */
+        .section-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-top: 4px solid var(--accent);
+        }
+        .section-title { color: var(--primary); margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        
+        /* Split Layout (Kép + Szöveg egymás mellett) */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2rem;
+            align-items: start;
+        }
+        .plot-container img, .plot-container div { width: 100%; height: auto; border-radius: 8px; border: 1px solid #eee; }
+        
+        /* Elemzés Doboz */
+        .analysis-box {
+            background: #f8fbff;
+            border-left: 5px solid var(--accent);
+            padding: 1.5rem;
+            border-radius: 0 8px 8px 0;
+        }
+        .badge { background: var(--primary); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; display: inline-block; margin-bottom: 10px;}
+        
+        /* --- MODERN TABLE STYLING --- */
+        .table-responsive { overflow-x: auto; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-top: 1rem; }
+        table.custom-table {
+            width: 100%; border-collapse: collapse; font-size: 0.95rem; background: white; white-space: nowrap;
+        }
+        table.custom-table th {
+            background-color: var(--primary); color: white; text-align: left; padding: 16px 20px;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem;
+            position: sticky; top: 0;
+        }
+        table.custom-table td {
+            padding: 14px 20px;
+            border-bottom: 1px solid #f1f2f6;
+            color: var(--text);
+        }
+        table.custom-table tr:last-child td { border-bottom: none; }
+        table.custom-table tr:hover { background-color: #f8fbff; transition: background-color 0.2s; }
+        table.custom-table td:last-child { font-size: 0.85rem; color: var(--text-muted); font-style: italic; }
+
+        /* Mobil nézet */
+        @media (max-width: 768px) {
+            .split-layout { grid-template-columns: 1fr; }
+            .section-card { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="section-card" style="text-align: center; background: linear-gradient(135deg, #1e272e, #34495e); color: white;">
+            <h1>EU Macroprudential Policy Report</h1>
+            <p>Generated: {{ generation_date }}</p>
+        </div>
+
+        <div class="section-card">
+            <h2 class="section-title">Executive Summary</h2>
+            <div class="analysis-box" style="border-left-color: #27ae60; background-color: #f0fbf4;">
+                <span class="badge" style="background: #27ae60;">Key Takeaways</span>
+                <p>{{ analyses.executive_summary }}</p>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <h2 class="section-title">Macroprudential Diffusion</h2>
+            <div class="split-layout">
+                <div class="plot-container">
+                    {{ plots.diffusion_plot | safe }}
+                </div>
+                <div class="analysis-box">
+                    <span class="badge">AI Analysis</span>
+                    <p>{{ analyses.strategic_diffusion_analysis }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <h2 class="section-title">Latest Changes (Policy Driver Analysis)</h2>
+            
+            <div class="table-responsive">
+                {{ policy_table_html | safe }}
+            </div>
+
+            <div class="analysis-box" style="margin-top: 20px;">
+                <span class="badge">Insight</span>
+                <p>{{ analyses.policy_driver_analysis }}</p>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <h2 class="section-title">Jurisdictional Heterogeneity</h2>
+            <div class="split-layout">
+                <div class="plot-container">
+                    {{ plots.cross_section_plot | safe }}
+                </div>
+                <div class="analysis-box">
+                    <span class="badge">AI Analysis</span>
+                    <p>{{ analyses.jurisdictional_heterogeneity }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <h2 class="section-title">Historical Evolution</h2>
+            <div class="split-layout">
+                <div class="plot-container">
+                    {{ plots.historical_plot | safe }}
+                </div>
+                <div class="analysis-box">
+                    <span class="badge">AI Analysis</span>
+                    <p>{{ analyses.long_term_policy_trajectories }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <h2 class="section-title">Risk Analysis (Indicator Decoupling)</h2>
+            <div class="split-layout">
+                <div class="plot-container">
+                    {{ plots.risk_plot | safe }}
+                </div>
+                <div class="analysis-box">
+                    <span class="badge">AI Analysis</span>
+                    <p>{{ analyses.indicator_decoupling }}</p>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</body>
+</html>

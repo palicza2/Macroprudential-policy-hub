@@ -1,0 +1,10 @@
+pandas
+requests
+plotly
+jinja2
+python-dotenv
+langchain-google-genai
+country_converter
+pyarrow
+openpyxl
+tabulate

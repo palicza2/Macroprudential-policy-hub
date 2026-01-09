@@ -1,98 +1,104 @@
-# Macroprudential Policy Hub
+# Macroprudential Policy Hub (AI-Powered) 🚀
 
-This repository provides a framework for tracking and analyzing Countercyclical Capital Buffer (CCyB) rates across the European Union and the European Economic Area (EEA).
-It dynamically downloads the latest CCyB data from the European Systemic Risk Board (ESRB) and generates analytical reports and dashboards.
+This repository hosts an **automated, AI-driven framework** for tracking and analyzing Countercyclical Capital Buffer (CCyB) rates across the European Union and the European Economic Area (EEA).
 
-## Project Structure
+The system automatically retrieves the latest data from the European Systemic Risk Board (ESRB), processes it, generates interactive visualizations, and leverages **Google Gemini AI** to produce professional-grade financial stability reports in a modern HTML dashboard.
 
-The project is organized into a modular and rational structure to enhance maintainability, scalability, and ease of use:
+## 🌟 Key Features
 
-```
+* **Automated ETL Pipeline**: Downloads raw Excel data from the ESRB, cleans and normalizes it, and saves optimized `parquet` files for high-performance access.
+* **Interactive Visualization**: Generates dynamic, zoomable charts using `Plotly` (Diffusion Index, Cross-Sectional Snapshots, Risk Analysis Bubble Charts) embedded directly into the report.
+* **AI-Driven Analysis (LLM)**: Utilizes the **Google Gemini 2.5 Flash Lite** model to interpret trends, deconstruct policy drivers, and assess risk decoupling. It features built-in "Retry" logic (`tenacity`) to handle API rate limits gracefully.
+* **Intelligent Grounding**: The AI is "grounded" with both visual data and raw numeric tables (converted to Markdown) to prevent hallucinations and ensure factual accuracy in the analysis.
+* **Modern Dashboard**: The final output is rendered via a `Jinja2` template into a single, standalone `index.html` file that serves as a comprehensive "Executive Dashboard".
+
+## 📂 Project Structure
+
+The project follows a modular architecture for maintainability:
+
+```text
 Macroprudential_hub/
-├── data/                 # Stores raw, processed, and generated data files (Excel, RData)
-├── scripts/              # Contains R scripts for data loading, processing, and configuration
-│   ├── config.R          # Centralized configuration variables (URLs, paths, filenames)
-│   └── data_loader.R     # Handles data download, cleaning, and initial processing
-├── reports/              # R Markdown files for generating reports
-│   └── CCyB_Tracker.Rmd   # Detailed R Markdown report on CCyB evolution and policy
-├── run_all.R             # Master script to execute the entire data pipeline and render reports
-└── README.md             # This file
+├── data/                   # Data storage (Raw Excel and processed Parquet files)
+├── output/                 # Temporary artifacts (e.g., base64 images for AI vision)
+├── scripts/                # Core logic modules
+│   ├── etl_process.py      # Data extraction, transformation, and loading
+│   ├── plot_generator.py   # Plotly interactive chart generation
+│   └── llm_analysis.py     # LangChain + Google Gemini AI integration
+├── templates/              # HTML assets
+│   └── report_template.html # Jinja2 report skeleton
+├── .env                    # Environment variables (API Keys) - NOT version controlled
+├── index.html              # The final generated report
+├── run_pipeline.py         # Main entry point / Orchestrator
+└── requirements.txt        # Python dependencies
 ```
 
-## Key Features
+## 🛠️ Installation & Setup
 
-*   **Automated Data Acquisition**: Downloads the latest CCyB data directly from the ESRB website.
-*   **Modular Design**: Separates data loading, processing, and reporting logic into distinct scripts for better organization.
-*   **Centralized Configuration**: All external URLs, file paths, and key parameters are managed in a single `config.R` file.
-*   **Dynamic Report**: Generates a detailed HTML report using R Markdown.
-*   **Data Export**: Automatically exports processed data into Excel files for further analysis.
-*   **Version Controlled**: The entire project is under Git version control for tracking changes and collaborative development.
-
-## Getting Started
-
-To set up and run this project locally, follow these steps:
+Follow these steps to set up the pipeline locally:
 
 ### 1. Prerequisites
-
-Make sure you have [R](https://www.r-project.org/) and [RStudio](https://www.rstudio.com/products/rstudio/download/) installed.
+* **Python 3.10+** installed.
+* A Google Cloud Project with a **Google AI Studio API Key** (for Gemini access).
 
 ### 2. Clone the Repository
-
 ```bash
 git clone https://github.com/palicza2/Macroprudential-policy-hub.git
 cd Macroprudential-policy-hub
 ```
 
-### 3. Install R Packages
+### 3. Install Dependencies
+It is recommended to use a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+*Key dependencies: `pandas`, `plotly`, `langchain-google-genai`, `tenacity`, `jinja2`, `python-dotenv`, `openpyxl`, `pyarrow`, `tabulate`.*
 
-Open RStudio and install the necessary R packages. You can do this by running the following command in the R console:
-
-```R
-if (!require("pacman")) install.packages("pacman")
-pacman::p_load(curl, readxl, dplyr, janitor, lubridate, countrycode, stringr, writexl, crosstalk, ggplot2, rmarkdown, flexdashboard, plotly, DT, reactable, tidyr, ggrepel)
+### 4. Configure Environment Variables
+Create a `.env` file in the root directory and add your Google API key:
+```env
+GOOGLE_API_KEY=your_actual_api_key_here
 ```
 
-### 4. Run the Project
+## 🚀 Usage
 
-Execute the `run_all.R` script to download the latest data, process it, and render all reports and plots. You can run this script directly from RStudio or your R console:
+To run the full pipeline (Data Update -> Visualization -> AI Analysis -> Report Generation), simply execute the main script:
 
-```R
-source("run_all.R")
+```bash
+python run_pipeline.py
 ```
 
-This script will perform the following actions:
-*   Download the ESRB CCyB data to the `data/` directory (if not already present).
-*   Process and clean the data.
-*   Render `reports/CCyB_Tracker.Rmd` to `index.html` in the project root.
-*   Generate `ccyb_evolution.png` in the project root.
-*   Export various data subsets to Excel files in the `data/` directory.
+### Workflow Overview:
+1.  **ETL**: Checks for existing data. If stale or missing, downloads the latest Excel file from ESRB and processes it into DataFrames.
+2.  **Visualization**: Generates HTML components for charts and temporary images for the AI's vision capabilities.
+3.  **AI Analysis**: The orchestrator sends tasks to Gemini (e.g., "Analyze the diffusion curve"). The system includes throttling (15s delays) to respect Free Tier API rate limits.
+4.  **Rendering**: Combines the analytics, charts, and table data into the `report_template.html` and saves the final `index.html`.
 
-## Output Files
+## 📊 Outputs
 
-After running `run_all.R`, the following files will be generated:
+Upon successful execution, the root directory will contain:
+* **`index.html`**: A fully interactive web report containing:
+    * Executive Summary (AI-synthesized).
+    * Interactive Plotly Charts.
+    * "Latest Changes" Policy Table.
+    * Deep-dive textual analysis for each section.
 
-*   **In the project root:**
-    *   `index.html`: The comprehensive analytical report (generated from `CCyB_Tracker.Rmd`).
-    *   `ccyb_evolution.png`: A plot showing the evolution of CCyB rates.
-*   **In the `data/` directory:**
-    *   `data_diffusion.xlsx`: Excel export of aggregate trend data.
-    *   `data_latest_decisions.xlsx`: Excel export of recent policy decisions.
-    *   `data_snapshot.xlsx`: Excel export of the latest CCyB rates per country.
-    *   `data_pn_ccyb.xlsx`: Excel export of positive neutral CCyB frameworks data.
-    *   `data_historical.xlsx`: Excel export of full historical data.
-    *   `data_risk_analysis.xlsx`: Excel export of credit vs. CCyB setting analysis data.
+## 🔧 Customization
 
-## Customization and Further Development
-
-*   **Configuration**: Modify `scripts/config.R` to change data sources, output directories, or other global parameters.
-*   **Data Processing**: Adjust `scripts/data_loader.R` to modify data cleaning, transformation, or add new derived variables.
-*   **Report**: Edit `reports/CCyB_Tracker.Rmd` to customize visualizations, add new analyses, or change the layout.
-*   **New Analyses**: Add new R scripts to the `scripts/` directory for additional analytical modules.
-
-## Contributing
-
-Feel free to fork this repository, open issues, or submit pull requests.
+* **Prompt Engineering**: You can adjust the analytical depth, tone, or specific questions in the `tasks` list and `OUTPUT_INSTRUCTIONS` within `scripts/llm_analysis.py`.
+* **Data Source**: If the ESRB data URL changes, update the `ESRB_URL` constant in `scripts/etl_process.py`.
 
 ## License
 
-This project is open-source and available under the MIT License.
+This project is open-source for educational and personal use, licensed under the **Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)**.
+
+You are free to:
+* **Share** — copy and redistribute the material in any medium or format.
+* **Adapt** — remix, transform, and build upon the material.
+
+Under the following terms:
+* **Attribution** — You must give appropriate credit to the author.
+* **NonCommercial** — You may not use the material for commercial purposes (e.g., internal business tools, paid products).
+
+**For commercial inquiries or licensing, please contact the author.**

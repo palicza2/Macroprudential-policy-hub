@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #2d3436;
+  line-height: 1.8;
+  font-size: 19px; 
+}
+h1 { font-size: 2.75rem; margin-top: 3rem; margin-bottom: 2rem; font-weight: 700; color: #1e272e; }
+h2 { font-size: 2.1rem; margin-top: 2.5rem; margin-bottom: 1.5rem; font-weight: 700; color: #1e272e; }
+h3 { font-size: 1.6rem; margin-top: 2rem; margin-bottom: 1.25rem; font-weight: 700; color: #1e272e; }
+
+.report-container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 40px 20px;
+}
+
+/* --- MOBILE OPTIMIZATION --- */
+@media (max-width: 768px) {
+  body { font-size: 17px; }
+  h1 { font-size: 2.1rem; }
+  h2 { font-size: 1.7rem; }
+  h3 { font-size: 1.3rem; }
+  
+  .report-container { padding: 20px 15px; }
+  
+  .download-btn { 
+    float: none; 
+    display: block; 
+    margin: 20px auto;
+    width: 80%;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  
+  .analysis-text {
+    font-size: 1.25rem;
+    padding: 20px;
+    margin: 25px 0;
+  }
+
+  /* Force bscols to stack */
+  .crosstalk-bscols {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .crosstalk-bscols > div {
+    width: 100% !important;
+    margin-bottom: 20px;
+  }
+}
+
+.download-btn {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+  background-color: #0984e3;
+  text-decoration: none;
+  padding: 10px 22px;
+  border-radius: 50px;
+  display: inline-block;
+  margin-top: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(9, 132, 227, 0.2);
+  border: none;
+}
+.download-btn:hover {
+  background: #0773c5;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(9, 132, 227, 0.3);
+  text-decoration: none;
+}
+.analysis-text {
+  font-size: 1.45rem;
+  color: #2d3748;
+  margin: 45px 0;
+  padding: 40px;
+  background-color: #f8fafc;
+  border-left: 8px solid #0984e3;
+  border-radius: 0 20px 20px 0;
+  line-height: 1.8;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+.analysis-title {
+  font-weight: 800;
+  color: #1a202c;
+  display: block;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  letter-spacing: 0.15em;
+}
+hr {
+  margin: 90px 0;
+  border: 0;
+  border-top: 2px solid #edf2f7;
+}
+.sidebar-filter {
+  background: #f8fafc;
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  border: 1px solid #e2e8f0;
+}
+/* Ensure tables don't break layout on tiny screens */
+.reactable {
+  overflow-x: auto;
+}
+.rt-td, .rt-th {
+  font-size: 1.05rem !important;
+  white-space: nowrap; /* Prevent messy wrapping in small cells */
+}
+/* Allow reasoning to wrap while others stay neat */
+.rt-td:last-child {
+  white-space: normal;
+  min-width: 250px;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ title }}</h1>
+        <p><strong>Dátum:</strong> {{ date }}</p>
+
+        <div class="section">
+            <h2 class="section-title">Összefoglalás</h2>
+            <div class="analysis-text">
+                <span class="analysis-title">Executive Summary</span>
+                <p>{{ analyses.executive_summary }}</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Makroprudenciális Diffúzió</h2>
+            <div class="plot-container">
+                <img src="{{ plot_paths.macroprudential_diffusion }}" alt="Makroprudenciális Diffúzió Ábra">
+            </div>
+            <div class="analysis-text">
+                <span class="analysis-title">Strategic Diffusion Analysis</span>
+                <p>{{ analyses.strategic_diffusion_analysis }}</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Legfrissebb Döntések Elemzése</h2>
+            <!-- Az eredeti Reactable táblázatot itt szövegesen jelenítjük meg, vagy később HTML táblázattá alakítjuk -->
+            <div class="analysis-text">
+                <span class="analysis-title">Policy Driver Analysis</span>
+                <p>{{ analyses.policy_driver_analysis }}</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Jelenlegi Helyzet - Keresztmetszeti Áttekintés</h2>
+            <div class="plot-container">
+                <img src="{{ plot_paths.cross_sectional_snapshot }}" alt="Keresztmetszeti Áttekintés Ábra">
+            </div>
+            <div class="analysis-text">
+                <span class="analysis-title">Jurisdictional Heterogeneity Analysis</span>
+                <p>{{ analyses.jurisdictional_heterogeneity_analysis }}</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Strukturális Keretrendszer Innováció</h2>
+            <div class="analysis-text">
+                <span class="analysis-title">Structural Framework Innovation Analysis</span>
+                <p>{{ analyses.structural_framework_innovation_analysis }}</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Történelmi Evolúció</h2>
+            <div class="plot-container">
+                <img src="{{ plot_paths.historical_evolution }}" alt="Történelmi Evolúció Ábra">
+            </div>
+            <div class="analysis-text">
+                <span class="analysis-title">Long Term Policy Trajectories Analysis</span>
+                <p>{{ analyses.long_term_policy_trajectories_analysis }}</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Kockázatelemzés - Hitel vs. CCyB Beállítás</h2>
+            <div class="plot-container">
+                <img src="{{ plot_paths.risk_analysis }}" alt="Kockázatelemzés Ábra">
+            </div>
+            <div class="analysis-text">
+                <span class="analysis-title">Indicator Decoupling Analysis</span>
+                <p>{{ analyses.indicator_decoupling_analysis }}</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Generálva: {{ date }}</p>
+            <p>Forrás: European Systemic Risk Board (ESRB) Countercyclical Capital Buffer Database</p>
+        </div>
+    </div>
+</body>
+</html>
