@@ -1,104 +1,110 @@
-# Macroprudential Policy Hub (AI-Powered) 🚀
+# 🇪🇺 Macro Policy Hub (AI-Powered) 🚀
 
-This repository hosts an **automated, AI-driven framework** for tracking and analyzing Countercyclical Capital Buffer (CCyB) rates across the European Union and the European Economic Area (EEA).
+**An automated, AI-driven dashboard for tracking Macroprudential Policy (CCyB & SyRB) across the European Economic Area.**
 
-The system automatically retrieves the latest data from the European Systemic Risk Board (ESRB), processes it, generates interactive visualizations, and leverages **Google Gemini AI** to produce professional-grade financial stability reports in a modern HTML dashboard.
+This repository hosts a sophisticated pipeline that retrieves raw policy data from the **European Systemic Risk Board (ESRB)**, processes it, and generates a professional, mobile-responsive HTML dashboard. It leverages **Google Gemini 2.5** to provide executive summaries, strategic insights, and smart keyword extraction from complex legal texts.
+
+---
 
 ## 🌟 Key Features
 
-* **Automated ETL Pipeline**: Downloads raw Excel data from the ESRB, cleans and normalizes it, and saves optimized `parquet` files for high-performance access.
-* **Interactive Visualization**: Generates dynamic, zoomable charts using `Plotly` (Diffusion Index, Cross-Sectional Snapshots, Risk Analysis Bubble Charts) embedded directly into the report.
-* **AI-Driven Analysis (LLM)**: Utilizes the **Google Gemini 2.5 Flash Lite** model to interpret trends, deconstruct policy drivers, and assess risk decoupling. It features built-in "Retry" logic (`tenacity`) to handle API rate limits gracefully.
-* **Intelligent Grounding**: The AI is "grounded" with both visual data and raw numeric tables (converted to Markdown) to prevent hallucinations and ensure factual accuracy in the analysis.
-* **Modern Dashboard**: The final output is rendered via a `Jinja2` template into a single, standalone `index.html` file that serves as a comprehensive "Executive Dashboard".
+### 1. Dual-Pillar Monitoring 🏛️
+* **Part I: CCyB Monitor:** Tracks Countercyclical Capital Buffer rates, calculating diffusion indices and analyzing the credit gap vs. rate decoupling.
+* **Part II: SyRB Monitor:** A dedicated section for the **Systemic Risk Buffer**, distinguishing between **General** and **Sectoral** measures (e.g., Residential/Commercial Real Estate).
+
+### 2. AI-Driven Intelligence (Gemini 2.5) 🧠
+* **Executive Summaries:** Generates a high-level, bulleted strategic overview of the entire EU landscape.
+* **Smart Keyword Extraction:** Automatically converts long, complex legal descriptions (e.g., *"Retail exposures secured by residential property..."*) into punchy tags (e.g., *"Residential Mortgages"*).
+* **Trend Analysis:** Interprets visual patterns in diffusion charts to explain *why* policies are tightening or loosening.
+
+### 3. Modern, Mobile-First UI 📱
+* **Responsive Design:** Features a "Hamburger" menu on mobile and a sticky sidebar on desktop.
+* **Interactive Charts:** Zoomable Plotly visualizations (Diffusion Trends, Risk Analysis, Sectoral Focus).
+* **Social Ready:** Includes Open Graph (OG) meta tags for professional previews when sharing via Messenger, LinkedIn, or Teams.
+
+### 4. Robust ETL Pipeline ⚙️
+* **Dynamic Parsing:** Automatically detects header rows and sheet names in ESRB Excel files, making it resilient to format changes.
+* **Data Cleaning:** Normalizes country names, dates, and rates; handles missing values gracefully.
+* **Parquet Storage:** Saves processed data in high-performance `.parquet` format for quick retrieval.
+
+---
 
 ## 📂 Project Structure
 
-The project follows a modular architecture for maintainability:
+    MacroPolicyHub/
+    ├── data/                        # Raw Excel downloads & Processed Parquet files
+    ├── scripts/
+    │   ├── etl_process.py           # Robust ETL: Downloads & Cleans CCyB/SyRB data
+    │   ├── plot_generator.py        # Generates interactive Plotly HTML components
+    │   └── llm_analysis.py          # AI Logic: Summaries, Keyword Extraction
+    ├── templates/
+    │   └── report_template.html     # Jinja2 HTML template (Responsive, Sidebar)
+    ├── run_pipeline.py              # Main orchestrator script
+    ├── app.py                       # (Optional) Streamlit Chatbot for Q&A
+    ├── requirements.txt             # Python dependencies
+    └── README.md                    # Project documentation
 
-```text
-Macroprudential_hub/
-├── data/                   # Data storage (Raw Excel and processed Parquet files)
-├── output/                 # Temporary artifacts (e.g., base64 images for AI vision)
-├── scripts/                # Core logic modules
-│   ├── etl_process.py      # Data extraction, transformation, and loading
-│   ├── plot_generator.py   # Plotly interactive chart generation
-│   └── llm_analysis.py     # LangChain + Google Gemini AI integration
-├── templates/              # HTML assets
-│   └── report_template.html # Jinja2 report skeleton
-├── .env                    # Environment variables (API Keys) - NOT version controlled
-├── index.html              # The final generated report
-├── run_pipeline.py         # Main entry point / Orchestrator
-└── requirements.txt        # Python dependencies
-```
+---
 
-## 🛠️ Installation & Setup
-
-Follow these steps to set up the pipeline locally:
+## 🚀 Installation & Usage
 
 ### 1. Prerequisites
-* **Python 3.10+** installed.
-* A Google Cloud Project with a **Google AI Studio API Key** (for Gemini access).
+* Python 3.10+
+* A Google Cloud API Key (for Gemini)
 
-### 2. Clone the Repository
-```bash
-git clone https://github.com/palicza2/Macroprudential-policy-hub.git
-cd Macroprudential-policy-hub
-```
+### 2. Install Dependencies
 
-### 3. Install Dependencies
-It is recommended to use a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
-*Key dependencies: `pandas`, `plotly`, `langchain-google-genai`, `tenacity`, `jinja2`, `python-dotenv`, `openpyxl`, `pyarrow`, `tabulate`.*
+    pip install -r requirements.txt
 
-### 4. Configure Environment Variables
-Create a `.env` file in the root directory and add your Google API key:
-```env
-GOOGLE_API_KEY=your_actual_api_key_here
-```
+*(Key libraries: `pandas`, `plotly`, `langchain-google-genai`, `jinja2`, `openpyxl`, `tenacity`)*
 
-## 🚀 Usage
+### 3. Configuration
+Create a `.env` file in the root directory and add your API key:
 
-To run the full pipeline (Data Update -> Visualization -> AI Analysis -> Report Generation), simply execute the main script:
+    GOOGLE_API_KEY=your_actual_api_key_here
 
-```bash
-python run_pipeline.py
-```
+### 4. Run the Pipeline
+To generate the static HTML report:
 
-### Workflow Overview:
-1.  **ETL**: Checks for existing data. If stale or missing, downloads the latest Excel file from ESRB and processes it into DataFrames.
-2.  **Visualization**: Generates HTML components for charts and temporary images for the AI's vision capabilities.
-3.  **AI Analysis**: The orchestrator sends tasks to Gemini (e.g., "Analyze the diffusion curve"). The system includes throttling (15s delays) to respect Free Tier API rate limits.
-4.  **Rendering**: Combines the analytics, charts, and table data into the `report_template.html` and saves the final `index.html`.
+    python run_pipeline.py
 
-## 📊 Outputs
+* **Step 1:** Downloads latest Excel files from ESRB (or uses local cache).
+* **Step 2:** Processes data into CCyB and SyRB datasets.
+* **Step 3:** Generates interactive charts.
+* **Step 4:** Sends data to Gemini AI for analysis and keyword extraction.
+* **Step 5:** Renders `index.html`.
 
-Upon successful execution, the root directory will contain:
-* **`index.html`**: A fully interactive web report containing:
-    * Executive Summary (AI-synthesized).
-    * Interactive Plotly Charts.
-    * "Latest Changes" Policy Table.
-    * Deep-dive textual analysis for each section.
+### 5. (Beta) Interactive Chatbot
+To ask questions about the data (e.g., *"Which countries target CRE risks?"*):
 
-## 🔧 Customization
+    streamlit run app.py
 
-* **Prompt Engineering**: You can adjust the analytical depth, tone, or specific questions in the `tasks` list and `OUTPUT_INSTRUCTIONS` within `scripts/llm_analysis.py`.
-* **Data Source**: If the ESRB data URL changes, update the `ESRB_URL` constant in `scripts/etl_process.py`.
+---
+
+## 📊 Dashboard Sections
+
+The generated `index.html` includes:
+
+1.  **Global Executive Summary:** High-level strategic bullet points.
+2.  **CCyB Monitor:**
+    * *Recent Decisions:* Table with AI-summarized drivers.
+    * *Strategic Diffusion:* Chart showing the number of active countries over time.
+    * *Risk Analysis:* Bubble chart comparing Credit Gap vs. Buffer Rates.
+3.  **SyRB Monitor:**
+    * *Adoption Trends:* Comparison of General vs. Sectoral buffer adoption.
+    * *Sectoral Focus:* Bar chart showing targeted exposures (RRE, CRE, Corporate).
+    * *Policy Data:* Tables for active measures with **AI-extracted keywords**.
+
+---
+
+## 🛠️ Customization
+
+* **Adjusting AI Tone:** Modify `OUTPUT_INSTRUCTIONS` in `scripts/llm_analysis.py`.
+* **Adding New Charts:** Edit `scripts/plot_generator.py` and update the template.
+* **Updating Data Sources:** If ESRB URLs change, update `FILES` configuration in `scripts/etl_process.py`.
+
+---
 
 ## License
 
-This project is open-source for educational and personal use, licensed under the **Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)**.
-
-You are free to:
-* **Share** — copy and redistribute the material in any medium or format.
-* **Adapt** — remix, transform, and build upon the material.
-
-Under the following terms:
-* **Attribution** — You must give appropriate credit to the author.
-* **NonCommercial** — You may not use the material for commercial purposes (e.g., internal business tools, paid products).
-
-**For commercial inquiries or licensing, please contact the author.**
+This project is open-source, licensed under the **Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)**.
