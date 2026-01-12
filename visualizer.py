@@ -101,4 +101,13 @@ class Visualizer:
             else: plots['syrb_sector'] = "<div>No Data</div>"
         else: plots['syrb_sector'] = "<div>No Data</div>"
 
+        # 6. BBM Diffusion
+        df_bbm_trend = data.get('bbm_trend_df')
+        if df_bbm_trend is not None and not df_bbm_trend.empty:
+            fig = px.line(df_bbm_trend, x='date', y='n_countries', title='Number of Countries with at least one Active BBM', template='plotly_white')
+            fig.update_layout(xaxis_title="", yaxis_title="Count")
+            plots['bbm_diffusion'] = fig.to_html(full_html=False, include_plotlyjs=False) + create_download_link(df_bbm_trend)
+            if p := self._save(fig, "bbm_diffusion.png"): paths['bbm_diffusion'] = p
+        else: plots['bbm_diffusion'] = "<div>No Data</div>"
+
         return plots, paths

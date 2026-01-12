@@ -118,6 +118,7 @@ class LLMAnalyzer:
         active_syrb_str = df_to_string(data_inputs.get('active_syrb_df'))
         syrb_decisions_str = df_to_string(data_inputs.get('syrb_decisions_df'))
         active_bbm_str = df_to_string(data_inputs.get('active_bbm_df'))
+        bbm_decisions_str = df_to_string(data_inputs.get('bbm_decisions_df'))
         
         system_context = "ROLE: Financial Analyst. STYLE: Professional, concise. Use HTML tags like <b> for emphasis if needed. IMPORTANT: Always use the provided DATA tables as the primary source of truth for numbers and rates."
 
@@ -134,7 +135,9 @@ class LLMAnalyzer:
             {"id": "syrb_active_analysis", "img": None, "data": active_syrb_str, "temp": 0.3, "prompt": "Analyze active SyRB measures. Start with a strong topic sentence. Write exactly ONE paragraph of 6-7 sentences."},
             {"id": "syrb_decisions_analysis", "img": None, "data": syrb_decisions_str, "temp": 0.2, "prompt": "Summarize latest SyRB decisions. Start with a strong topic sentence. Write exactly ONE paragraph of 6-7 sentences."},
             
-            {"id": "bbm_analysis", "img": None, "data": active_bbm_str, "temp": 0.3, "prompt": "Analyze Borrower-Based Measures (LTV, DSTI, DTI, etc.) active across Europe. Focus on how these measures target household indebtedness. Start with a strong topic sentence. Write exactly ONE paragraph of 6-7 sentences."}
+            {"id": "bbm_analysis", "img": None, "data": active_bbm_str, "temp": 0.3, "prompt": "Analyze Borrower-Based Measures (LTV, DSTI, DTI, etc.) active across Europe. Focus on how these measures target household indebtedness. Start with a strong topic sentence. Write exactly ONE paragraph of 6-7 sentences."},
+            {"id": "bbm_diffusion_analysis", "img": "bbm_diffusion", "data": "", "temp": 0.2, "prompt": "Analyze the trend in the number of countries adopting borrower-based measures. Start with a strong topic sentence. Write exactly ONE paragraph of 6-7 sentences."},
+            {"id": "bbm_decisions_analysis", "img": None, "data": bbm_decisions_str, "temp": 0.2, "prompt": "Summarize latest Borrower-Based Measure decisions. Start with a strong topic sentence. Write exactly ONE paragraph of 6-7 sentences."}
         ]
 
         results = {}
@@ -208,8 +211,8 @@ class LLMAnalyzer:
             TASK: Write a comprehensive Global Executive Summary.
             STRUCTURE: 4-5 paragraphs, each 5-6 sentences long. Each paragraph must start with a <b>bold topic sentence</b>.
             CONTENT: Synthesize the findings. How are cyclical (CCyB), structural (SyRB), and borrower-based (BBM) tools interacting? What is the overall macroprudential stance in Europe?
-            
-            INPUTS: 
+    
+    INPUTS:
             CCyB Overview: {results.get('ccyb_section_summary')}
             SyRB Overview: {results.get('syrb_section_summary')}
             BBM Overview: {results.get('bbm_section_summary')}

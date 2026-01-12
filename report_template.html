@@ -26,6 +26,9 @@
         .nav-link.active { background: var(--secondary); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
         .nav-link.active i { opacity: 1; }
         
+        .sub-nav { padding-left: 45px; font-size: 0.85rem; opacity: 0.8; margin-top: -2px; }
+        .sub-nav:hover { opacity: 1; }
+        
         /* Mobile Header */
         .mobile-header { display: none; position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); background: var(--primary); color: white; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 900; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .menu-btn { background: none; border: none; color: white; cursor: pointer; padding: 5px; display: flex; align-items: center; }
@@ -112,26 +115,26 @@
             Global Overview
         </a>
 
-        <div class="nav-group">Cyclical Risks</div>
-        <a href="#ccyb-section" class="nav-link">
-            <i data-lucide="activity"></i>
+        <div class="nav-group">Policy Instruments</div>
+        
+        <a href="#capital-section" class="nav-link">
+            <i data-lucide="building"></i>
+            Capital-based measures
+        </a>
+        <a href="#ccyb-section" class="nav-link sub-nav">
             CCyB Analysis
         </a>
-        
-        <div class="nav-group">Structural Risks</div>
-        <a href="#syrb-section" class="nav-link">
-            <i data-lucide="shield-check"></i>
+        <a href="#syrb-section" class="nav-link sub-nav">
             SyRB Analysis
         </a>
-
-        <div class="nav-group">Borrower-Based Risks</div>
+        
         <a href="#bbm-section" class="nav-link">
             <i data-lucide="home"></i>
-            BBM Analysis
+            Borrower-based measures
         </a>
 
         <div style="margin-top: auto; padding-top: 40px; font-size: 0.75rem; color: #64748b; border-top: 1px solid rgba(255,255,255,0.1);">
-            Macroprudential Dashboard v5.2<br>
+            Macroprudential Dashboard v5.4<br>
             © 2026 Macro Hub
         </div>
     </nav>
@@ -141,6 +144,8 @@
         <div class="card">
             <div class="ai-box" style="font-size: 1.05rem; background: #f0f7ff; border-color: #3b82f6;">{{ analyses['executive_summary'] | safe }}</div>
         </div>
+
+        <h1 id="capital-section" style="margin-top: 60px; border-bottom: 2px solid var(--primary); padding-bottom: 10px;">Capital-based measures</h1>
 
         <h2 id="ccyb-section">Countercyclical buffer (CCyB)</h2>
         
@@ -231,7 +236,7 @@
             <div class="ai-box" style="margin-top:20px">{{ analyses['syrb_decisions_analysis'] }}</div>
         </div>
 
-        <h2 id="bbm-section">Borrower-based measures (BBM)</h2>
+        <h1 id="bbm-section" style="margin-top: 60px; border-bottom: 2px solid var(--primary); padding-bottom: 10px;">Borrower-based measures</h1>
 
         <div class="card">
             <div class="card-title">Section Summary</div>
@@ -239,10 +244,24 @@
         </div>
 
         <div class="card">
+            <div class="card-title">Adoption Count</div>
+            <div class="grid-2">
+                <div>{{ plots['bbm_diffusion'] | safe }}</div>
+                <div class="ai-box">{{ analyses['bbm_diffusion_analysis'] }}</div>
+            </div>
+        </div>
+
+        <div class="card">
             <div class="card-title">Active Measures Cross-Country Comparison</div>
             {% if bbm_ref_date %}<span class="ref-date">Latest reference data: {{ bbm_ref_date }}</span>{% endif %}
             <div class="table-container">{{ bbm_pivot_html | safe }}</div>
             <div class="ai-box" style="margin-top:20px">{{ analyses['bbm_analysis'] }}</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Latest Borrower-based Measure Decisions</div>
+            <div class="table-container">{{ bbm_decisions_html | safe }}</div>
+            <div class="ai-box" style="margin-top:20px">{{ analyses['bbm_decisions_analysis'] }}</div>
         </div>
     </main>
 

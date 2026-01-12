@@ -206,9 +206,10 @@ class ETLPipeline:
             logger.error(f"CCyB Error: {e}")
             return pd.DataFrame()
 
-    def calculate_trends(self, ccyb_df, syrb_df):
+    def calculate_trends(self, ccyb_df, syrb_df, bbm_df=None):
         agg_trend_ccyb = pd.DataFrame()
         syrb_trend = pd.DataFrame()
+        bbm_trend = pd.DataFrame()
         today = pd.Timestamp.now().normalize()
 
         if not ccyb_df.empty:
@@ -248,7 +249,43 @@ class ETLPipeline:
                 res['Sectoral SyRB'] = sec_counts.reindex(all_dates).ffill().fillna(0)
                 res['date'] = res.index
                 syrb_trend = res.reset_index(drop=True)
-        return agg_trend_ccyb, syrb_trend
+
+        if bbm_df is not None and not bbm_df.empty:
+            # BBM Trend: Országok száma, ahol legalább egy aktív BBM van
+            df = bbm_df.dropna(subset=['date']).copy()
+            
+            # Készítünk egy eseménylistát (aktiválás és deaktiválás)
+            events = []
+            for _, row in df.iterrows():
+                # Aktiválás
+                events.append({'date': row['date'], 'country': row['country'], 'change': 1})
+                # Deaktiválás (ha van)
+                if pd.notna(row.get('revocation_date')):
+                    events.append({'date': row['revocation_date'], 'country': row['country'], 'change': -1})
+                elif 'status' in row and any(s in str(row['status']).lower() for s in ['deactivated', 'revoked', 'expired']):
+                    # Ha a státusz inaktív de nincs visszavonási dátum, akkor feltételezzük 
+                    # (ez bizonytalanabb, de a BoBM táblában gyakran így van)
+                    pass
+
+            if events:
+                ev_df = pd.DataFrame(events).sort_values('date')
+                # Országonkénti aktív mérések száma az időben
+                # Pivot: index=date, columns=country, values=count
+                # Ezt trükkösebben kell: minden országra külön kiszámoljuk az aktív mérések számát
+                all_countries = ev_df['country'].unique()
+                all_dates = pd.date_range(start=ev_df['date'].min(), end=today, freq='D')
+                
+                country_states = pd.DataFrame(index=all_dates)
+                for c in all_countries:
+                    c_ev = ev_df[ev_df['country'] == c].groupby('date')['change'].sum().reindex(all_dates).fillna(0).cumsum()
+                    country_states[c] = (c_ev > 0).astype(int)
+                
+                bbm_trend = pd.DataFrame({
+                    'date': all_dates,
+                    'n_countries': country_states.sum(axis=1)
+                }).reset_index(drop=True)
+
+        return agg_trend_ccyb, syrb_trend, bbm_trend
 
     def run_pipeline(self):
         download_file_safely(self.syrb_url, self.syrb_file)
@@ -256,7 +293,7 @@ class ETLPipeline:
         syrb_df = self._process_syrb()
         ccyb_df = self._process_ccyb()
         bbm_df = self._process_bbm()
-        agg_trend, syrb_trend = self.calculate_trends(ccyb_df, syrb_df)
+        agg_trend, syrb_trend, bbm_trend = self.calculate_trends(ccyb_df, syrb_df, bbm_df)
         def get_latest(df): 
             if df.empty: return df
             return df.sort_values('date').groupby('country').tail(1).reset_index(drop=True)
@@ -270,7 +307,7 @@ class ETLPipeline:
         
         return {
             'ccyb_df': ccyb_df, 'syrb_df': syrb_df, 'bbm_df': bbm_df,
-            'agg_trend_df': agg_trend, 'syrb_trend_df': syrb_trend,
+            'agg_trend_df': agg_trend, 'syrb_trend_df': syrb_trend, 'bbm_trend_df': bbm_trend,
             'latest_ccyb_df': latest_ccyb, 'latest_syrb_df': latest_syrb,
             'latest_bbm_df': latest_bbm
         }

@@ -132,21 +132,20 @@ def main():
     # --- BBM Processing ---
     bbm_full = data.get('bbm_df')
     active_bbm = pd.DataFrame()
+    bbm_decisions = pd.DataFrame()
     bbm_pivot_html = ""
     bbm_ref_date = ""
     
     if bbm_full is not None and not bbm_full.empty:
-        logger.info("   -> BBM processing (Compact Pivot Table)...")
-        # Aktív eszközök szűrése
+        logger.info("   -> BBM processing...")
+        # A) Aktív eszközök (Pivot Table)
         active_bbm = bbm_full[bbm_full['active_status'] == 'Active'].copy()
         
         if not active_bbm.empty:
-            # Referencia dátum meghatározása (legfrissebb mérés dátuma)
             max_date = active_bbm['date'].max()
             if pd.notna(max_date):
                 bbm_ref_date = max_date.strftime('%Y-%m-%d')
 
-            # Rövidítések alkalmazása
             rename_map = {
                 'Loan-to-value (LTV)': 'LTV',
                 'Debt-service-to-income (DSTI)': 'DSTI',
@@ -159,7 +158,6 @@ def main():
             }
             active_bbm['measure_short'] = active_bbm['measure_type'].map(lambda x: rename_map.get(x, x))
 
-            # Pivot tábla létrehozása: Sorok = Country, Oszlopok = Measure Type
             pivot_df = active_bbm.pivot_table(
                 index='iso2', 
                 columns='measure_short', 
@@ -167,22 +165,32 @@ def main():
                 aggfunc=lambda x: '✅'
             ).fillna('')
             
-            # Tisztítás
             pivot_df.index.name = 'COUNTRY'
             pivot_df.columns.name = None
-            
-            # Sorok és oszlopok rendezése
             pivot_df = pivot_df.sort_index(axis=0).sort_index(axis=1)
-            
-            # HTML generálás
             bbm_pivot_html = pivot_df.to_html(classes='display-table bbm-pivot', escape=False)
-        else:
-            bbm_pivot_html = "<p class='no-data'>No active borrower-based measures found.</p>"
+
+        # B) Legutóbbi 10 BBM döntés
+        bbm_decisions = bbm_full.sort_values('date', ascending=False).head(10).copy()
+        cols_bbm_dec = ['date', 'iso2', 'measure_type', 'status', 'description']
+        bbm_decisions = bbm_decisions[[c for c in cols_bbm_dec if c in bbm_decisions.columns]]
+        
+        if not bbm_decisions.empty:
+            logger.info("   -> BBM AI cleaning (Decisions)...")
+            if 'date' in bbm_decisions.columns:
+                bbm_decisions['date'] = pd.to_datetime(bbm_decisions['date']).dt.strftime('%Y-%m-%d')
+            
+            # AI Tisztítás a leírásra
+            details = analyzer.extract_keywords(bbm_decisions['description'].astype(str).tolist(), "targeted risk or background")
+            bbm_decisions['description'] = details
+            
+            bbm_decisions.columns = [c.upper() for c in bbm_decisions.columns]
+            bbm_decisions = bbm_decisions.rename(columns={'DATE': 'DATE', 'ISO2': 'COUNTRY', 'MEASURE_TYPE': 'TYPE', 'STATUS': 'STATUS', 'DESCRIPTION': 'DETAILS'})
 
     analyses = analyzer.run_analysis(
         {'latest_ccyb_df': data.get('latest_ccyb_df'), 'ccyb_decisions_df': ccyb_decisions,
          'active_syrb_df': active_syrb, 'syrb_decisions_df': syrb_decisions,
-         'active_bbm_df': active_bbm}, 
+         'active_bbm_df': active_bbm, 'bbm_decisions_df': bbm_decisions}, 
         paths, {}
     )
     
@@ -204,6 +212,7 @@ def main():
         syrb_active_html=to_html(active_syrb),
         syrb_decisions_html=to_html(syrb_decisions),
         bbm_pivot_html=bbm_pivot_html,
+        bbm_decisions_html=to_html(bbm_decisions),
         bbm_ref_date=bbm_ref_date
     )
     
