@@ -57,6 +57,16 @@
         td { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
         tr:last-child td { border-bottom: none; }
         tr:hover td { background: #f8fafc; }
+
+        /* BBM Pivot Specific */
+        .bbm-pivot { font-size: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+        .bbm-pivot th:first-child { position: sticky; left: 0; z-index: 10; background: #f8fafc; text-align: left; padding: 10px 15px; border-right: 2px solid #e2e8f0; }
+        .bbm-pivot td:first-child { position: sticky; left: 0; z-index: 5; background: white; font-weight: 700; color: var(--primary); border-right: 2px solid #e2e8f0; text-align: left; padding: 10px 15px; }
+        .bbm-pivot td { text-align: center; padding: 8px; border-right: 1px solid #f1f5f9; }
+        .bbm-pivot th { text-align: center; background: #f8fafc; color: #475569; font-weight: 700; padding: 10px 5px; border-bottom: 2px solid #e2e8f0; }
+        .bbm-pivot tr:nth-child(even) td:not(:first-child) { background: #fcfdfe; }
+        
+        .ref-date { font-size: 0.75rem; color: #64748b; font-weight: 500; margin-top: -15px; margin-bottom: 20px; display: block; }
         
         /* Filter Controls */
         .controls-row { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -229,8 +239,9 @@
         </div>
 
         <div class="card">
-            <div class="card-title">Currently Active Borrower-based Measures</div>
-            <div class="table-container">{{ bbm_active_html | safe }}</div>
+            <div class="card-title">Active Measures Cross-Country Comparison</div>
+            {% if bbm_ref_date %}<span class="ref-date">Latest reference data: {{ bbm_ref_date }}</span>{% endif %}
+            <div class="table-container">{{ bbm_pivot_html | safe }}</div>
             <div class="ai-box" style="margin-top:20px">{{ analyses['bbm_analysis'] }}</div>
         </div>
     </main>

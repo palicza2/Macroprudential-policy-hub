@@ -132,27 +132,52 @@ def main():
     # --- BBM Processing ---
     bbm_full = data.get('bbm_df')
     active_bbm = pd.DataFrame()
+    bbm_pivot_html = ""
+    bbm_ref_date = ""
+    
     if bbm_full is not None and not bbm_full.empty:
-        logger.info("   -> BBM processing...")
+        logger.info("   -> BBM processing (Compact Pivot Table)...")
         # Aktív eszközök szűrése
         active_bbm = bbm_full[bbm_full['active_status'] == 'Active'].copy()
         
-        # Csak a releváns oszlopok
-        cols_needed = ['iso2', 'date', 'measure_type', 'description']
-        active_bbm = active_bbm[[c for c in cols_needed if c in active_bbm.columns]]
-        
-        # Dátum formázás
-        if 'date' in active_bbm.columns:
-            active_bbm['date'] = pd.to_datetime(active_bbm['date']).dt.strftime('%Y-%m-%d')
+        if not active_bbm.empty:
+            # Referencia dátum meghatározása (legfrissebb mérés dátuma)
+            max_date = active_bbm['date'].max()
+            if pd.notna(max_date):
+                bbm_ref_date = max_date.strftime('%Y-%m-%d')
+
+            # Rövidítések alkalmazása
+            rename_map = {
+                'Loan-to-value (LTV)': 'LTV',
+                'Debt-service-to-income (DSTI)': 'DSTI',
+                'Loan-to-income (LTI)': 'LTI',
+                'DTI': 'DTI',
+                'Loan maturity': 'Maturity',
+                'Loan amortisation': 'Amort.',
+                'Flexibility quota': 'Flex.',
+                'Stress test / sensitivity test': 'Stress T.'
+            }
+            active_bbm['measure_short'] = active_bbm['measure_type'].map(lambda x: rename_map.get(x, x))
+
+            # Pivot tábla létrehozása: Sorok = Country, Oszlopok = Measure Type
+            pivot_df = active_bbm.pivot_table(
+                index='iso2', 
+                columns='measure_short', 
+                values='active_status', 
+                aggfunc=lambda x: '✅'
+            ).fillna('')
             
-        # AI Tisztítás (hasonlóan a SyRB-hez)
-        logger.info("   -> BBM AI keywords generation...")
-        details = analyzer.extract_keywords(active_bbm['description'].astype(str).tolist(), "targeted risk or background")
-        active_bbm['description'] = details
-        
-        # Nagybetűsítés és átnevezés a táblázathoz
-        active_bbm.columns = [c.upper() for c in active_bbm.columns]
-        active_bbm = active_bbm.rename(columns={'ISO2': 'COUNTRY', 'DATE': 'ACTIVE FROM', 'MEASURE_TYPE': 'TYPE', 'DESCRIPTION': 'DETAILS'})
+            # Tisztítás
+            pivot_df.index.name = 'COUNTRY'
+            pivot_df.columns.name = None
+            
+            # Sorok és oszlopok rendezése
+            pivot_df = pivot_df.sort_index(axis=0).sort_index(axis=1)
+            
+            # HTML generálás
+            bbm_pivot_html = pivot_df.to_html(classes='display-table bbm-pivot', escape=False)
+        else:
+            bbm_pivot_html = "<p class='no-data'>No active borrower-based measures found.</p>"
 
     analyses = analyzer.run_analysis(
         {'latest_ccyb_df': data.get('latest_ccyb_df'), 'ccyb_decisions_df': ccyb_decisions,
@@ -178,7 +203,8 @@ def main():
         ccyb_decisions_html=to_html(ccyb_decisions),
         syrb_active_html=to_html(active_syrb),
         syrb_decisions_html=to_html(syrb_decisions),
-        bbm_active_html=to_html(active_bbm)
+        bbm_pivot_html=bbm_pivot_html,
+        bbm_ref_date=bbm_ref_date
     )
     
     with open("index.html", "w", encoding="utf-8") as f: f.write(html)
