@@ -123,6 +123,56 @@ class ETLPipeline:
             logger.error(f"SyRB Error: {e}")
             return pd.DataFrame()
 
+    def _process_bbm(self):
+        """Processes Borrower-Based Measures (LTV, DSTI, etc.) from the BoBM sheet."""
+        if not self.syrb_file.exists(): return pd.DataFrame()
+        try:
+            xl = pd.ExcelFile(self.syrb_file)
+            sheet = next((s for s in xl.sheet_names if "BoBM" in s), None)
+            if not sheet: return pd.DataFrame()
+
+            df_raw = xl.parse(sheet, header=None, nrows=30)
+            header_idx = find_header_row(df_raw)
+            
+            df = xl.parse(sheet, skiprows=header_idx)
+            df = clean_columns(df)
+            
+            col_map = {}
+            for c in df.columns:
+                cl = c.lower().strip()
+                if 'country' in cl: col_map['country'] = c
+                elif 'measure becomes active on' in cl: col_map['date'] = c
+                elif 'type of measure' in cl: col_map['measure_type'] = c
+                elif 'present status of measure' in cl: col_map['status'] = c
+                elif 'description of measure' in cl: col_map['description'] = c
+                elif 'date of revocation' in cl: col_map['revocation_date'] = c
+
+            if not col_map or 'country' not in col_map: return pd.DataFrame()
+
+            df = df.rename(columns={v: k for k, v in col_map.items()})
+            df['date'] = pd.to_datetime(df['date'], errors='coerce')
+            df['revocation_date'] = pd.to_datetime(df.get('revocation_date'), errors='coerce')
+            
+            df = df.dropna(subset=['country'])
+            df['iso2'] = coco.convert(names=df['country'].tolist(), to='iso2', not_found=None)
+            
+            # Határozzuk meg az aktív státuszt
+            def check_active(row):
+                status = str(row.get('status', '')).lower()
+                rev_date = row.get('revocation_date')
+                if 'deactivated' in status or 'revoked' in status or 'expired' in status:
+                    return "Inactive"
+                if pd.notna(rev_date) and rev_date <= pd.Timestamp.now():
+                    return "Inactive"
+                return "Active"
+
+            df['active_status'] = df.apply(check_active, axis=1)
+            
+            return df.sort_values(['country', 'date'], ascending=[True, False]).reset_index(drop=True)
+        except Exception as e:
+            logger.error(f"BBM Error: {e}")
+            return pd.DataFrame()
+
     def _process_ccyb(self):
         if not self.ccyb_file.exists(): return pd.DataFrame()
         try:
@@ -205,16 +255,22 @@ class ETLPipeline:
         download_file_safely(self.ccyb_url, self.ccyb_file)
         syrb_df = self._process_syrb()
         ccyb_df = self._process_ccyb()
+        bbm_df = self._process_bbm()
         agg_trend, syrb_trend = self.calculate_trends(ccyb_df, syrb_df)
         def get_latest(df): 
             if df.empty: return df
             return df.sort_values('date').groupby('country').tail(1).reset_index(drop=True)
         latest_syrb = get_latest(syrb_df)
         latest_ccyb = get_latest(ccyb_df)
+        latest_bbm = bbm_df[bbm_df['active_status'] == 'Active'].reset_index(drop=True) if not bbm_df.empty else pd.DataFrame()
+        
         if not syrb_df.empty: syrb_df.to_parquet(FILES["syrb_processed"])
         if not ccyb_df.empty: ccyb_df.to_parquet(FILES["ccyb_processed"])
+        if not bbm_df.empty: bbm_df.to_parquet(FILES["bbm_processed"])
+        
         return {
-            'ccyb_df': ccyb_df, 'syrb_df': syrb_df, 
+            'ccyb_df': ccyb_df, 'syrb_df': syrb_df, 'bbm_df': bbm_df,
             'agg_trend_df': agg_trend, 'syrb_trend_df': syrb_trend,
-            'latest_ccyb_df': latest_ccyb, 'latest_syrb_df': latest_syrb
+            'latest_ccyb_df': latest_ccyb, 'latest_syrb_df': latest_syrb,
+            'latest_bbm_df': latest_bbm
         }

@@ -129,9 +129,35 @@ def main():
     active_syrb = enrich_syrb(active_syrb, "Active")
     syrb_decisions = enrich_syrb(syrb_decisions, "Decisions")
 
+    # --- BBM Processing ---
+    bbm_full = data.get('bbm_df')
+    active_bbm = pd.DataFrame()
+    if bbm_full is not None and not bbm_full.empty:
+        logger.info("   -> BBM processing...")
+        # Aktív eszközök szűrése
+        active_bbm = bbm_full[bbm_full['active_status'] == 'Active'].copy()
+        
+        # Csak a releváns oszlopok
+        cols_needed = ['iso2', 'date', 'measure_type', 'description']
+        active_bbm = active_bbm[[c for c in cols_needed if c in active_bbm.columns]]
+        
+        # Dátum formázás
+        if 'date' in active_bbm.columns:
+            active_bbm['date'] = pd.to_datetime(active_bbm['date']).dt.strftime('%Y-%m-%d')
+            
+        # AI Tisztítás (hasonlóan a SyRB-hez)
+        logger.info("   -> BBM AI keywords generation...")
+        details = analyzer.extract_keywords(active_bbm['description'].astype(str).tolist(), "targeted risk or background")
+        active_bbm['description'] = details
+        
+        # Nagybetűsítés és átnevezés a táblázathoz
+        active_bbm.columns = [c.upper() for c in active_bbm.columns]
+        active_bbm = active_bbm.rename(columns={'ISO2': 'COUNTRY', 'DATE': 'ACTIVE FROM', 'MEASURE_TYPE': 'TYPE', 'DESCRIPTION': 'DETAILS'})
+
     analyses = analyzer.run_analysis(
         {'latest_ccyb_df': data.get('latest_ccyb_df'), 'ccyb_decisions_df': ccyb_decisions,
-         'active_syrb_df': active_syrb, 'syrb_decisions_df': syrb_decisions}, 
+         'active_syrb_df': active_syrb, 'syrb_decisions_df': syrb_decisions,
+         'active_bbm_df': active_bbm}, 
         paths, {}
     )
     
@@ -151,7 +177,8 @@ def main():
         generation_date=today_str, plots=plots, analyses=analyses,
         ccyb_decisions_html=to_html(ccyb_decisions),
         syrb_active_html=to_html(active_syrb),
-        syrb_decisions_html=to_html(syrb_decisions)
+        syrb_decisions_html=to_html(syrb_decisions),
+        bbm_active_html=to_html(active_bbm)
     )
     
     with open("index.html", "w", encoding="utf-8") as f: f.write(html)

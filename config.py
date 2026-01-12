@@ -19,7 +19,9 @@ FILES = {
     "syrb_processed": DATA_DIR / "processed_syrb.parquet",
     "latest_syrb": DATA_DIR / "latest_syrb.parquet",
     "ccyb_processed": DATA_DIR / "processed_ccyb.parquet",
-    "latest_ccyb": DATA_DIR / "latest_ccyb.parquet"
+    "latest_ccyb": DATA_DIR / "latest_ccyb.parquet",
+    "bbm_processed": DATA_DIR / "processed_bbm.parquet",
+    "latest_bbm": DATA_DIR / "latest_bbm.parquet"
 }
 
 # --- LLM ---

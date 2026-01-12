@@ -117,6 +117,7 @@ class LLMAnalyzer:
         ccyb_decisions_str = df_to_string(data_inputs.get('ccyb_decisions_df'))
         active_syrb_str = df_to_string(data_inputs.get('active_syrb_df'))
         syrb_decisions_str = df_to_string(data_inputs.get('syrb_decisions_df'))
+        active_bbm_str = df_to_string(data_inputs.get('active_bbm_df'))
         
         system_context = "ROLE: Financial Analyst. STYLE: Professional, concise. Use HTML tags like <b> for emphasis if needed. IMPORTANT: Always use the provided DATA tables as the primary source of truth for numbers and rates."
 
@@ -131,7 +132,9 @@ class LLMAnalyzer:
             {"id": "syrb_trend_analysis", "img": "syrb_counts_trend", "data": "", "temp": 0.2, "prompt": "Describe SyRB usage trends. Start with a strong topic sentence. Write exactly ONE paragraph of 6-7 sentences."},
             {"id": "syrb_sectoral_analysis", "img": "syrb_sector", "data": "", "temp": 0.2, "prompt": "Analyze SyRB sectoral composition. Start with a strong topic sentence. Write exactly ONE paragraph of 6-7 sentences."},
             {"id": "syrb_active_analysis", "img": None, "data": active_syrb_str, "temp": 0.3, "prompt": "Analyze active SyRB measures. Start with a strong topic sentence. Write exactly ONE paragraph of 6-7 sentences."},
-            {"id": "syrb_decisions_analysis", "img": None, "data": syrb_decisions_str, "temp": 0.2, "prompt": "Summarize latest SyRB decisions. Start with a strong topic sentence. Write exactly ONE paragraph of 6-7 sentences."}
+            {"id": "syrb_decisions_analysis", "img": None, "data": syrb_decisions_str, "temp": 0.2, "prompt": "Summarize latest SyRB decisions. Start with a strong topic sentence. Write exactly ONE paragraph of 6-7 sentences."},
+            
+            {"id": "bbm_analysis", "img": None, "data": active_bbm_str, "temp": 0.3, "prompt": "Analyze Borrower-Based Measures (LTV, DSTI, DTI, etc.) active across Europe. Focus on how these measures target household indebtedness. Start with a strong topic sentence. Write exactly ONE paragraph of 6-7 sentences."}
         ]
 
         results = {}
@@ -181,6 +184,19 @@ class LLMAnalyzer:
             """
             res_syrb = (self._get_llm(0.3) | StrOutputParser()).invoke([HumanMessage(content=syrb_summ_prompt)])
             results['syrb_section_summary'] = self._clean_text(res_syrb, is_global=True)
+
+            # BBM Section Summary
+            bbm_summ_prompt = f"""
+            {system_context}
+            TASK: Write a SPECIFIC high-level summary of the Borrower-Based Measures (BBM) section.
+            INPUTS (Context from analysis):
+            - Active BBM Analysis: {results.get('bbm_analysis')}
+            
+            STRUCTURE: 1-2 bullet points (HTML <li> tags).
+            REQUIREMENT: Be specific about LTV, DSTI, and other borrower-based constraints applied across countries.
+            """
+            res_bbm = (self._get_llm(0.3) | StrOutputParser()).invoke([HumanMessage(content=bbm_summ_prompt)])
+            results['bbm_section_summary'] = self._clean_text(res_bbm, is_global=True)
         except Exception as e:
             logger.error(f"Error in section summaries: {e}")
 
@@ -191,11 +207,12 @@ class LLMAnalyzer:
             {system_context}
             TASK: Write a comprehensive Global Executive Summary.
             STRUCTURE: 4-5 paragraphs, each 5-6 sentences long. Each paragraph must start with a <b>bold topic sentence</b>.
-            CONTENT: Synthesize the findings. How are cyclical (CCyB) and structural (SyRB) tools interacting? What is the overall macroprudential stance in Europe?
+            CONTENT: Synthesize the findings. How are cyclical (CCyB), structural (SyRB), and borrower-based (BBM) tools interacting? What is the overall macroprudential stance in Europe?
             
             INPUTS: 
             CCyB Overview: {results.get('ccyb_section_summary')}
             SyRB Overview: {results.get('syrb_section_summary')}
+            BBM Overview: {results.get('bbm_section_summary')}
             """
             res_global = (self._get_llm(0.5) | StrOutputParser()).invoke([HumanMessage(content=exec_prompt)])
             results['executive_summary'] = self._clean_text(res_global, is_global=True)

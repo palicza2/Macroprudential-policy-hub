@@ -114,6 +114,12 @@
             SyRB Analysis
         </a>
 
+        <div class="nav-group">Borrower-Based Risks</div>
+        <a href="#bbm-section" class="nav-link">
+            <i data-lucide="home"></i>
+            BBM Analysis
+        </a>
+
         <div style="margin-top: auto; padding-top: 40px; font-size: 0.75rem; color: #64748b; border-top: 1px solid rgba(255,255,255,0.1);">
             Macroprudential Dashboard v5.2<br>
             © 2026 Macro Hub
@@ -213,6 +219,19 @@
             <div class="card-title">Latest Decisions</div>
             <div class="table-container">{{ syrb_decisions_html | safe }}</div>
             <div class="ai-box" style="margin-top:20px">{{ analyses['syrb_decisions_analysis'] }}</div>
+        </div>
+
+        <h2 id="bbm-section">Borrower-based measures (BBM)</h2>
+
+        <div class="card">
+            <div class="card-title">Section Summary</div>
+            <div class="ai-box">{{ analyses['bbm_section_summary'] | safe }}</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Currently Active Borrower-based Measures</div>
+            <div class="table-container">{{ bbm_active_html | safe }}</div>
+            <div class="ai-box" style="margin-top:20px">{{ analyses['bbm_analysis'] }}</div>
         </div>
     </main>
 
