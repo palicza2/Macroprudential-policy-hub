@@ -363,8 +363,9 @@ h2::before {
 
 .news-meta {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
     color: var(--text-muted);
     font-size: 0.8rem;
     font-weight: 600;
@@ -388,7 +389,7 @@ h2::before {
 .news-tag--bbm { background: #fef3c7; color: #92400e; }
 .news-tag--real-estate { background: #ede9fe; color: #6d28d9; }
 .news-tag--capital { background: #fee2e2; color: #991b1b; }
-.news-tag--systemic { background: #cffafe; color: #0e7490; }
+.news-tag--reciprocation { background: #fee2e2; color: #991b1b; }
 .news-tag--source { background: #f1f5f9; color: #475569; }
 
 .news-title {
@@ -396,6 +397,22 @@ h2::before {
     font-weight: 700;
     margin: 0;
     color: var(--primary);
+    word-break: break-word;
+}
+
+.news-countries {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.news-pill {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #1f2937;
 }
 
 .news-summary {

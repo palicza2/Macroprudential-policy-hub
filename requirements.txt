@@ -4,6 +4,7 @@ plotly
 jinja2
 python-dotenv
 langchain-google-genai
+langgraph
 country_converter
 pyarrow
 openpyxl
