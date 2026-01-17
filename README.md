@@ -77,7 +77,7 @@ graph TD
     subgraph AI_Core ["AI Analysis & Grounding"]
         C -->|Retrieve Context| D{LangGraph<br/>Validator}
         H -->|Chart Images| D
-        J[Google Search<br/>(Optional)] -->|External Evidence| D
+        J[Google Search Optional] -->|External Evidence| D
         D -->|Raw Data + Images| E[Google Gemini 2.5<br/>Flash Lite]
         E -->|Draft Analysis| D
         D -->|Verified Output| F[Final Analysis]
