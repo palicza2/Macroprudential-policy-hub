@@ -27,5 +27,63 @@ FILES = {
 # --- LLM ---
 LLM_CONFIG = {
     "model_name": "gemini-2.5-flash-lite",
-    "max_output_tokens": 2000
+    "max_output_tokens": 2000,
+    "api_key_env": "GOOGLE_API_KEY",
+}
+
+# --- Google Search (Grounded Validation) ---
+SEARCH_CONFIG = {
+    "enabled": True,
+    "search_enabled_env": "SEARCH_ENABLED",
+    "api_key_env": "CUSTOM_SEARCH_API_KEY",
+    "cse_id_env": "GOOGLE_CSE_ID",
+    "allowed_domains_env": "SEARCH_ALLOWED_DOMAINS",
+    "max_results": 5,
+    "report_path": str(DATA_DIR / "validation_report.json"),
+    "allowed_domains": [
+        "ecb.europa.eu",
+        "esrb.europa.eu",
+        "bankofgreece.gr",
+        "banque-france.fr",
+        "bde.es",
+        "bundesbank.de",
+        "bankofitaly.it",
+        "oesterreichische-nationalbank.at",
+        "nbp.pl",
+        "nbs.sk",
+        "mnb.hu",
+        "centralbank.ie",
+        "bank.lv",
+        "bankofestonia.ee",
+        "bankoflithuania.lt",
+        "bsi.si",
+        "bportugal.pt",
+        "bnr.ro",
+        "cnb.cz",
+        "dnb.nl",
+        "fi.se",
+        "fma.gv.at",
+        "finanssivalvonta.fi",
+        "fma.li",
+        "norges-bank.no",
+        "riksbank.se",
+        "snb.ch",
+    ],
+}
+
+# --- News / External Updates ---
+NEWS_CONFIG = {
+    "enabled": True,
+    "api_key_env": "CUSTOM_SEARCH_API_KEY",
+    "cse_id_env": "GOOGLE_CSE_ID",
+    "months_back": 12,
+    "max_results": 10,
+    "query": (
+        "macroprudential OR macroprudential policy OR macroprudential report OR "
+        "countercyclical capital buffer OR countercyclical buffer OR systemic risk buffer OR "
+        "borrower-based measures OR reciprocation OR reciprocity OR "
+        "CCyB OR SyRB OR LTV OR DSTI OR LTI OR DTI OR O-SII OR OSII OR "
+        "(site:ecb.europa.eu OR site:esrb.europa.eu OR site:mnb.hu OR "
+        "site:bankofgreece.gr OR site:bundesbank.de OR site:bankofitaly.it)"
+    ),
 }

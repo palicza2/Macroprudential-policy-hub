@@ -7,95 +7,8 @@
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        :root {
-            --primary: #0f172a; --secondary: #3b82f6; --bg-body: #f1f5f9; --bg-card: #ffffff;
-            --text-main: #334155; --sidebar-w: 280px; --radius: 12px; --header-h: 60px;
-        }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; display: flex; min-height: 100vh; }
-        
-        /* Sidebar */
-        .sidebar { width: var(--sidebar-w); background: var(--primary); color: white; position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; padding: 25px 20px; box-sizing: border-box; z-index: 1000; box-shadow: 4px 0 15px rgba(0,0,0,0.1); transition: transform 0.3s ease-in-out; }
-        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 1.4rem; font-weight: 800; margin-bottom: 40px; color: white; text-decoration: none; }
-        .sidebar-brand span { color: var(--secondary); }
-
-        .nav-group { margin: 30px 0 10px; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; }
-        .nav-link { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: #cbd5e1; text-decoration: none; margin-bottom: 4px; border-radius: 8px; transition: all 0.2s; font-size: 0.9rem; font-weight: 500; }
-        .nav-link i { width: 18px; height: 18px; opacity: 0.7; }
-        .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(4px); }
-        .nav-link.active { background: var(--secondary); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
-        .nav-link.active i { opacity: 1; }
-        
-        .sub-nav { padding-left: 45px; font-size: 0.85rem; opacity: 0.8; margin-top: -2px; }
-        .sub-nav:hover { opacity: 1; }
-        
-        /* Mobile Header */
-        .mobile-header { display: none; position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); background: var(--primary); color: white; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 900; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .menu-btn { background: none; border: none; color: white; cursor: pointer; padding: 5px; display: flex; align-items: center; }
-        
-        .overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 950; backdrop-filter: blur(2px); }
-        .overlay.active { display: block; }
-
-        /* Main Content */
-        .main-content { margin-left: var(--sidebar-w); flex: 1; padding: 40px; max-width: 1400px; box-sizing: border-box; transition: all 0.3s; }
-        
-        h1 { font-size: 2.2rem; font-weight: 800; color: var(--primary); margin-top: 0; margin-bottom: 30px; letter-spacing: -0.02em; }
-        h2 { font-size: 1.7rem; font-weight: 700; color: var(--primary); margin: 50px 0 25px; display: flex; align-items: center; gap: 12px; }
-        h2::before { content: ""; display: block; width: 4px; height: 24px; background: var(--secondary); border-radius: 2px; }
-
-        .card { background: var(--bg-card); border-radius: var(--radius); padding: 30px; margin-bottom: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
-        .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; color: var(--primary); display: flex; align-items: center; justify-content: space-between; }
-        
-        .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
-        
-        .ai-box { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid var(--secondary); padding: 25px; border-radius: 8px; font-size: 0.95rem; line-height: 1.7; color: #334155; white-space: pre-wrap; }
-        .ai-box b { color: var(--primary); font-weight: 700; }
-        .ai-box ul { padding-left: 20px; margin: 10px 0; }
-        .ai-box li { margin-bottom: 8px; }
-        
-        /* Table Styles */
-        .table-container { overflow-x: auto; margin: 0 -30px; padding: 0 30px; -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.875rem; }
-        th { background: #f8fafc; text-align: left; padding: 14px 20px; font-weight: 700; color: #64748b; border-bottom: 2px solid #e2e8f0; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
-        td { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background: #f8fafc; }
-
-        /* BBM Pivot Specific */
-        .bbm-pivot { font-size: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
-        .bbm-pivot th:first-child { position: sticky; left: 0; z-index: 10; background: #f8fafc; text-align: left; padding: 10px 15px; border-right: 2px solid #e2e8f0; }
-        .bbm-pivot td:first-child { position: sticky; left: 0; z-index: 5; background: white; font-weight: 700; color: var(--primary); border-right: 2px solid #e2e8f0; text-align: left; padding: 10px 15px; }
-        .bbm-pivot td { text-align: center; padding: 8px; border-right: 1px solid #f1f5f9; }
-        .bbm-pivot th { text-align: center; background: #f8fafc; color: #475569; font-weight: 700; padding: 10px 5px; border-bottom: 2px solid #e2e8f0; }
-        .bbm-pivot tr:nth-child(even) td:not(:first-child) { background: #fcfdfe; }
-        
-        .ref-date { font-size: 0.75rem; color: #64748b; font-weight: 500; margin-top: -15px; margin-bottom: 20px; display: block; }
-        
-        /* Filter Controls */
-        .controls-row { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
-        .chart-input { padding: 10px 15px; border: 1px solid #e2e8f0; border-radius: 8px; width: 300px; font-family: inherit; font-size: 0.9rem; transition: border-color 0.2s; outline: none; }
-        .chart-input:focus { border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-
-        /* Responsive Breakpoints */
-        @media (max-width: 1200px) {
-            .grid-2 { grid-template-columns: 1fr; }
-        }
-
-        @media (max-width: 992px) { 
-            .mobile-header { display: flex; }
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.active { transform: translateX(0); }
-            .main-content { margin-left: 0; width: 100%; padding: 80px 20px 40px; }
-            .card { padding: 20px; }
-            .table-container { margin: 0 -20px; padding: 0 20px; }
-            h1 { font-size: 1.8rem; }
-            .chart-input { width: 100%; }
-        }
-
-        @media (max-width: 640px) {
-            .card-title { flex-direction: column; align-items: flex-start; gap: 10px; }
-        }
-    </style>
+    <link rel="stylesheet" href="assets/styles.css">
+    <script src="assets/app.js" defer></script>
 </head>
 <body>
     <header class="mobile-header">
@@ -109,28 +22,19 @@
 
     <nav class="sidebar" id="sidebar">
         <a href="#" class="sidebar-brand">🇪🇺 Macro<span>Hub</span></a>
-        
-        <a href="#global-exec" class="nav-link">
-            <i data-lucide="layout-dashboard"></i>
-            Global Overview
-        </a>
 
-        <div class="nav-group">Policy Instruments</div>
-        
-        <a href="#capital-section" class="nav-link">
-            <i data-lucide="building"></i>
-            Capital-based measures
+        <div class="nav-group">Dashboard</div>
+        <a href="#" class="nav-link active" data-tab="overview">
+            <i data-lucide="layout-grid"></i> Overview
         </a>
-        <a href="#ccyb-section" class="nav-link sub-nav">
-            CCyB Analysis
+        <a href="#" class="nav-link" data-tab="news">
+            <i data-lucide="newspaper"></i> Latest News
         </a>
-        <a href="#syrb-section" class="nav-link sub-nav">
-            SyRB Analysis
+        <a href="#" class="nav-link" data-tab="capital">
+            <i data-lucide="shield-check"></i> Capital Measures
         </a>
-        
-        <a href="#bbm-section" class="nav-link">
-            <i data-lucide="home"></i>
-            Borrower-based measures
+        <a href="#" class="nav-link" data-tab="borrower">
+            <i data-lucide="users"></i> Borrower Measures
         </a>
 
         <div style="margin-top: auto; padding-top: 40px; font-size: 0.75rem; color: #64748b; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -140,14 +44,65 @@
     </nav>
 
     <main class="main-content">
-        <h1 id="global-exec">Global Executive Summary</h1>
-        <div class="card">
-            <div class="ai-box" style="font-size: 1.05rem; background: #f0f7ff; border-color: #3b82f6;">{{ analyses['executive_summary'] | safe }}</div>
-        </div>
+        <section id="tab-overview" class="tab-content active">
+            <h1 id="global-exec">Global Executive Summary</h1>
+            <div class="card">
+                <div class="ai-box" style="font-size: 1.05rem; background: #f0f7ff; border-color: #3b82f6;">{{ analyses['executive_summary'] | safe }}</div>
+            </div>
+        </section>
 
-        <h1 id="capital-section" style="margin-top: 60px; border-bottom: 2px solid var(--primary); padding-bottom: 10px;">Capital-based measures</h1>
+        <section id="tab-news" class="tab-content">
+            <h1 id="news-section" class="section-title">Latest Macroprudential News</h1>
+            <div class="news-layout">
+                <div class="news-main">
+                    <div class="card">
+                        <div class="card-title">Highlights Summary</div>
+                        <div class="ai-box">{{ analyses['news_summary'] }}</div>
+                    </div>
+                    {{ news_feed_html | safe }}
+                </div>
+                <aside class="news-sidebar">
+                    <div class="card">
+                        <div class="card-title">
+                            <span>Filters</span>
+                            <button class="link-button" id="news-clear">Clear all</button>
+                        </div>
+                        <input type="text" id="news-search" class="chart-input" placeholder="Search news, tags...">
+                        <div class="filter-group">
+                            <div class="filter-title">Policy Type</div>
+                            <label class="filter-option"><input type="checkbox" data-filter="ccyb" checked> CCyB (Countercyclical)</label>
+                            <label class="filter-option"><input type="checkbox" data-filter="syrb" checked> SyRB (Systemic Risk)</label>
+                            <label class="filter-option"><input type="checkbox" data-filter="bbm" checked> BBM (Borrower-Based)</label>
+                            <label class="filter-option"><input type="checkbox" data-filter="ltv" checked> LTV</label>
+                            <label class="filter-option"><input type="checkbox" data-filter="dsti" checked> DSTI</label>
+                            <label class="filter-option"><input type="checkbox" data-filter="lti" checked> LTI</label>
+                            <label class="filter-option"><input type="checkbox" data-filter="dti" checked> DTI</label>
+                        </div>
+                        <div class="filter-group">
+                            <div class="filter-title">Themes</div>
+                            <label class="filter-option"><input type="checkbox" data-filter="real-estate" checked> Real Estate</label>
+                            <label class="filter-option"><input type="checkbox" data-filter="systemic" checked> Systemic Risk</label>
+                            <label class="filter-option"><input type="checkbox" data-filter="capital" checked> Capital</label>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Trending Topics</div>
+                        <div class="tag-cloud">
+                            <button class="tag-pill" data-tag="real-estate">#Housing</button>
+                            <button class="tag-pill" data-tag="inflation">#Inflation</button>
+                            <button class="tag-pill" data-tag="ccyb">#CCyB</button>
+                            <button class="tag-pill" data-tag="bbm">#BBM</button>
+                            <button class="tag-pill" data-tag="systemic">#SystemicRisk</button>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
 
-        <h2 id="ccyb-section">Countercyclical buffer (CCyB)</h2>
+        <section id="tab-capital" class="tab-content">
+            <h1 id="capital-section" class="section-title">Capital-based measures</h1>
+
+            <h2 id="ccyb-section">Countercyclical buffer (CCyB)</h2>
         
         <div class="card">
             <div class="card-title">
@@ -160,7 +115,16 @@
         <div class="card">
             <div class="card-title">Adoption Count</div>
             <div class="grid-2">
-                <div>{{ plots['ccyb_diffusion'] | safe }}</div>
+                <div>
+                    {% if plot_files.get('ccyb_diffusion') %}
+                        <iframe class="plot-frame" src="{{ plot_files['ccyb_diffusion'] }}" loading="lazy"></iframe>
+                        {% if download_links.get('ccyb_diffusion') %}
+                            <a class="download-link" href="{{ download_links['ccyb_diffusion'] }}" download>Download data</a>
+                        {% endif %}
+                    {% else %}
+                        <div class="empty-state">No Data</div>
+                    {% endif %}
+                </div>
                 <div class="ai-box">{{ analyses['ccyb_diffusion_analysis'] }}</div>
             </div>
         </div>
@@ -170,7 +134,7 @@
             <div class="controls-row">
                 <input type="text" id="ccyb-country-filter" class="chart-input" placeholder="Filter countries (e.g. HU, FR, DE)">
             </div>
-            <div>{{ plots['ccyb_timeseries'] | safe }}</div>
+            <div class="plot-inline">{{ plots_inline['ccyb_timeseries'] | safe }}</div>
             <div class="ai-box" style="margin-top:20px">{{ analyses['ccyb_history_analysis'] }}</div>
         </div>
 
@@ -178,10 +142,18 @@
             <div class="card-title">Geographic & Comparative View</div>
             <div class="grid-2">
                 <div>
-                    <h3 style="font-size: 1rem; color: #64748b;">Map View</h3>
-                    {{ plots['cross_section_map'] | safe }}
-                    <h3 style="margin-top:30px; font-size: 1rem; color: #64748b;">Comparative Levels</h3>
-                    {{ plots['cross_section_bar'] | safe }}
+                    <h3 class="subtle-title">Map View</h3>
+                    {% if plot_files.get('cross_section_map') %}
+                        <iframe class="plot-frame" src="{{ plot_files['cross_section_map'] }}" loading="lazy"></iframe>
+                    {% else %}
+                        <div class="empty-state">No Data</div>
+                    {% endif %}
+                    <h3 class="subtle-title" style="margin-top:30px;">Comparative Levels</h3>
+                    {% if plot_files.get('cross_section_bar') %}
+                        <iframe class="plot-frame" src="{{ plot_files['cross_section_bar'] }}" loading="lazy"></iframe>
+                    {% else %}
+                        <div class="empty-state">No Data</div>
+                    {% endif %}
                 </div>
                 <div class="ai-box"><h4 style="margin-top:0">Detailed Analysis</h4>{{ analyses['ccyb_level_analysis'] | safe }}</div>
             </div>
@@ -190,18 +162,28 @@
         <div class="card">
              <div class="card-title">Risk Analysis</div>
              <div class="grid-2">
-                 <div>{{ plots['risk_plot'] | safe }}</div>
+                 <div>
+                    {% if plot_files.get('risk_plot') %}
+                        <iframe class="plot-frame" src="{{ plot_files['risk_plot'] }}" loading="lazy"></iframe>
+                    {% else %}
+                        <div class="empty-state">No Data</div>
+                    {% endif %}
+                 </div>
                  <div class="ai-box">{{ analyses['risk_analysis_text'] }}</div>
              </div>
         </div>
 
         <div class="card">
             <div class="card-title">Latest Decisions</div>
-            <div class="table-container">{{ ccyb_decisions_html | safe }}</div>
+            {% if table_files.get('ccyb_decisions') %}
+                <iframe class="table-frame" src="{{ table_files['ccyb_decisions'] }}" loading="lazy"></iframe>
+            {% else %}
+                <div class="empty-state">No Data</div>
+            {% endif %}
             <div class="ai-box" style="margin-top:20px">{{ analyses['ccyb_decisions_analysis'] }}</div>
         </div>
 
-        <h2 id="syrb-section">Systemic Risk Buffer (SyRB)</h2>
+            <h2 id="syrb-section">Systemic Risk Buffer (SyRB)</h2>
 
         <div class="card">
             <div class="card-title">Section Summary</div>
@@ -211,7 +193,13 @@
         <div class="card">
             <div class="card-title">Adoption Trend</div>
             <div class="grid-2">
-                <div>{{ plots['syrb_counts_trend'] | safe }}</div>
+                <div>
+                    {% if plot_files.get('syrb_counts_trend') %}
+                        <iframe class="plot-frame" src="{{ plot_files['syrb_counts_trend'] }}" loading="lazy"></iframe>
+                    {% else %}
+                        <div class="empty-state">No Data</div>
+                    {% endif %}
+                </div>
                 <div class="ai-box">{{ analyses['syrb_trend_analysis'] }}</div>
             </div>
         </div>
@@ -219,24 +207,41 @@
         <div class="card">
             <div class="card-title">Sectoral Focus</div>
             <div class="grid-2">
-                <div>{{ plots['syrb_sector'] | safe }}</div>
+                <div>
+                    {% if plot_files.get('syrb_sector') %}
+                        <iframe class="plot-frame" src="{{ plot_files['syrb_sector'] }}" loading="lazy"></iframe>
+                    {% else %}
+                        <div class="empty-state">No Data</div>
+                    {% endif %}
+                </div>
                 <div class="ai-box">{{ analyses['syrb_sectoral_analysis'] }}</div>
             </div>
         </div>
 
         <div class="card">
             <div class="card-title">Currently Active SyRB Measures</div>
-            <div class="table-container">{{ syrb_active_html | safe }}</div>
+            {% if table_files.get('syrb_active') %}
+                <iframe class="table-frame" src="{{ table_files['syrb_active'] }}" loading="lazy"></iframe>
+            {% else %}
+                <div class="empty-state">No Data</div>
+            {% endif %}
             <div class="ai-box" style="margin-top:20px">{{ analyses['syrb_active_analysis'] }}</div>
         </div>
         
         <div class="card">
             <div class="card-title">Latest Decisions</div>
-            <div class="table-container">{{ syrb_decisions_html | safe }}</div>
+            {% if table_files.get('syrb_decisions') %}
+                <iframe class="table-frame" src="{{ table_files['syrb_decisions'] }}" loading="lazy"></iframe>
+            {% else %}
+                <div class="empty-state">No Data</div>
+            {% endif %}
             <div class="ai-box" style="margin-top:20px">{{ analyses['syrb_decisions_analysis'] }}</div>
         </div>
 
-        <h1 id="bbm-section" style="margin-top: 60px; border-bottom: 2px solid var(--primary); padding-bottom: 10px;">Borrower-based measures</h1>
+        </section>
+
+        <section id="tab-borrower" class="tab-content">
+            <h1 id="bbm-section" class="section-title">Borrower-based measures</h1>
 
         <div class="card">
             <div class="card-title">Section Summary</div>
@@ -246,7 +251,16 @@
         <div class="card">
             <div class="card-title">Adoption Count</div>
             <div class="grid-2">
-                <div>{{ plots['bbm_diffusion'] | safe }}</div>
+                <div>
+                    {% if plot_files.get('bbm_diffusion') %}
+                        <iframe class="plot-frame" src="{{ plot_files['bbm_diffusion'] }}" loading="lazy"></iframe>
+                        {% if download_links.get('bbm_diffusion') %}
+                            <a class="download-link" href="{{ download_links['bbm_diffusion'] }}" download>Download data</a>
+                        {% endif %}
+                    {% else %}
+                        <div class="empty-state">No Data</div>
+                    {% endif %}
+                </div>
                 <div class="ai-box">{{ analyses['bbm_diffusion_analysis'] }}</div>
             </div>
         </div>
@@ -254,73 +268,37 @@
         <div class="card">
             <div class="card-title">Active Measures Cross-Country Comparison</div>
             {% if bbm_ref_date %}<span class="ref-date">Latest reference data: {{ bbm_ref_date }}</span>{% endif %}
-            <div class="table-container">{{ bbm_pivot_html | safe }}</div>
+            {% if table_files.get('bbm_pivot') %}
+                <iframe class="table-frame" src="{{ table_files['bbm_pivot'] }}" loading="lazy"></iframe>
+            {% else %}
+                <div class="empty-state">No Data</div>
+            {% endif %}
             <div class="ai-box" style="margin-top:20px">{{ analyses['bbm_analysis'] }}</div>
         </div>
 
         <div class="card">
-            <div class="card-title">Latest Borrower-based Measure Decisions</div>
-            <div class="table-container">{{ bbm_decisions_html | safe }}</div>
-            <div class="ai-box" style="margin-top:20px">{{ analyses['bbm_decisions_analysis'] }}</div>
+            <div class="card-title">LTV Measures (Loan-to-Value)</div>
+            {% if ltv_ref_date %}<span class="ref-date">Latest reference data: {{ ltv_ref_date }}</span>{% endif %}
+            {% if table_files.get('ltv_table') %}
+                <iframe class="table-frame" src="{{ table_files['ltv_table'] }}" loading="lazy"></iframe>
+            {% else %}
+                <div class="empty-state">No Data</div>
+            {% endif %}
+            <div class="ai-box" style="margin-top:20px">{{ analyses['ltv_analysis'] }}</div>
         </div>
+
+            <div class="card">
+            <div class="card-title">Latest Borrower-based Measure Decisions</div>
+            {% if table_files.get('bbm_decisions') %}
+                <iframe class="table-frame" src="{{ table_files['bbm_decisions'] }}" loading="lazy"></iframe>
+            {% else %}
+                <div class="empty-state">No Data</div>
+            {% endif %}
+            <div class="ai-box" style="margin-top:20px">{{ analyses['bbm_decisions_analysis'] }}</div>
+            </div>
+        </section>
+
     </main>
 
-    <script>
-        // Sidebar Toggle for Mobile
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
-            document.querySelector('.overlay').classList.toggle('active');
-        }
-
-        // Initialize Lucide Icons
-        lucide.createIcons();
-
-        // Smooth scroll for nav links
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', () => {
-                if (window.innerWidth <= 992) {
-                    toggleSidebar();
-                }
-            });
-        });
-
-        // Highlight active nav link on scroll
-        window.addEventListener('scroll', () => {
-            let current = '';
-            document.querySelectorAll('h1, h2').forEach(section => {
-                const sectionTop = section.offsetTop;
-                if (pageYOffset >= sectionTop - 100) {
-                    current = section.getAttribute('id');
-                }
-            });
-
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href').substring(1) === current) {
-                    link.classList.add('active');
-                }
-            });
-        });
-
-        // JS Filter for Time Series Chart (Text Input)
-        document.getElementById('ccyb-country-filter').addEventListener('input', function(e) {
-            var plot = document.getElementById('ccyb_ts_plot');
-            if (!plot || !plot.data) return;
-            
-            var input = e.target.value.toUpperCase().trim();
-            var tokens = input.split(/[\s,]+/).filter(x => x); // Split by space or comma
-            
-            var updates = plot.data.map(trace => {
-                if (tokens.length === 0) return { visible: true }; // Show all if empty
-                // Check if trace name matches any token
-                var match = tokens.some(token => trace.name.toUpperCase().includes(token));
-                return { visible: match ? true : 'legendonly' };
-            });
-            
-            // Batch update for performance
-            var visibility = updates.map(u => u.visible);
-            Plotly.restyle(plot, {visible: visibility});
-        });
-    </script>
 </body>
 </html>

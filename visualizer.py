@@ -1,7 +1,7 @@
 import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
-from utils import SuppressOutput, create_download_link
+from utils import SuppressOutput
 
 class Visualizer:
     def __init__(self, figures_dir: Path):
@@ -17,7 +17,9 @@ class Visualizer:
         except Exception: return None
 
     def generate_all_plots(self, data, ref_date):
-        plots = {}
+        plots_inline = {}
+        plot_figs = {}
+        download_data = {}
         paths = {}
 
         # 1. CCyB Diffusion
@@ -25,9 +27,11 @@ class Visualizer:
         if df_trend is not None and not df_trend.empty:
             fig = px.line(df_trend, x='date', y='n_positive', title='Number of Countries with Positive CCyB', template='plotly_white')
             fig.update_layout(xaxis_title="", yaxis_title="Count")
-            plots['ccyb_diffusion'] = fig.to_html(full_html=False, include_plotlyjs='cdn') + create_download_link(df_trend)
+            plot_figs['ccyb_diffusion'] = fig
+            download_data['ccyb_diffusion'] = df_trend
             if p := self._save(fig, "ccyb_diffusion.png"): paths['ccyb_diffusion'] = p
-        else: plots['ccyb_diffusion'] = "<div>No Data</div>"
+        else:
+            plot_figs['ccyb_diffusion'] = None
 
         # 2. CCyB Time Series
         df_hist = data.get('ccyb_df')
@@ -36,9 +40,15 @@ class Visualizer:
             df_plot = df_hist[df_hist['country'].isin(active_countries)].sort_values('date')
             fig = px.line(df_plot, x='date', y='rate', color='country', title='Historical CCyB Rates', template='plotly_white')
             fig.update_layout(xaxis_title="", yaxis_title="Rate (%)", legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"), margin=dict(b=100))
-            plots['ccyb_timeseries'] = fig.to_html(full_html=False, include_plotlyjs=False, div_id='ccyb_ts_plot')
+            plots_inline['ccyb_timeseries'] = fig.to_html(
+                full_html=False,
+                include_plotlyjs=False,
+                div_id='ccyb_ts_plot',
+                config={"responsive": True}
+            )
             if p := self._save(fig, "ccyb_timeseries.png"): paths['ccyb_timeseries'] = p
-        else: plots['ccyb_timeseries'] = "<div>No Data</div>"
+        else:
+            plots_inline['ccyb_timeseries'] = "<div class='empty-state'>No Data</div>"
 
         # 3. Current CCyB Map & Bar
         df_latest = data.get('latest_ccyb_df')
@@ -48,23 +58,23 @@ class Visualizer:
                     color_continuous_scale="Blues", title=f"Map View ({ref_date})", scope="europe")
                 fig_map.update_geos(fitbounds="locations", visible=False)
                 fig_map.update_layout(margin={"r":0,"t":30,"l":0,"b":0})
-                plots['cross_section_map'] = fig_map.to_html(full_html=False, include_plotlyjs=False)
+                plot_figs['cross_section_map'] = fig_map
                 if p := self._save(fig_map, "cross_section_map.png"): paths['cross_section_map'] = p
             
             fig_bar = px.bar(df_latest.sort_values('rate', ascending=True), x='rate', y='country', orientation='h', 
                 title=f"Comparative Levels ({ref_date})", text='rate', template='plotly_white')
             fig_bar.update_traces(textposition='outside')
-            plots['cross_section_bar'] = fig_bar.to_html(full_html=False, include_plotlyjs=False)
+            plot_figs['cross_section_bar'] = fig_bar
             if p := self._save(fig_bar, "cross_section_bar.png"): paths['cross_section_bar'] = p
 
             fig2 = px.scatter(df_latest, x='credit_gap', y='rate', text='iso2', title='Risk Analysis', template='plotly_white')
             fig2.update_traces(textposition='top center')
-            plots['risk_plot'] = fig2.to_html(full_html=False, include_plotlyjs=False)
+            plot_figs['risk_plot'] = fig2
             if p := self._save(fig2, "risk_plot.png"): paths['risk_plot'] = p
         else:
-            plots['cross_section_map'] = "<div>No Data</div>"
-            plots['cross_section_bar'] = "<div>No Data</div>"
-            plots['risk_plot'] = "<div>No Data</div>"
+            plot_figs['cross_section_map'] = None
+            plot_figs['cross_section_bar'] = None
+            plot_figs['risk_plot'] = None
 
         # 4. SyRB Trend
         df_syrb_trend = data.get('syrb_trend_df')
@@ -75,9 +85,10 @@ class Visualizer:
             if 'Sectoral SyRB' in df_syrb_trend.columns: 
                 fig.add_trace(go.Scatter(x=df_syrb_trend['date'], y=df_syrb_trend['Sectoral SyRB'], name='Sectoral'))
             fig.update_layout(title='Active SyRB Measures Count', template='plotly_white', legend=dict(orientation="h", y=-0.2))
-            plots['syrb_counts_trend'] = fig.to_html(full_html=False, include_plotlyjs=False)
+            plot_figs['syrb_counts_trend'] = fig
             if p := self._save(fig, "syrb_counts_trend.png"): paths['syrb_counts_trend'] = p
-        else: plots['syrb_counts_trend'] = "<div>No Data</div>"
+        else:
+            plot_figs['syrb_counts_trend'] = None
 
         # 5. SyRB Sectoral (Clustered Bar)
         df_syrb = data.get('latest_syrb_df')
@@ -96,18 +107,22 @@ class Visualizer:
                 # --- CLUSTERED MODE ---
                 fig_bar.update_layout(barmode='group', xaxis={'categoryorder':'total descending'})
                 
-                plots['syrb_sector'] = fig_bar.to_html(full_html=False, include_plotlyjs=False)
+                plot_figs['syrb_sector'] = fig_bar
                 if p := self._save(fig_bar, "syrb_sector.png"): paths['syrb_sector'] = p
-            else: plots['syrb_sector'] = "<div>No Data</div>"
-        else: plots['syrb_sector'] = "<div>No Data</div>"
+            else:
+                plot_figs['syrb_sector'] = None
+        else:
+            plot_figs['syrb_sector'] = None
 
         # 6. BBM Diffusion
         df_bbm_trend = data.get('bbm_trend_df')
         if df_bbm_trend is not None and not df_bbm_trend.empty:
             fig = px.line(df_bbm_trend, x='date', y='n_countries', title='Number of Countries with at least one Active BBM', template='plotly_white')
             fig.update_layout(xaxis_title="", yaxis_title="Count")
-            plots['bbm_diffusion'] = fig.to_html(full_html=False, include_plotlyjs=False) + create_download_link(df_bbm_trend)
+            plot_figs['bbm_diffusion'] = fig
+            download_data['bbm_diffusion'] = df_bbm_trend
             if p := self._save(fig, "bbm_diffusion.png"): paths['bbm_diffusion'] = p
-        else: plots['bbm_diffusion'] = "<div>No Data</div>"
+        else:
+            plot_figs['bbm_diffusion'] = None
 
-        return plots, paths
+        return plots_inline, plot_figs, download_data, paths
