@@ -61,7 +61,7 @@ Reduces the time required for quarterly macroprudential reporting from days to m
 - **Global Executive Summary:** Integrates section summaries into a multi-paragraph strategic narrative.
 - **Text Cleaning:** Converts LLM output to HTML-safe summaries with consistent emphasis.
 - **News Enrichment:** Generates 2–3 sentence summaries and assigns policy/theme tags.
-- **Optional Grounding:** Validates AI output against data, charts, and optional Google Search context.
+- **Optional Grounding:** Multimodal validation against data tables, chart images, and optional Google Search context.
 
 ---
 
@@ -76,7 +76,9 @@ graph TD
 
     subgraph AI_Core ["AI Analysis & Grounding"]
         C -->|Retrieve Context| D{LangGraph<br/>Validator}
-        D -->|Raw Data + Context| E[Google Gemini 2.5<br/>Flash Lite]
+        H -->|Chart Images| D
+        J[Google Search<br/>(Optional)] -->|External Evidence| D
+        D -->|Raw Data + Images| E[Google Gemini 2.5<br/>Flash Lite]
         E -->|Draft Analysis| D
         D -->|Verified Output| F[Final Analysis]
     end
