@@ -23,6 +23,7 @@ DEFAULT_ANALYSIS_IDS = [
     "ccyb_section_summary",
     "syrb_section_summary",
     "bbm_section_summary",
+    "capital_overall_section_summary",
     "ccyb_diffusion_analysis",
     "ccyb_history_analysis",
     "ccyb_level_analysis",
@@ -35,6 +36,7 @@ DEFAULT_ANALYSIS_IDS = [
     "bbm_analysis",
     "bbm_diffusion_analysis",
     "bbm_decisions_analysis",
+    "capital_overall_analysis",
 ]
 
 
@@ -157,6 +159,7 @@ def _build_data_context(data_inputs: Dict[str, Any]) -> str:
         "LATEST SyRB TABLE:\n" + df_to_string(data_inputs.get("latest_syrb_df")),
         "ACTIVE SyRB TABLE:\n" + df_to_string(data_inputs.get("active_syrb_df")),
         "LATEST BBM TABLE:\n" + df_to_string(data_inputs.get("latest_bbm_df")),
+        "CAPITAL OVERALL TABLE:\n" + df_to_string(data_inputs.get("capital_overall_df")),
     ]
     return "\n\n".join(parts)
 

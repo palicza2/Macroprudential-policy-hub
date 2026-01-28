@@ -41,6 +41,18 @@ function initTabs() {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             activateTab(link.dataset.tab);
+
+            // Optional in-page anchor jump (e.g., #ccyb-section under Capital)
+            var href = link.getAttribute('href') || '';
+            if (href && href.indexOf('#') === 0) {
+                var target = document.querySelector(href);
+                if (target) {
+                    // wait a tick so the tab content is visible
+                    setTimeout(function() {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 0);
+                }
+            }
         });
     });
 }

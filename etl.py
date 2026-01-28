@@ -15,6 +15,7 @@ class ETLPipeline:
         self.syrb_url = syrb_url
         self.ccyb_file = FILES["ccyb_source"]
         self.syrb_file = FILES["syrb_source"]
+        self.measures_overview_file = FILES.get("measures_overview_source", self.syrb_file)
 
     def _extract_rate_from_text(self, text):
         if pd.isna(text): return 0.0
@@ -206,6 +207,53 @@ class ETLPipeline:
             logger.error(f"CCyB Error: {e}")
             return pd.DataFrame()
 
+    def _process_osii(self):
+        """
+        Best-effort extraction of O-SII buffer rates from the ESRB measures overview workbook.
+        """
+        if not self.measures_overview_file or not Path(self.measures_overview_file).exists():
+            return pd.DataFrame()
+        try:
+            xl = pd.ExcelFile(self.measures_overview_file)
+            sheet = next((s for s in xl.sheet_names if "O-SII" in s.upper() or "OSII" in s.upper()), None)
+            if not sheet:
+                return pd.DataFrame()
+
+            df_raw = xl.parse(sheet, header=None, nrows=30)
+            header_idx = find_header_row(df_raw)
+            df = xl.parse(sheet, skiprows=header_idx)
+            df = clean_columns(df)
+
+            col_map = {}
+            for c in df.columns:
+                cl = c.lower().strip()
+                if "country" in cl:
+                    col_map["country"] = c
+                elif "present status" in cl:
+                    col_map["status"] = c
+                elif "measure becomes active on" in cl or ("active" in cl and "date" in cl):
+                    col_map["date"] = c
+                elif ("buffer" in cl and "rate" in cl) or (cl == "rate"):
+                    col_map["rate_col"] = c
+                elif "rate" in cl and "guide" not in cl:
+                    col_map.setdefault("rate_col", c)
+
+            if "country" not in col_map or "rate_col" not in col_map:
+                return pd.DataFrame()
+
+            df = df.rename(columns={v: k for k, v in col_map.items()})
+            df["date"] = pd.to_datetime(df.get("date"), errors="coerce")
+            df = df.dropna(subset=["country"])
+            df["iso2"] = coco.convert(names=df["country"].tolist(), to="iso2", not_found=None)
+
+            numeric_rates = pd.to_numeric(df["rate_col"], errors="coerce")
+            df["rate_numeric"] = numeric_rates.fillna(df["rate_col"].apply(self._extract_rate_from_text))
+            df["rate_text"] = df["rate_numeric"].apply(lambda x: f"{x}%" if pd.notna(x) and x > 0 else "0% / Inactive")
+            return df.sort_values(["country", "date"], ascending=[True, False]).reset_index(drop=True)
+        except Exception as e:
+            logger.error(f"OSII Error: {e}")
+            return pd.DataFrame()
+
     def calculate_trends(self, ccyb_df, syrb_df, bbm_df=None):
         agg_trend_ccyb = pd.DataFrame()
         syrb_trend = pd.DataFrame()
@@ -293,6 +341,7 @@ class ETLPipeline:
         syrb_df = self._process_syrb()
         ccyb_df = self._process_ccyb()
         bbm_df = self._process_bbm()
+        osii_df = self._process_osii()
         agg_trend, syrb_trend, bbm_trend = self.calculate_trends(ccyb_df, syrb_df, bbm_df)
         def get_latest(df): 
             if df.empty: return df
@@ -300,14 +349,20 @@ class ETLPipeline:
         latest_syrb = get_latest(syrb_df)
         latest_ccyb = get_latest(ccyb_df)
         latest_bbm = bbm_df[bbm_df['active_status'] == 'Active'].reset_index(drop=True) if not bbm_df.empty else pd.DataFrame()
+        latest_osii = get_latest(osii_df) if osii_df is not None and not osii_df.empty else pd.DataFrame()
         
         if not syrb_df.empty: syrb_df.to_parquet(FILES["syrb_processed"])
         if not ccyb_df.empty: ccyb_df.to_parquet(FILES["ccyb_processed"])
         if not bbm_df.empty: bbm_df.to_parquet(FILES["bbm_processed"])
+        if osii_df is not None and not osii_df.empty:
+            osii_df.to_parquet(FILES["osii_processed"])
+            latest_osii.to_parquet(FILES["latest_osii"])
         
         return {
             'ccyb_df': ccyb_df, 'syrb_df': syrb_df, 'bbm_df': bbm_df,
             'agg_trend_df': agg_trend, 'syrb_trend_df': syrb_trend, 'bbm_trend_df': bbm_trend,
             'latest_ccyb_df': latest_ccyb, 'latest_syrb_df': latest_syrb,
-            'latest_bbm_df': latest_bbm
+            'latest_bbm_df': latest_bbm,
+            'osii_df': osii_df,
+            'latest_osii_df': latest_osii,
         }

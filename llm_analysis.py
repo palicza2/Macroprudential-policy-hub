@@ -8,6 +8,9 @@ from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
 from config import LLM_CONFIG
+from prompts import SYSTEM_CONTEXT_LAST_12M
+from llm_tasks import build_chart_tasks, build_section_tasks, build_global_task
+from llm_runner import run_tasks, run_task
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -240,118 +243,30 @@ INPUT:
         bbm_decisions_str = df_to_string(data_inputs.get('bbm_decisions_df'))
         ltv_table_str = df_to_string(data_inputs.get('ltv_table_df'))
         news_str = df_to_string(data_inputs.get('news_df'))
+        capital_overall_str = df_to_string(data_inputs.get('capital_overall_df'))
         
-        system_context = (
-            "ROLE: Financial Analyst. STYLE: Professional, concise, analytical. "
-            "TIMEFRAME: Focus on developments in the last 12 months; mention older context only briefly. "
-            "FOCUS: Emphasize country objectives and the risks being addressed. "
-            "AVOID: Explaining what the tools are or their transmission/impact mechanisms. "
-            "IMPORTANT: Always use the provided DATA tables as the primary source of truth for numbers and rates."
+        # 1) Chart/table tasks
+        chart_tasks = build_chart_tasks(
+            latest_ccyb_str=latest_ccyb_str,
+            ccyb_decisions_str=ccyb_decisions_str,
+            active_syrb_str=active_syrb_str,
+            syrb_decisions_str=syrb_decisions_str,
+            active_bbm_str=active_bbm_str,
+            bbm_decisions_str=bbm_decisions_str,
+            ltv_table_str=ltv_table_str,
+            news_str=news_str,
+            capital_overall_str=capital_overall_str,
         )
+        results = run_tasks(analyzer=self, tasks=chart_tasks, plot_paths=plot_paths)
 
-        # 1. LÉPÉS: Egyedi ábra-elemzések
-        chart_tasks = [
-            {"id": "ccyb_diffusion_analysis", "img": "ccyb_diffusion", "data": latest_ccyb_str, "temp": 0.2, "prompt": "Analyze CCyB adoption over the last 12 months. Emphasize country objectives and risks addressed (e.g., credit growth, property markets). Avoid tool descriptions. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences."},
-            {"id": "ccyb_history_analysis", "img": "ccyb_timeseries", "data": latest_ccyb_str, "temp": 0.2, "prompt": "Highlight key CCyB changes in the last 12 months. Emphasize where objectives shifted and what risks authorities cite. Avoid explaining the CCyB mechanism. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences."},
-            {"id": "ccyb_level_analysis", "img": "cross_section_bar", "data": latest_ccyb_str, "temp": 0.3, "prompt": "Compare current CCyB levels with emphasis on the last 12 months of changes. Focus on country goals and risks being targeted; avoid general tool descriptions. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences."},
-            {"id": "risk_analysis_text", "img": "risk_plot", "data": latest_ccyb_str, "temp": 0.3, "prompt": "Interpret Credit Gap vs CCyB with a focus on the last 12 months. Emphasize risk signals and policy objectives across countries; avoid explaining mechanisms. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences."},
-            {"id": "ccyb_decisions_analysis", "img": None, "data": ccyb_decisions_str, "temp": 0.2, "prompt": "Summarize CCyB decisions from the last 12 months. Emphasize the risks cited and policy objectives; avoid tool explanations. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences."},
-            
-            {"id": "syrb_trend_analysis", "img": "syrb_counts_trend", "data": "", "temp": 0.2, "prompt": "Describe SyRB trends over the last 12 months. Emphasize objectives and risks (especially sectoral exposures) rather than tool mechanics. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences."},
-            {"id": "syrb_sectoral_analysis", "img": "syrb_sector", "data": "", "temp": 0.2, "prompt": "Analyze SyRB sectoral composition with focus on the last 12 months. Highlight country targets and risk pockets; avoid mechanism descriptions. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences."},
-            {"id": "syrb_active_analysis", "img": None, "data": active_syrb_str, "temp": 0.3, "prompt": "Analyze active SyRB measures from the last 12 months. Emphasize country objectives and risks cited; avoid tool explanations. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences."},
-            {"id": "syrb_decisions_analysis", "img": None, "data": syrb_decisions_str, "temp": 0.2, "prompt": "Summarize SyRB decisions from the last 12 months. Emphasize risks addressed and policy objectives; avoid mechanism descriptions. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences."},
-            
-            {"id": "bbm_analysis", "img": None, "data": active_bbm_str, "temp": 0.3, "prompt": "Analyze borrower-based measures with focus on the last 12 months. Emphasize country objectives and risks (e.g., housing credit risks), not tool mechanics. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences."},
-            {"id": "bbm_diffusion_analysis", "img": "bbm_diffusion", "data": "", "temp": 0.2, "prompt": "Analyze adoption trends of borrower-based measures over the last 12 months. Emphasize what risks countries are targeting; avoid describing tool mechanics. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences."},
-            {"id": "bbm_decisions_analysis", "img": None, "data": bbm_decisions_str, "temp": 0.2, "prompt": "Summarize borrower-based measure decisions from the last 12 months. Emphasize objectives and risks cited; avoid mechanism descriptions. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences."}
-            ,
-            {"id": "ltv_analysis", "img": None, "data": ltv_table_str, "temp": 0.2, "prompt": "Analyze LTV limits and first-time buyer exemptions with focus on the last 12 months. Emphasize objectives and risks, avoid mechanism explanations. Write ONE paragraph of 4-5 sentences."}
-            ,
-            {"id": "news_summary", "img": None, "data": news_str, "temp": 0.2, "prompt": "Summarize the most important macroprudential news from the last 12 months. Focus on objectives and risks cited. Write ONE paragraph of 4-5 sentences."}
-        ]
-
-        results = {}
-        for t in chart_tasks:
-            logger.info(f"  🧠 Elemzés: {t['id']}...")
-            try:
-                img_path = plot_paths.get(t['img']) if t['img'] else None
-                img_b64 = get_base64(img_path)
-                content = [{"type": "text", "text": t['prompt'] + (f"\nDATA:\n{t['data']}" if t['data'] else "")}]
-                if img_b64: content.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_b64}"}})
-                llm = self._get_llm(temperature=t.get('temp', 0.2))
-                res = (llm | StrOutputParser()).invoke([HumanMessage(content=content)])
-                results[t['id']] = self._clean_text(res, is_global=False)
-            except: results[t['id']] = "N/A"
-
-        # 2. LÉPÉS: Fejezet összefoglalók (már látják a rész-elemzéseket is)
+        # 2) Section summaries
         logger.info("  🧠 Section Summaries...")
-        try:
-            # CCyB Section Summary
-            ccyb_summ_prompt = f"""
-            {system_context}
-            TASK: Write a SPECIFIC high-level summary of the CCyB section focused on the last 12 months.
-            INPUTS (Context from charts):
-            - Adoption Trends: {results.get('ccyb_diffusion_analysis')}
-            - Current Levels: {results.get('ccyb_level_analysis')}
-            - Risks: {results.get('risk_analysis_text')}
-            - Decisions: {results.get('ccyb_decisions_analysis')}
-            
-            STRUCTURE: 1-2 bullet points (HTML <li> tags). 
-            REQUIREMENT: Be analytical. Emphasize country objectives and the risks being addressed. Avoid tool descriptions or mechanism explanations.
-            """
-            res_ccyb = (self._get_llm(0.3) | StrOutputParser()).invoke([HumanMessage(content=ccyb_summ_prompt)])
-            results['ccyb_section_summary'] = self._clean_text(res_ccyb, is_global=True)
+        for t in build_section_tasks(results):
+            results[t.id] = run_task(analyzer=self, task=t)
 
-            # SyRB Section Summary
-            syrb_summ_prompt = f"""
-            {system_context}
-            TASK: Write a SPECIFIC high-level summary of the SyRB section focused on the last 12 months.
-            INPUTS (Context from charts):
-            - Usage Trends: {results.get('syrb_trend_analysis')}
-            - Sectoral Focus: {results.get('syrb_sectoral_analysis')}
-            - Active Measures: {results.get('syrb_active_analysis')}
-            - Recent Decisions: {results.get('syrb_decisions_analysis')}
-            
-            STRUCTURE: 1-2 bullet points (HTML <li> tags).
-            REQUIREMENT: Be analytical. Emphasize objectives and targeted risks (e.g., sectoral exposures). Avoid tool descriptions or mechanism explanations.
-            """
-            res_syrb = (self._get_llm(0.3) | StrOutputParser()).invoke([HumanMessage(content=syrb_summ_prompt)])
-            results['syrb_section_summary'] = self._clean_text(res_syrb, is_global=True)
-
-            # BBM Section Summary
-            bbm_summ_prompt = f"""
-            {system_context}
-            TASK: Write a SPECIFIC high-level summary of the Borrower-Based Measures (BBM) section focused on the last 12 months.
-            INPUTS (Context from analysis):
-            - Active BBM Analysis: {results.get('bbm_analysis')}
-            
-            STRUCTURE: 1-2 bullet points (HTML <li> tags).
-            REQUIREMENT: Be analytical. Emphasize objectives and risks (housing leverage, affordability, credit quality). Avoid tool descriptions or mechanism explanations.
-            """
-            res_bbm = (self._get_llm(0.3) | StrOutputParser()).invoke([HumanMessage(content=bbm_summ_prompt)])
-            results['bbm_section_summary'] = self._clean_text(res_bbm, is_global=True)
-        except Exception as e:
-            logger.error(f"Error in section summaries: {e}")
-
-        # 3. LÉPÉS: Global Executive Summary (már a fejezet-összefoglalókból építkezik)
+        # 3) Global summary
         logger.info("  🧠 Global Summary...")
-        try:
-            exec_prompt = f"""
-            {system_context}
-            TASK: Write a comprehensive Global Executive Summary focused on the last 12 months.
-            STRUCTURE: 4-5 paragraphs, each 5-6 sentences long. Each paragraph must start with a <b>bold topic sentence</b>.
-            CONTENT: Synthesize the findings. Emphasize country objectives and the risks being addressed, and how recent trends shifted the overall stance. Avoid explaining tool mechanics.
-    
-    INPUTS:
-            CCyB Overview: {results.get('ccyb_section_summary')}
-            SyRB Overview: {results.get('syrb_section_summary')}
-            BBM Overview: {results.get('bbm_section_summary')}
-            """
-            res_global = (self._get_llm(0.5) | StrOutputParser()).invoke([HumanMessage(content=exec_prompt)])
-            results['executive_summary'] = self._clean_text(res_global, is_global=True)
-        except: results['executive_summary'] = "N/A"
-        
-        return results
-        
+        exec_task = build_global_task(results)
+        results[exec_task.id] = run_task(analyzer=self, task=exec_task)
+
         return results

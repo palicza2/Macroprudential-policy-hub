@@ -17,6 +17,7 @@ from news import fetch_news, build_news_feed_html
 from render import render_report, df_to_html_table
 from ccyb import prepare_ccyb_decisions
 from syrb import prepare_syrb_tables
+from capital_overall import build_capital_overall_df
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 for noisy_lib in ['kaleido', 'urllib3', 'matplotlib', 'chromies', 'werkzeug']:
@@ -43,6 +44,15 @@ def main():
 
     # 2. Vizualizáció
     logger.info("2. Grafikonok...")
+    # Capital overall dataframe (needs to be available for plotting)
+    capital_overall_df = build_capital_overall_df(
+        ccyb_df=data.get("ccyb_df"),
+        syrb_df=data.get("syrb_df"),
+        osii_df=data.get("osii_df"),
+        ccob_rate=2.5,
+    )
+    data["capital_overall_df"] = capital_overall_df
+
     viz = Visualizer(FIGURES_DIR)
     today_str = datetime.now().strftime("%Y-%m-%d")
     plots_inline, plot_figs, download_data, paths = viz.generate_all_plots(data, today_str)
@@ -194,6 +204,7 @@ def main():
         'latest_bbm_df': data.get('latest_bbm_df'),
         'ltv_table_df': ltv_table,
         'news_df': news_df,
+        'capital_overall_df': capital_overall_df,
     }
 
     analyses = analyzer.run_analysis(analysis_inputs, paths, {})
@@ -213,6 +224,7 @@ def main():
         "bbm_pivot": bbm_pivot_html or "<p class='no-data'>No Data</p>",
         "bbm_decisions": df_to_html_table(bbm_decisions),
         "ltv_table": df_to_html_table(ltv_table),
+        "capital_overall": df_to_html_table(capital_overall_df),
     }
 
     plot_files_input = {
@@ -223,11 +235,13 @@ def main():
         "syrb_counts_trend": plot_figs.get("syrb_counts_trend"),
         "syrb_sector": plot_figs.get("syrb_sector"),
         "bbm_diffusion": plot_figs.get("bbm_diffusion"),
+        "capital_overall_buffers": plot_figs.get("capital_overall_buffers"),
     }
 
     download_data_input = {
         "ccyb_diffusion": download_data.get("ccyb_diffusion"),
         "bbm_diffusion": download_data.get("bbm_diffusion"),
+        "capital_overall_buffers": download_data.get("capital_overall_buffers"),
     }
 
     news_feed_html = build_news_feed_html(news_df, today_str=today_str)

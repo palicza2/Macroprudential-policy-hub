@@ -125,4 +125,45 @@ class Visualizer:
         else:
             plot_figs['bbm_diffusion'] = None
 
+        # 7. Capital Overall Buffers (stacked)
+        df_cap = data.get("capital_overall_df")
+        if df_cap is not None and not df_cap.empty:
+            df_plot = df_cap.copy()
+            # plotly needs wide->stacked traces
+            x = df_plot["ISO2"].astype(str).tolist()
+            components = ["CCoB", "CCyB", "O-SII", "SyRB", "sSyRB"]
+            fig = go.Figure()
+            colors = {
+                "CCoB": "#2c3e50",
+                "CCyB": "#3498db",
+                "O-SII": "#9b59b6",
+                "SyRB": "#e67e22",
+                "sSyRB": "#e74c3c",
+            }
+            for comp in components:
+                if comp in df_plot.columns:
+                    fig.add_trace(
+                        go.Bar(
+                            name=comp,
+                            x=x,
+                            y=df_plot[comp].fillna(0.0).tolist(),
+                            marker_color=colors.get(comp),
+                        )
+                    )
+            fig.update_layout(
+                barmode="stack",
+                title="Overall Capital Buffer Requirement by Country",
+                template="plotly_white",
+                xaxis_title="Country",
+                yaxis_title="Buffer rate (%)",
+                legend=dict(orientation="h", y=-0.25),
+                margin=dict(b=110),
+            )
+            plot_figs["capital_overall_buffers"] = fig
+            download_data["capital_overall_buffers"] = df_plot
+            if p := self._save(fig, "capital_overall_buffers.png"):
+                paths["capital_overall_buffers"] = p
+        else:
+            plot_figs["capital_overall_buffers"] = None
+
         return plots_inline, plot_figs, download_data, paths
