@@ -153,6 +153,17 @@ To generate the static HTML report:
 - **Step 5:** Optional grounded validation (data + charts + optional external sources).
 - **Step 6:** Renders the final `index.html`.
 
+### 5. Publish to GitHub Pages (Manual)
+
+This repository is configured as a **publishable repo**: the generated site output is committed so GitHub Pages can serve it directly.
+
+Typical publish flow:
+
+    python main.py
+    git add index.html assets/ reports/ CNAME
+    git commit -m "Publish dashboard YYYY-MM-DD"
+    git push
+
 ---
 
 ## 📊 Dashboard Sections

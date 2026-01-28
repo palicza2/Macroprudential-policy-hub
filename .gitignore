@@ -1,1 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local outputs / noise (keep publishable outputs committed)
+data/validation_report.json
+
+# Optional: if you don't want to commit these caches, uncomment:
+# data/*.xlsx
+# data/*.parquet
 .env
