@@ -9,7 +9,8 @@ REPORTS_DIR = BASE_DIR / "reports"
 # --- URL-ek ---
 URLS = {
     "syrb": "https://www.esrb.europa.eu/national_policy/shared/pdf/esrb.measures_overview_macroprudential_measures.xlsx",
-    "ccyb": "https://www.esrb.europa.eu/national_policy/ccb/shared/data/esrb.ccybd_CCyB_data.xlsx"
+    "ccyb": "https://www.esrb.europa.eu/national_policy/ccb/shared/data/esrb.ccybd_CCyB_data.xlsx",
+    "capital_measures": "https://www.esrb.europa.eu/national_policy/shared/pdf/esrb.measures_overview_capital-based_measures.xlsx"
 }
 
 # --- Fájlok ---
@@ -17,6 +18,7 @@ FILES = {
     "syrb_source": DATA_DIR / "esrb.measures_overview_macroprudential_measures.xlsx",
     "measures_overview_source": DATA_DIR / "esrb.measures_overview_macroprudential_measures.xlsx",
     "ccyb_source": DATA_DIR / "esrb.ccybd_CCyB_data.xlsx",
+    "capital_measures_source": DATA_DIR / "esrb.measures_overview_capital-based_measures.xlsx",
     "syrb_processed": DATA_DIR / "processed_syrb.parquet",
     "latest_syrb": DATA_DIR / "latest_syrb.parquet",
     "ccyb_processed": DATA_DIR / "processed_ccyb.parquet",

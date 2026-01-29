@@ -36,7 +36,7 @@ def main():
     ensure_dirs(DATA_DIR, FIGURES_DIR, REPORTS_DIR)
     
     logger.info("1. Adatfeldolgozás...")
-    etl = ETLPipeline(DATA_DIR, URLS["ccyb"], URLS["syrb"])
+    etl = ETLPipeline(DATA_DIR, URLS["ccyb"], URLS["syrb"], URLS.get("capital_measures"))
     data = etl.run_pipeline()
     
     ccyb_full = data.get("ccyb_df")

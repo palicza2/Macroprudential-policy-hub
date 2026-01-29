@@ -123,7 +123,7 @@ def build_chart_tasks(
             data=capital_overall_str,
             temp=0.25,
             prompt=(
-                "Analyze the overall capital buffer requirement by country based on the stacked components (CCoB, CCyB, O-SII, SyRB, sSyRB). "
+                "Analyze the overall capital buffer requirement by country based on the stacked components (CCoB, CCyB, GSII/O-SII, SyRB, sSyRB). "
                 "Focus on differences across countries and what objectives/risks they reflect in the last 12 months; avoid explaining tool mechanics. "
                 "Be specific and reference country patterns (high/low, concentration in specific components). "
                 "Write ONE paragraph of 6-7 sentences."

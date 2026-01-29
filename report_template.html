@@ -5,10 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EU Macroprudential Dashboard</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="assets/styles.css">
     <script src="assets/app.js" defer></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
 </head>
 <body>
     <header class="mobile-header">
@@ -35,8 +39,12 @@
         </a>
         <a href="#ccyb-section" class="nav-link sub-nav" data-tab="capital">CCyB</a>
         <a href="#syrb-section" class="nav-link sub-nav" data-tab="capital">SyRB</a>
+        <a href="#capital-stack-section" class="nav-link sub-nav" data-tab="capital">Capital stack</a>
         <a href="#" class="nav-link" data-tab="borrower">
             <i data-lucide="users"></i> Borrower Measures
+        </a>
+        <a href="#" class="nav-link" data-tab="about" style="margin-top: auto;">
+            <i data-lucide="info"></i> About
         </a>
 
         <div style="margin-top: auto; padding-top: 40px; font-size: 0.75rem; color: #64748b; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -240,9 +248,9 @@
             <div class="ai-box" style="margin-top:20px">{{ analyses['syrb_decisions_analysis'] }}</div>
         </div>
 
-        <h2 id="capital-overall-section" style="margin-top:40px;">Overall</h2>
+        <h2 id="capital-stack-section" style="margin-top:40px;">Capital stack</h2>
         <div class="card">
-            <div class="card-title">Overall Capital Buffer Requirement</div>
+            <div class="card-title">Capital Buffer Stack</div>
             <div class="grid-2">
                 <div>
                     {% if plot_files.get('capital_overall_buffers') %}
@@ -322,6 +330,99 @@
                 <div class="empty-state">No Data</div>
             {% endif %}
             <div class="ai-box" style="margin-top:20px">{{ analyses['bbm_decisions_analysis'] }}</div>
+            </div>
+        </section>
+
+        <section id="tab-about" class="tab-content">
+            <h1 id="about-section" class="section-title">About</h1>
+            
+            <div class="card">
+                <div class="card-title">Macro Policy Hub</div>
+                <div class="about-intro">
+                    <p class="about-description">An automated, AI-driven dashboard for tracking Macroprudential Policy (CCyB, SyRB, BBM) across the European Economic Area.</p>
+                    <div class="about-value-box">
+                        <strong>Business Value:</strong> Reduces quarterly macroprudential reporting time from days to minutes by automating data retrieval, cleaning, and initial analysis.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Technology & Architecture</div>
+                <div class="about-grid">
+                    <div class="about-col">
+                        <h3 class="about-subtitle">Technology Stack</h3>
+                        <div class="tech-stack">
+                            <div class="tech-item">
+                                <span class="tech-label">Core</span>
+                                <span class="tech-value">Python, pandas</span>
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">AI/ML</span>
+                                <span class="tech-value">LangChain, LangGraph, Gemini 2.5 Flash</span>
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">Visualization</span>
+                                <span class="tech-value">Plotly</span>
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">Frontend</span>
+                                <span class="tech-value">Jinja2, HTML/CSS/JS</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="about-col">
+                        <h3 class="about-subtitle">Key Features</h3>
+                        <ul class="about-features">
+                            <li>Multi-Pillar Monitoring (CCyB, SyRB, BBM, GSII/O-SII)</li>
+                            <li>AI-Driven Intelligence with Grounded Validation</li>
+                            <li>Modern Mobile-Responsive UI</li>
+                            <li>Robust ETL Pipeline</li>
+                        </ul>
+                        <h3 class="about-subtitle" style="margin-top: 20px;">Data Sources</h3>
+                        <p class="about-data-sources">ESRB publications: CCyB dataset, Measures Overview (SyRB/BBM), Capital-Based Measures (GSII/O-SII).</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">System Architecture</div>
+                <p class="about-arch-desc">Three-stage pipeline: <strong>Data Ingestion & ETL</strong> processes ESRB Excel files into Parquet storage; <strong>AI Analysis & Grounding</strong> uses <strong>LangGraph</strong> to orchestrate validation (extract claims → verify against data/charts → optional Google Search → refine with Gemini 2.5 Flash); <strong>Dashboard Layer</strong> renders HTML with embedded Plotly charts.</p>
+                <div class="mermaid-container">
+                    <div class="mermaid">
+graph TD
+    subgraph Data_Ingestion ["Data Ingestion and ETL"]
+        A[("ESRB Data Source<br/>Excel Files")] -->|Download| B[Python ETL Pipeline]
+        B -->|Clean Normalize| C[("Parquet Storage<br/>Optimized Data")]
+    end
+
+    subgraph AI_Core ["AI Analysis and Grounding"]
+        C -->|Retrieve Context| D{LangGraph<br/>Validator}
+        H -->|Chart Images| D
+        J[Google Search Optional] -->|External Evidence| D
+        D -->|Raw Data Images| E[Google Gemini 2.5<br/>Flash Lite]
+        E -->|Draft Analysis| D
+        D -->|Verified Output| F[Final Analysis]
+    end
+
+    subgraph Presentation ["Dashboard Layer"]
+        F --> G[Jinja2 Template Engine]
+        C -->|Visual Data| H[Plotly Charts]
+        G --> I[("HTML Dashboard<br/>index.html embedded plots")]
+        H --> I
+    end
+
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style C fill:#f9f,stroke:#333,stroke-width:2px
+    style E fill:#bbf,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style D fill:#fef3c7,stroke:#333,stroke-width:2px
+    style I fill:#bfb,stroke:#333,stroke-width:2px
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">License</div>
+                <p class="about-license">This project is open-source, licensed under the <strong>Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)</strong>.</p>
             </div>
         </section>
 

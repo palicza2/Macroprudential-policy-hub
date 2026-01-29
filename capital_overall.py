@@ -14,7 +14,7 @@ def build_capital_overall_df(
     Per-country overall capital buffer components:
     - CCoB: constant (default 2.5)
     - CCyB: latest ANNOUNCED rate (latest decision_date per country; independent of application date)
-    - O-SII: max rate per country (best-effort from measures_overview)
+    - GSII/O-SII: max rate per country (from capital-based measures workbook)
     - SyRB: max GENERAL SyRB per country (includes future dates if not revoked/deactivated)
     - sSyRB: max SECTORAL SyRB per country (includes future dates if not revoked/deactivated)
     """
@@ -61,26 +61,49 @@ def build_capital_overall_df(
         syrb_general = gen.groupby("iso2")["rate_numeric"].max() if not gen.empty else pd.Series(dtype=float)
         syrb_sectoral = sec.groupby("iso2")["rate_numeric"].max() if not sec.empty else pd.Series(dtype=float)
 
-    # --- O-SII (max per country) ---
+    # --- GSII/O-SII (max per country) ---
     osii_series = pd.Series(dtype=float)
     if osii_df is not None and not osii_df.empty and "iso2" in osii_df.columns:
         df = osii_df.copy()
         df["rate_numeric"] = pd.to_numeric(df.get("rate_numeric"), errors="coerce").fillna(0.0)
         df["iso2"] = df["iso2"].astype(str)
+        # Csak aktív méréseket számoljuk (status != Revoked/Deactivated)
+        if "status" in df.columns:
+            status_str = df["status"].astype(str)
+            mask_active = ~status_str.str.contains("Revoked|Deactivated|Expired|No longer", case=False, na=False)
+            df = df[mask_active].copy()
         osii_series = df.groupby("iso2")["rate_numeric"].max()
 
     # union of iso2s
     countries = sorted(set(ccyb_series.index) | set(syrb_general.index) | set(syrb_sectoral.index) | set(osii_series.index))
     if not countries:
-        return pd.DataFrame(columns=["ISO2", "CCoB", "CCyB", "O-SII", "SyRB", "sSyRB", "TOTAL"])
+        return pd.DataFrame(columns=["ISO2", "CCoB", "CCyB", "GSII/O-SII", "SyRB", "sSyRB", "TOTAL"])
 
     out = pd.DataFrame({"ISO2": countries})
     out["CCoB"] = float(ccob_rate)
     out["CCyB"] = out["ISO2"].map(ccyb_series).fillna(0.0)
-    out["O-SII"] = out["ISO2"].map(osii_series).fillna(0.0)
+    out["GSII/O-SII"] = out["ISO2"].map(osii_series).fillna(0.0)
     out["SyRB"] = out["ISO2"].map(syrb_general).fillna(0.0)
     out["sSyRB"] = out["ISO2"].map(syrb_sectoral).fillna(0.0)
-    out["TOTAL"] = out[["CCoB", "CCyB", "O-SII", "SyRB", "sSyRB"]].sum(axis=1)
+    out["TOTAL"] = out[["CCoB", "CCyB", "GSII/O-SII", "SyRB", "sSyRB"]].sum(axis=1)
+    
+    # Validáció: 3% feletti értékek ellenőrzése
+    import logging
+    logger = logging.getLogger(__name__)
+    high_total = out[out["TOTAL"] > 3.0]
+    if not high_total.empty:
+        for _, row in high_total.iterrows():
+            logger.warning(
+                f"High total capital buffer detected for {row['ISO2']}: "
+                f"TOTAL={row['TOTAL']:.2f}% (CCoB={row['CCoB']:.2f}%, CCyB={row['CCyB']:.2f}%, "
+                f"GSII/O-SII={row['GSII/O-SII']:.2f}%, SyRB={row['SyRB']:.2f}%, sSyRB={row['sSyRB']:.2f}%)"
+            )
+            # Ha SyRB > 10%, valószínűleg formátum hiba
+            if row["SyRB"] > 10.0:
+                logger.error(f"  -> SyRB={row['SyRB']:.2f}% seems too high, possible format error!")
+            if row["sSyRB"] > 10.0:
+                logger.error(f"  -> sSyRB={row['sSyRB']:.2f}% seems too high, possible format error!")
+    
     out = out.sort_values(["TOTAL", "ISO2"], ascending=[False, True]).reset_index(drop=True)
     return out
 

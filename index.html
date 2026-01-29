@@ -5,10 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EU Macroprudential Dashboard</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="assets/styles.css">
     <script src="assets/app.js" defer></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
 </head>
 <body>
     <header class="mobile-header">
@@ -33,8 +37,14 @@
         <a href="#" class="nav-link" data-tab="capital">
             <i data-lucide="shield-check"></i> Capital Measures
         </a>
+        <a href="#ccyb-section" class="nav-link sub-nav" data-tab="capital">CCyB</a>
+        <a href="#syrb-section" class="nav-link sub-nav" data-tab="capital">SyRB</a>
+        <a href="#capital-stack-section" class="nav-link sub-nav" data-tab="capital">Capital stack</a>
         <a href="#" class="nav-link" data-tab="borrower">
             <i data-lucide="users"></i> Borrower Measures
+        </a>
+        <a href="#" class="nav-link" data-tab="about" style="margin-top: auto;">
+            <i data-lucide="info"></i> About
         </a>
 
         <div style="margin-top: auto; padding-top: 40px; font-size: 0.75rem; color: #64748b; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -47,7 +57,7 @@
         <section id="tab-overview" class="tab-content active">
             <h1 id="global-exec">Global Executive Summary</h1>
             <div class="card">
-                <div class="ai-box" style="font-size: 1.05rem; background: #f0f7ff; border-color: #3b82f6;"><p><b>European financial stability frameworks have seen a dynamic recalibration over the past twelve months, with a clear emphasis on proactive risk management and country-specific objectives.</b> A significant trend has been the increase in Countercyclical Capital Buffer (CCyB) rates by several European nations, including Germany, Denmark, Norway, Sweden, and Slovakia. These actions were primarily driven by concerns over robust credit growth and the potential overheating of property markets, aiming to build resilience against cyclical systemic imbalances and asset price corrections. Bulgaria and Lithuania also raised their CCyB rates to preserve capital during a broad-based credit cycle recovery, acknowledging intense loan supply and elevated uncertainty.</p><p><b>Conversely, the stance on CCyB rates has diverged, reflecting distinct country-level financial cycles and risk profiles.</b> Austria, Italy, and Malta have maintained zero CCyB rates, a decision aligned with weak financial cycles and negative credit-to-GDP gaps, indicating no immediate need for buffer activation. Luxembourg, however, adjusted its CCyB to 0.5% due to a widening credit-to-GDP gap, driven by sustained credit to the non-financial sector and households, coupled with a downward GDP revision. This varied application of CCyB underscores a targeted strategy to address unique country-specific financial stability risks rather than a uniform approach.</p><p><b>The implementation of Systemic Risk Buffer (SyRB) measures has become more targeted over the last year, with a notable increase in active sectoral measures.</b> This strategic shift aims to address specific sector vulnerabilities, particularly within real estate, and emerging risks more effectively than broad economic stability interventions. Germany and Lithuania have introduced sectoral buffers for residential and commercial real estate to mitigate cyclical risks and stabilize credit demand, while Denmark's substantial real estate sector buffer highlights concerns about lending growth and macroeconomic conditions. This evolution signifies a move towards granular risk mitigation.</p><p><b>The primary risks addressed by SyRB measures in the past twelve months have been concentrated in the real estate sector and broader credit cycle vulnerabilities.</b> While some countries, such as Belgium and France, have de-activated buffers, signaling a perceived reduction in specific risks, others like Finland, Italy, and Slovenia have maintained or implemented buffers to counter systemic credit risk, with a focus on cross-border exposures. The Czech Republic's introduction of a buffer demonstrates a proactive approach to managing systemic risks arising from economic openness, energy transition, and cyber threats, reflecting a more diverse risk landscape.</p><p><b>Borrower-based measures (BBMs) have been actively employed across European countries in the last twelve months to counter escalating housing credit risks and excessive household leverage.</b> This proactive strategy is designed to fortify financial stability by preventing the build-up of systemic risk within mortgage markets. Key objectives include safeguarding against potential housing market overheating and ensuring borrowers' capacity to service debt under adverse economic conditions. Countries like Bulgaria, Croatia, and Greece have reinforced measures such as Loan-to-Value (LTV) and Debt-Service-to-Income (DSTI) limits, thereby mitigating risks to credit quality and affordability.</p></div>
+                <div class="ai-box" style="font-size: 1.05rem; background: #f0f7ff; border-color: #3b82f6;"><p><b>The past twelve months have seen a notable increase in the utilization of macroprudential tools aimed at bolstering financial sector resilience and mitigating cyclical risks.</b> Several countries, including Germany, Denmark, Norway, Sweden, and Croatia, have elevated their Countercyclical Capital Buffer (CCyB) rates. This proactive measure directly addresses objectives to curb accelerating credit growth, particularly in real estate and corporate lending, and to fortify the banking sector against potential systemic shocks and asset price inflation. While a smaller group, such as Austria, Italy, and Finland, maintained zero CCyB rates, their underlying objective of financial stability persists, with some, like Slovenia and Hungary, implementing "positive neutral" rates to preemptively build capital against emerging vulnerabilities.</p><p><b>A significant expansion in the deployment of Systemic Risk Buffer (SyRB) measures has occurred over the last year, with active general measures more than doubling.</b> This surge reflects a heightened objective of broad economic stabilization and stimulus management, while the consistent number of sectoral measures indicates a continued targeted approach. The primary risk being addressed by the increase in general SyRB measures is the potential for overstimulation and inflation. Sectoral measures, conversely, continue to focus on mitigating market distortions and competitive imbalances within specific industries.</p><p><b>The real estate sector and broader credit market vulnerabilities have been central to the implementation of SyRB measures over the past twelve months.</b> Numerous countries have adjusted or introduced buffers to counter elevated credit growth in residential real estate, stabilize commercial real estate markets, and mitigate general credit and cross-border exposures. Jurisdictions like the Czech Republic have also broadened their scope to include risks associated with economic openness, foreign trade concentration, energy transformation, and cyber threats, underscoring a comprehensive macroprudential strategy.</p><p><b>Borrower-Based Measures (BBMs) have also been intensified over the last year, with national authorities reinforcing their implementation to enhance financial stability.</b> The primary objective is to curb excessive household indebtedness and prevent potential overheating in real estate markets. The key risks being addressed include unsustainable housing leverage, declining affordability for new market entrants, and the potential deterioration of credit quality within the mortgage sector, all designed to safeguard borrowers and the financial system from rapid credit expansion and evolving economic conditions.</p><p><b>Overall capital buffer requirements have exhibited significant divergence across countries in the last twelve months, reflecting varied national objectives in managing systemic risk.</b> Denmark leads with the highest requirement at 16%, driven by substantial SyRB and CCyB. Robust buffers in Northern and Central Europe, often supplemented by GSII/O-SII and SyRB, highlight a strategic focus on mitigating risks associated with large, interconnected financial institutions. Conversely, lower requirements in Southern and Eastern Europe, primarily relying on the CCoB, suggest a regulatory approach prioritizing simpler frameworks, potentially due to less complex or lower perceived systemic risks within their financial systems during this period.</p></div>
             </div>
         </section>
 
@@ -57,269 +67,269 @@
                 <div class="news-main">
                     <div class="card">
                         <div class="card-title">Highlights Summary</div>
-                        <div class="ai-box">Over the past 12 months, macroprudential news has heavily focused on the strategic use of the Countercyclical Capital Buffer (CCyB) and the Systemic Risk Buffer (SyRB) to bolster banking sector resilience. A key objective highlighted is the early activation of the CCyB to mitigate cyclical systemic risks linked to domestic credit cycles, ensuring sufficient capital availability even when risks are not yet subdued. The SyRB is also noted for its role in addressing systemic risks not covered by other regulations. Consultations and decisions regarding the calibration and reciprocation of these buffers, such as the Belgian SyRB and CCyB, underscore the ongoing efforts to manage financial stability.</div>
+                        <div class="ai-box">Over the past 12 months, macroprudential news has heavily focused on the Countercyclical Capital Buffer (CCyB) and the Systemic Risk Buffer (SyRB) as key tools for enhancing financial stability. A primary objective has been to build banking sector resilience by ensuring sufficient capital availability, particularly through the early activation of the CCyB. This proactive approach aims to mitigate cyclical systemic risks linked to domestic credit cycles. Furthermore, there's an emerging focus on calibrating a "positive neutral" CCyB rate, which links bank capital losses to buffer levels, and on utilizing the SyRB to address systemic risks not covered by other regulatory frameworks.</div>
                     </div>
                     <div class='news-feed'>
-                <article class="news-card" data-tags="reciprocation syrb capital ccyb capital" data-search="consultation reciprocation belgian macroprudential systemic risk ... a consultation on belgian macroprudential systemic risk buffer reciprocation is underway. the dutch central bank (dnb) is assessing the current level of the countercyclical capital buffer (ccyb). www.dnb.nl">
-                    <div class="news-card__header">
-                        <div class="news-tags"><span class='news-tag news-tag--reciprocation'>Reciprocation</span><span class='news-tag news-tag--syrb'>SyRB</span><span class='news-tag news-tag--capital'>Capital</span><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
-                        <div class="news-meta">
-                            <span class='news-date'>Reported: 2025-08-21</span>
-                            <span class="news-date">Retrieved: 2026-01-17</span>
-                        </div>
+            <article class="news-card" data-tags="ccyb capital reciprocation" data-search="reciprocated foreign macroprudential measures dnb reciprocated foreign macroprudential measures, including the belgian systemic risk buffer. the countercyclical capital buffer (ccyb) is a specific type of macroprudential measure. www.dnb.nl">
+                <div class="news-card__header">
+                    <div class="news-tags"><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span><span class='news-tag news-tag--reciprocation'>Reciprocation</span></div>
+                    <div class="news-meta">
+                        <span class='news-date'>Reported: 2026-01-16</span>
+                        <span class="news-date">Retrieved: 2026-01-29</span>
                     </div>
-                    <h3 class="news-title">Consultation reciprocation Belgian macroprudential systemic risk ...</h3>
-                    
-                    <p class="news-summary">A consultation on Belgian macroprudential systemic risk buffer reciprocation is underway. The Dutch central bank (DNB) is assessing the current level of the countercyclical capital buffer (CCyB).</p>
-                    <div class="news-divider"></div>
-                    <div class="news-actions">
-                        <div class="news-source">
-                            <span class="news-source__icon">
-                                <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.dnb.nl&sz=64" alt="">
-                            </span>
-                            <span>www.dnb.nl</span>
-                        </div>
-                        <a class="news-link" href="https://www.dnb.nl/en/publications/supervision-publications/consultation-2025/consultation-reciprocation-belgian-macroprudential-systemic-risk-buffer/" target="_blank" rel="noopener">
-                            <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
-                            Read original
-                        </a>
-                    </div>
-                </article>
-                
-                <article class="news-card" data-tags="ccyb capital" data-search="macroprudential and monetary policy interaction: the role of early ... the early activation of the countercyclical capital buffer (ccyb) enhances banking sector resilience by ensuring adequate capital availability. this policy aims to mitigate cyclical systemic risks. www.ecb.europa.eu">
-                    <div class="news-card__header">
-                        <div class="news-tags"><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
-                        <div class="news-meta">
-                            <span class='news-date'>Published: 2025-08-18</span>
-                            <span class="news-date">Retrieved: 2026-01-17</span>
-                        </div>
-                    </div>
-                    <h3 class="news-title">Macroprudential and monetary policy interaction: the role of early ...</h3>
-                    
-                    <p class="news-summary">The early activation of the countercyclical capital buffer (CCyB) enhances banking sector resilience by ensuring adequate capital availability. This policy aims to mitigate cyclical systemic risks.</p>
-                    <div class="news-divider"></div>
-                    <div class="news-actions">
-                        <div class="news-source">
-                            <span class="news-source__icon">
-                                <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.ecb.europa.eu&sz=64" alt="">
-                            </span>
-                            <span>www.ecb.europa.eu</span>
-                        </div>
-                        <a class="news-link" href="https://www.ecb.europa.eu/press/financial-stability-publications/macroprudential-bulletin/html/ecb.mpbu20250818_01.en.html" target="_blank" rel="noopener">
-                            <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
-                            Read original
-                        </a>
-                    </div>
-                </article>
-                
-                <article class="news-card" data-tags="ccyb capital" data-search="working paper series - from risk to buffer: calibrating the positive ... this working paper explores the calibration of the positive countercyclical capital buffer (ccyb) in the context of financial stability and macroprudential policy. it relates risk to buffer requirements. www.ecb.europa.eu">
-                    <div class="news-card__header">
-                        <div class="news-tags"><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
-                        <div class="news-meta">
-                            <span class='news-date'>Reported: 2025-07-14</span>
-                            <span class="news-date">Retrieved: 2026-01-17</span>
-                        </div>
-                    </div>
-                    <h3 class="news-title">Working Paper Series - From risk to buffer: calibrating the positive ...</h3>
-                    
-                    <p class="news-summary">This working paper explores the calibration of the positive countercyclical capital buffer (CCyB) in the context of financial stability and macroprudential policy. It relates risk to buffer requirements.</p>
-                    <div class="news-divider"></div>
-                    <div class="news-actions">
-                        <div class="news-source">
-                            <span class="news-source__icon">
-                                <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.ecb.europa.eu&sz=64" alt="">
-                            </span>
-                            <span>www.ecb.europa.eu</span>
-                        </div>
-                        <a class="news-link" href="https://www.ecb.europa.eu/pub/pdf/scpwps/ecb.wp3075~c0c36403f9.en.pdf" target="_blank" rel="noopener">
-                            <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
-                            Read original
-                        </a>
-                    </div>
-                </article>
-                
-                <article class="news-card" data-tags="syrb capital ccyb capital" data-search="macroprudential decision: national buffer requirements for banks ... a macroprudential decision maintained national systemic risk buffer (syrb) and o-sii buffer rates unchanged. the countercyclical capital buffer (ccyb) requirement for banks was also addressed in this decision. www.finanssivalvonta.fi">
-                    <div class="news-card__header">
-                        <div class="news-tags"><span class='news-tag news-tag--syrb'>SyRB</span><span class='news-tag news-tag--capital'>Capital</span><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
-                        <div class="news-meta">
-                            <span class='news-date'>Reported: 2025-06-27</span>
-                            <span class="news-date">Retrieved: 2026-01-17</span>
-                        </div>
-                    </div>
-                    <h3 class="news-title">Macroprudential decision: National buffer requirements for banks ...</h3>
-                    
-                    <p class="news-summary">A macroprudential decision maintained national systemic risk buffer (SyRB) and O-SII buffer rates unchanged. The countercyclical capital buffer (CCyB) requirement for banks was also addressed in this decision.</p>
-                    <div class="news-divider"></div>
-                    <div class="news-actions">
-                        <div class="news-source">
-                            <span class="news-source__icon">
-                                <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.finanssivalvonta.fi&sz=64" alt="">
-                            </span>
-                            <span>www.finanssivalvonta.fi</span>
-                        </div>
-                        <a class="news-link" href="https://www.finanssivalvonta.fi/en/publications-and-press-releases/Press-release/2025/macroprudential-decision-national-buffer-requirements-for-banks-and-the-housing-loan-cap-to-remain-unchanged/" target="_blank" rel="noopener">
-                            <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
-                            Read original
-                        </a>
-                    </div>
-                </article>
-                
-                <article class="news-card" data-tags="syrb capital ccyb capital" data-search="notification by national committee for macroprudential oversight ... the national committee for macroprudential oversight&amp;#x27;s notification indicates that while other instruments address specific risks, the countercyclical capital buffer (ccyb) and the systemic risk buffer (syrb) are also utilized. www.esrb.europa.eu">
-                    <div class="news-card__header">
-                        <div class="news-tags"><span class='news-tag news-tag--syrb'>SyRB</span><span class='news-tag news-tag--capital'>Capital</span><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
-                        <div class="news-meta">
-                            <span class='news-date'>Reported: 2025-04-01</span>
-                            <span class="news-date">Retrieved: 2026-01-17</span>
-                        </div>
-                    </div>
-                    <h3 class="news-title">Notification by National Committee for Macroprudential Oversight ...</h3>
-                    
-                    <p class="news-summary">The National Committee for Macroprudential Oversight&#x27;s notification indicates that while other instruments address specific risks, the countercyclical capital buffer (CCyB) and the systemic risk buffer (SyRB) are also utilized.</p>
-                    <div class="news-divider"></div>
-                    <div class="news-actions">
-                        <div class="news-source">
-                            <span class="news-source__icon">
-                                <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.esrb.europa.eu&sz=64" alt="">
-                            </span>
-                            <span>www.esrb.europa.eu</span>
-                        </div>
-                        <a class="news-link" href="https://www.esrb.europa.eu/pub/pdf/other/Esrb.notification250131_OSII_RO~3456b56242.en.pdf" target="_blank" rel="noopener">
-                            <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
-                            Read original
-                        </a>
-                    </div>
-                </article>
-                
-                <article class="news-card" data-tags="ccyb capital" data-search="using the countercyclical capital buffer to build up resilience early in ... the countercyclical capital buffer (ccyb) was implemented within the european macroprudential framework to address cyclical systemic risks tied to domestic credit cycles, with its accumulation being a key aspect. www.esrb.europa.eu">
-                    <div class="news-card__header">
-                        <div class="news-tags"><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
-                        <div class="news-meta">
-                            <span class='news-date'>Reported: 2025-01-31</span>
-                            <span class="news-date">Retrieved: 2026-01-17</span>
-                        </div>
-                    </div>
-                    <h3 class="news-title">Using the countercyclical capital buffer to build up resilience early in ...</h3>
-                    
-                    <p class="news-summary">The countercyclical capital buffer (CCyB) was implemented within the European macroprudential framework to address cyclical systemic risks tied to domestic credit cycles, with its accumulation being a key aspect.</p>
-                    <div class="news-divider"></div>
-                    <div class="news-actions">
-                        <div class="news-source">
-                            <span class="news-source__icon">
-                                <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.esrb.europa.eu&sz=64" alt="">
-                            </span>
-                            <span>www.esrb.europa.eu</span>
-                        </div>
-                        <a class="news-link" href="https://www.esrb.europa.eu/pub/pdf/reports/esrb.jointreportecbesrb202501~cdb5974ca9.en.pdf" target="_blank" rel="noopener">
-                            <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
-                            Read original
-                        </a>
-                    </div>
-                </article>
-                
-                <article class="news-card" data-tags="ccyb capital" data-search="ecb and esrb issue joint report on experiences of using the ... a joint report by the ecb and esrb highlights the early setting of a positive countercyclical capital buffer (ccyb) rate as a method to build resilience. this is done when cyclical systemic risks are not yet subdued. www.ecb.europa.eu">
-                    <div class="news-card__header">
-                        <div class="news-tags"><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
-                        <div class="news-meta">
-                            <span class='news-date'>Published: 2025-01-31</span>
-                            <span class="news-date">Retrieved: 2026-01-17</span>
-                        </div>
-                    </div>
-                    <h3 class="news-title">ECB and ESRB issue joint report on experiences of using the ...</h3>
-                    
-                    <p class="news-summary">A joint report by the ECB and ESRB highlights the early setting of a positive countercyclical capital buffer (CCyB) rate as a method to build resilience. This is done when cyclical systemic risks are not yet subdued.</p>
-                    <div class="news-divider"></div>
-                    <div class="news-actions">
-                        <div class="news-source">
-                            <span class="news-source__icon">
-                                <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.ecb.europa.eu&sz=64" alt="">
-                            </span>
-                            <span>www.ecb.europa.eu</span>
-                        </div>
-                        <a class="news-link" href="https://www.ecb.europa.eu/press/pr/date/2025/html/ecb.pr250131_3~f57297ee7f.en.html" target="_blank" rel="noopener">
-                            <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
-                            Read original
-                        </a>
-                    </div>
-                </article>
-                
-                <article class="news-card" data-tags="syrb capital" data-search="systemic risk buffer the systemic risk buffer (syrb) is designed to address systemic risks that are not covered by existing regulations like the capital requirements regulation, the ccyb, or specific institution buffers (g-sii/o-sii). www.esrb.europa.eu">
-                    <div class="news-card__header">
-                        <div class="news-tags"><span class='news-tag news-tag--syrb'>SyRB</span><span class='news-tag news-tag--capital'>Capital</span></div>
-                        <div class="news-meta">
-                            <span class='news-date'>Published: 2024-07-10</span>
-                            <span class="news-date">Retrieved: 2026-01-17</span>
-                        </div>
-                    </div>
-                    <h3 class="news-title">Systemic risk buffer</h3>
-                    
-                    <p class="news-summary">The systemic risk buffer (SyRB) is designed to address systemic risks that are not covered by existing regulations like the Capital Requirements Regulation, the CCyB, or specific institution buffers (G-SII/O-SII).</p>
-                    <div class="news-divider"></div>
-                    <div class="news-actions">
-                        <div class="news-source">
-                            <span class="news-source__icon">
-                                <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.esrb.europa.eu&sz=64" alt="">
-                            </span>
-                            <span>www.esrb.europa.eu</span>
-                        </div>
-                        <a class="news-link" href="https://www.esrb.europa.eu/national_policy/systemic/html/index.en.html" target="_blank" rel="noopener">
-                            <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
-                            Read original
-                        </a>
-                    </div>
-                </article>
-                
-                <article class="news-card" data-tags="ccyb capital" data-search="countercyclical capital buffer the countercyclical capital buffer (ccyb) is a tool designed to counteract procyclicality within the financial system. it is activated when there is an increasing judgment of cyclical systemic risk. www.esrb.europa.eu">
-                    <div class="news-card__header">
-                        <div class="news-tags"><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
-                        <div class="news-meta">
-                            <span class='news-date'>Published: 2024-03-20</span>
-                            <span class="news-date">Retrieved: 2026-01-17</span>
-                        </div>
-                    </div>
-                    <h3 class="news-title">Countercyclical capital buffer</h3>
-                    
-                    <p class="news-summary">The countercyclical capital buffer (CCyB) is a tool designed to counteract procyclicality within the financial system. It is activated when there is an increasing judgment of cyclical systemic risk.</p>
-                    <div class="news-divider"></div>
-                    <div class="news-actions">
-                        <div class="news-source">
-                            <span class="news-source__icon">
-                                <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.esrb.europa.eu&sz=64" alt="">
-                            </span>
-                            <span>www.esrb.europa.eu</span>
-                        </div>
-                        <a class="news-link" href="https://www.esrb.europa.eu/national_policy/ccb/html/index.en.html" target="_blank" rel="noopener">
-                            <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
-                            Read original
-                        </a>
-                    </div>
-                </article>
-                
-                <article class="news-card" data-tags="ccyb capital" data-search="macroprudential bulletin the macroprudential bulletin emphasizes that activating the countercyclical capital buffer (ccyb) early in the cycle strengthens the banking sector&amp;#x27;s resilience. this ensures sufficient capital is available. www.ecb.europa.eu">
-                    <div class="news-card__header">
-                        <div class="news-tags"><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
-                        <div class="news-meta">
-                            <span class='news-date'>Published: 2021-02-02</span>
-                            <span class="news-date">Retrieved: 2026-01-17</span>
-                        </div>
-                    </div>
-                    <h3 class="news-title">Macroprudential Bulletin</h3>
-                    
-                    <p class="news-summary">The Macroprudential Bulletin emphasizes that activating the Countercyclical Capital Buffer (CCyB) early in the cycle strengthens the banking sector&#x27;s resilience. This ensures sufficient capital is available.</p>
-                    <div class="news-divider"></div>
-                    <div class="news-actions">
-                        <div class="news-source">
-                            <span class="news-source__icon">
-                                <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.ecb.europa.eu&sz=64" alt="">
-                            </span>
-                            <span>www.ecb.europa.eu</span>
-                        </div>
-                        <a class="news-link" href="https://www.ecb.europa.eu/press/financial-stability-publications/macroprudential-bulletin/html/all-releases.en.html" target="_blank" rel="noopener">
-                            <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
-                            Read original
-                        </a>
-                    </div>
-                </article>
                 </div>
+                <h3 class="news-title">Reciprocated foreign macroprudential measures</h3>
+                
+                <p class="news-summary">DNB reciprocated foreign macroprudential measures, including the Belgian systemic risk buffer. The countercyclical capital buffer (CCyB) is a specific type of macroprudential measure.</p>
+                <div class="news-divider"></div>
+                <div class="news-actions">
+                    <div class="news-source">
+                        <span class="news-source__icon">
+                            <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.dnb.nl&sz=64" alt="">
+                        </span>
+                        <span>www.dnb.nl</span>
+                    </div>
+                    <a class="news-link" href="https://www.dnb.nl/en/sector-information/open-book-supervision/open-book-supervision-sectors/banks/prudential-supervision/factsheet/reciprocated-foreign-macroprudential-measures/" target="_blank" rel="noopener">
+                        <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
+                        Read original
+                    </a>
+                </div>
+            </article>
+            
+            <article class="news-card" data-tags="ccyb capital" data-search="informing the positive neutral countercyclical capital buffer using ... this publication, part of macroprudential bulletin 32, discusses the early activation of the countercyclical capital buffer (ccyb) and its positive neutral setting. www.ecb.europa.eu">
+                <div class="news-card__header">
+                    <div class="news-tags"><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
+                    <div class="news-meta">
+                        <span class='news-date'>Published: 2025-11-19</span>
+                        <span class="news-date">Retrieved: 2026-01-29</span>
+                    </div>
+                </div>
+                <h3 class="news-title">Informing the positive neutral countercyclical capital buffer using ...</h3>
+                
+                <p class="news-summary">This publication, part of Macroprudential Bulletin 32, discusses the early activation of the countercyclical capital buffer (CCyB) and its positive neutral setting.</p>
+                <div class="news-divider"></div>
+                <div class="news-actions">
+                    <div class="news-source">
+                        <span class="news-source__icon">
+                            <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.ecb.europa.eu&sz=64" alt="">
+                        </span>
+                        <span>www.ecb.europa.eu</span>
+                    </div>
+                    <a class="news-link" href="https://www.ecb.europa.eu/press/financial-stability-publications/macroprudential-bulletin/focus/2025/html/ecb.mpbu202511_focus01.en.html" target="_blank" rel="noopener">
+                        <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
+                        Read original
+                    </a>
+                </div>
+            </article>
+            
+            <article class="news-card" data-tags="ccyb capital" data-search="macroprudential bulletin - european central bank a novel approach for determining a target &amp;#x27;positive neutral&amp;#x27; countercyclical capital buffer rate is introduced, linking bank capital losses to this rate. www.ecb.europa.eu">
+                <div class="news-card__header">
+                    <div class="news-tags"><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
+                    <div class="news-meta">
+                        <span class='news-date'>Published: 2025-11-19</span>
+                        <span class="news-date">Retrieved: 2026-01-29</span>
+                    </div>
+                </div>
+                <h3 class="news-title">Macroprudential Bulletin - European Central Bank</h3>
+                
+                <p class="news-summary">A novel approach for determining a target &#x27;positive neutral&#x27; countercyclical capital buffer rate is introduced, linking bank capital losses to this rate.</p>
+                <div class="news-divider"></div>
+                <div class="news-actions">
+                    <div class="news-source">
+                        <span class="news-source__icon">
+                            <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.ecb.europa.eu&sz=64" alt="">
+                        </span>
+                        <span>www.ecb.europa.eu</span>
+                    </div>
+                    <a class="news-link" href="https://www.ecb.europa.eu/press/financial-stability-publications/macroprudential-bulletin/html/index.en.html" target="_blank" rel="noopener">
+                        <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
+                        Read original
+                    </a>
+                </div>
+            </article>
+            
+            <article class="news-card" data-tags="ccyb capital" data-search="macroprudential and monetary policy interaction: the role of early ... the early activation of the countercyclical capital buffer (ccyb) enhances banking sector resilience by ensuring sufficient capital availability. www.ecb.europa.eu">
+                <div class="news-card__header">
+                    <div class="news-tags"><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
+                    <div class="news-meta">
+                        <span class='news-date'>Published: 2025-08-18</span>
+                        <span class="news-date">Retrieved: 2026-01-29</span>
+                    </div>
+                </div>
+                <h3 class="news-title">Macroprudential and monetary policy interaction: the role of early ...</h3>
+                
+                <p class="news-summary">The early activation of the countercyclical capital buffer (CCyB) enhances banking sector resilience by ensuring sufficient capital availability.</p>
+                <div class="news-divider"></div>
+                <div class="news-actions">
+                    <div class="news-source">
+                        <span class="news-source__icon">
+                            <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.ecb.europa.eu&sz=64" alt="">
+                        </span>
+                        <span>www.ecb.europa.eu</span>
+                    </div>
+                    <a class="news-link" href="https://www.ecb.europa.eu/press/financial-stability-publications/macroprudential-bulletin/html/ecb.mpbu20250818_01.en.html" target="_blank" rel="noopener">
+                        <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
+                        Read original
+                    </a>
+                </div>
+            </article>
+            
+            <article class="news-card" data-tags="ccyb capital" data-search="calibrating the positive neutral ccyb rate in the euro area this ecb working paper focuses on calibrating the positive neutral ccyb rate within the euro area, addressing financial stability and capital requirements. www.ecb.europa.eu">
+                <div class="news-card__header">
+                    <div class="news-tags"><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
+                    <div class="news-meta">
+                        <span class='news-date'>Reported: 2025-07-14</span>
+                        <span class="news-date">Retrieved: 2026-01-29</span>
+                    </div>
+                </div>
+                <h3 class="news-title">calibrating the positive neutral CCyB rate in the euro area</h3>
+                
+                <p class="news-summary">This ECB Working Paper focuses on calibrating the positive neutral CCyB rate within the euro area, addressing financial stability and capital requirements.</p>
+                <div class="news-divider"></div>
+                <div class="news-actions">
+                    <div class="news-source">
+                        <span class="news-source__icon">
+                            <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.ecb.europa.eu&sz=64" alt="">
+                        </span>
+                        <span>www.ecb.europa.eu</span>
+                    </div>
+                    <a class="news-link" href="https://www.ecb.europa.eu/pub/pdf/scpwps/ecb.wp3075~c0c36403f9.en.pdf" target="_blank" rel="noopener">
+                        <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
+                        Read original
+                    </a>
+                </div>
+            </article>
+            
+            <article class="news-card" data-tags="ccyb capital" data-search="using the countercyclical capital buffer to build resilience early in the ... the ccyb, part of the european macroprudential framework since 2014, has been utilized to reduce cyclical systemic risks tied to domestic credit cycles. www.esrb.europa.eu">
+                <div class="news-card__header">
+                    <div class="news-tags"><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
+                    <div class="news-meta">
+                        <span class='news-date'>Reported: 2025-01-31</span>
+                        <span class="news-date">Retrieved: 2026-01-29</span>
+                    </div>
+                </div>
+                <h3 class="news-title">Using the countercyclical capital buffer to build resilience early in the ...</h3>
+                
+                <p class="news-summary">The CCyB, part of the European macroprudential framework since 2014, has been utilized to reduce cyclical systemic risks tied to domestic credit cycles.</p>
+                <div class="news-divider"></div>
+                <div class="news-actions">
+                    <div class="news-source">
+                        <span class="news-source__icon">
+                            <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.esrb.europa.eu&sz=64" alt="">
+                        </span>
+                        <span>www.esrb.europa.eu</span>
+                    </div>
+                    <a class="news-link" href="https://www.esrb.europa.eu/pub/pdf/reports/esrb.jointreportecbesrb202501~cdb5974ca9.en.pdf" target="_blank" rel="noopener">
+                        <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
+                        Read original
+                    </a>
+                </div>
+            </article>
+            
+            <article class="news-card" data-tags="ccyb capital" data-search="ecb and esrb issue joint report on experiences of using the ... a joint report by the ecb and esrb examines experiences with macroprudential tools, including setting a positive ccyb rate early in the cycle. www.ecb.europa.eu">
+                <div class="news-card__header">
+                    <div class="news-tags"><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
+                    <div class="news-meta">
+                        <span class='news-date'>Published: 2025-01-31</span>
+                        <span class="news-date">Retrieved: 2026-01-29</span>
+                    </div>
+                </div>
+                <h3 class="news-title">ECB and ESRB issue joint report on experiences of using the ...</h3>
+                
+                <p class="news-summary">A joint report by the ECB and ESRB examines experiences with macroprudential tools, including setting a positive CCyB rate early in the cycle.</p>
+                <div class="news-divider"></div>
+                <div class="news-actions">
+                    <div class="news-source">
+                        <span class="news-source__icon">
+                            <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.ecb.europa.eu&sz=64" alt="">
+                        </span>
+                        <span>www.ecb.europa.eu</span>
+                    </div>
+                    <a class="news-link" href="https://www.ecb.europa.eu/press/pr/date/2025/html/ecb.pr250131_3~f57297ee7f.en.html" target="_blank" rel="noopener">
+                        <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
+                        Read original
+                    </a>
+                </div>
+            </article>
+            
+            <article class="news-card" data-tags="syrb capital ccyb" data-search="systemic risk buffer the systemic risk buffer (syrb) is designed to manage systemic risks not addressed by the capital requirements regulation, ccyb, or g-sii/o-sii buffers. www.esrb.europa.eu">
+                <div class="news-card__header">
+                    <div class="news-tags"><span class='news-tag news-tag--syrb'>SyRB</span><span class='news-tag news-tag--capital'>Capital</span><span class='news-tag news-tag--ccyb'>CCyB</span></div>
+                    <div class="news-meta">
+                        <span class='news-date'>Published: 2024-07-10</span>
+                        <span class="news-date">Retrieved: 2026-01-29</span>
+                    </div>
+                </div>
+                <h3 class="news-title">Systemic risk buffer</h3>
+                
+                <p class="news-summary">The systemic risk buffer (SyRB) is designed to manage systemic risks not addressed by the Capital Requirements Regulation, CCyB, or G-SII/O-SII buffers.</p>
+                <div class="news-divider"></div>
+                <div class="news-actions">
+                    <div class="news-source">
+                        <span class="news-source__icon">
+                            <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.esrb.europa.eu&sz=64" alt="">
+                        </span>
+                        <span>www.esrb.europa.eu</span>
+                    </div>
+                    <a class="news-link" href="https://www.esrb.europa.eu/national_policy/systemic/html/index.en.html" target="_blank" rel="noopener">
+                        <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
+                        Read original
+                    </a>
+                </div>
+            </article>
+            
+            <article class="news-card" data-tags="syrb capital" data-search="macroprudential measures - european central bank the systemic risk buffer (syrb) is mentioned in relation to a specific institution&amp;#x27;s buffer rate effective january 1, 2026, and its regulatory basis. www.ecb.europa.eu">
+                <div class="news-card__header">
+                    <div class="news-tags"><span class='news-tag news-tag--syrb'>SyRB</span><span class='news-tag news-tag--capital'>Capital</span></div>
+                    <div class="news-meta">
+                        <span class='news-date'>Published: 2024-04-18</span>
+                        <span class="news-date">Retrieved: 2026-01-29</span>
+                    </div>
+                </div>
+                <h3 class="news-title">Macroprudential measures - European Central Bank</h3>
+                
+                <p class="news-summary">The systemic risk buffer (SyRB) is mentioned in relation to a specific institution&#x27;s buffer rate effective January 1, 2026, and its regulatory basis.</p>
+                <div class="news-divider"></div>
+                <div class="news-actions">
+                    <div class="news-source">
+                        <span class="news-source__icon">
+                            <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.ecb.europa.eu&sz=64" alt="">
+                        </span>
+                        <span>www.ecb.europa.eu</span>
+                    </div>
+                    <a class="news-link" href="https://www.ecb.europa.eu/paym/macroprudential-measures/html/index.en.html" target="_blank" rel="noopener">
+                        <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
+                        Read original
+                    </a>
+                </div>
+            </article>
+            
+            <article class="news-card" data-tags="ccyb capital" data-search="macroprudential bulletin - european central bank the early activation of the countercyclical capital buffer (ccyb), including a targeted &amp;#x27;positive neutral&amp;#x27; rate, is becoming a more frequent practice. www.ecb.europa.eu">
+                <div class="news-card__header">
+                    <div class="news-tags"><span class='news-tag news-tag--ccyb'>CCyB</span><span class='news-tag news-tag--capital'>Capital</span></div>
+                    <div class="news-meta">
+                        <span class='news-date'>Published: 2021-02-02</span>
+                        <span class="news-date">Retrieved: 2026-01-29</span>
+                    </div>
+                </div>
+                <h3 class="news-title">Macroprudential Bulletin - European Central Bank</h3>
+                
+                <p class="news-summary">The early activation of the countercyclical capital buffer (CCyB), including a targeted &#x27;positive neutral&#x27; rate, is becoming a more frequent practice.</p>
+                <div class="news-divider"></div>
+                <div class="news-actions">
+                    <div class="news-source">
+                        <span class="news-source__icon">
+                            <img class="news-source__favicon" src="https://www.google.com/s2/favicons?domain=www.ecb.europa.eu&sz=64" alt="">
+                        </span>
+                        <span>www.ecb.europa.eu</span>
+                    </div>
+                    <a class="news-link" href="https://www.ecb.europa.eu/press/financial-stability-publications/macroprudential-bulletin/html/all-releases.en.html" target="_blank" rel="noopener">
+                        <span class="news-link__icon" aria-hidden="true"><i data-lucide="share-2"></i></span>
+                        Read original
+                    </a>
+                </div>
+            </article>
+            </div>
                 </div>
                 <aside class="news-sidebar">
                     <div class="card">
@@ -341,8 +351,8 @@
                         <div class="filter-group">
                             <div class="filter-title">Themes</div>
                             <label class="filter-option"><input type="checkbox" data-filter="real-estate" checked> Real Estate</label>
-                            <label class="filter-option"><input type="checkbox" data-filter="systemic" checked> Systemic Risk</label>
                             <label class="filter-option"><input type="checkbox" data-filter="capital" checked> Capital</label>
+                            <label class="filter-option"><input type="checkbox" data-filter="reciprocation" checked> Reciprocation</label>
                         </div>
                     </div>
                     <div class="card">
@@ -352,7 +362,7 @@
                             <button class="tag-pill" data-tag="inflation">#Inflation</button>
                             <button class="tag-pill" data-tag="ccyb">#CCyB</button>
                             <button class="tag-pill" data-tag="bbm">#BBM</button>
-                            <button class="tag-pill" data-tag="systemic">#SystemicRisk</button>
+                            <button class="tag-pill" data-tag="reciprocation">#Reciprocation</button>
                         </div>
                     </div>
                 </aside>
@@ -369,8 +379,8 @@
                 <span>Section Summary</span>
                 <i data-lucide="info" size="18"></i>
             </div>
-            <div class="ai-box"><ul><li>Over the last 12 months, several European countries have proactively increased their Countercyclical Capital Buffer (CCyB) rates to address heightened risks associated with robust credit growth and property market overheating. Notably, Germany, Denmark, Norway, Sweden, and Slovakia raised their buffers to mitigate risks of cyclical systemic imbalances, particularly in residential real estate, and to bolster bank resilience against potential downturns and asset price corrections. Bulgaria and Lithuania also increased their CCyB rates, citing intense loan supply, elevated uncertainty, and the need to preserve capital during a broad-based credit cycle recovery.</li>
-<li>In contrast, countries such as Austria, Italy, and Malta have maintained zero CCyB rates, reflecting weak financial cycles and negative credit-to-GDP gaps, indicating no immediate need for buffer activation. Luxembourg, however, increased its CCyB to 0.5% due to a widening credit-to-GDP gap driven by sustained credit to the non-financial sector and households, and a downward revision of GDP. These divergent policy responses underscore a targeted approach to managing country-specific financial stability risks.</li></ul></div>
+            <div class="ai-box"><ul><li>Over the last 12 months, a significant number of countries, including Germany, Denmark, Norway, Sweden, and Croatia, have increased their Countercyclical Capital Buffer (CCyB) rates. This proactive stance is driven by objectives to mitigate risks associated with accelerating credit growth, particularly in real estate and corporate lending, and to bolster banking sector resilience against potential cyclical systemic risks and asset price inflation.</li>
+<li>Conversely, a smaller group of nations, such as Austria, Italy, and Finland, have maintained zero CCyB rates, reflecting subdued credit growth or economic uncertainty. However, even in these cases, the underlying objective remains to ensure financial stability, with some, like Slovenia and Hungary, adopting "positive neutral" rates to preemptively build capital buffers against potential future shocks and emerging vulnerabilities.</li></ul></div>
         </div>
 
         <div class="card">
@@ -384,7 +394,7 @@
                         
                     
                 </div>
-                <div class="ai-box">Over the last 12 months, a notable trend in Countercyclical Capital Buffer (CCyB) adoption has emerged, with several countries increasing their buffers to address risks of credit growth and property market overheating. Germany, for instance, raised its CCyB to 0.75% to counter a build-up of cyclical systemic risk, particularly in residential real estate, citing potentially underestimated credit risk and overvalued collateral. Denmark and Norway also increased their CCyB to 2.5%, citing building risks in the financial sector and accelerated household credit growth alongside substantial property price increases. Sweden and Slovakia moved their CCyB rates to 2% and 1.5% respectively, driven by strong credit dynamics and rapid housing price growth, aiming to bolster resilience against future shocks. Bulgaria and Lithuania also increased their CCyB rates, with Bulgaria citing intense loan supply and elevated uncertainty, and Lithuania aiming to preserve accumulated capital amidst a broad-based credit cycle recovery. These actions reflect a proactive approach by national authorities to mitigate financial stability risks by strengthening bank resilience against potential downturns and asset price corrections.</div>
+                <div class="ai-box">Over the last 12 months, the adoption of positive Countercyclical Capital Buffers (CCyBs) has seen a notable increase, driven by countries aiming to mitigate risks associated with credit growth and property market dynamics. While many nations, such as Austria, Italy, Malta, and Finland, maintained a zero CCyB rate due to subdued credit growth or economic uncertainty, others like Germany, Denmark, Norway, and Sweden have raised their CCyB rates to address building cyclical systemic risks, particularly in real estate and corporate lending. Luxembourg, for instance, increased its CCyB to 0.5% due to a widening credit-to-GDP gap fueled by mortgage credit to households and credit to non-financial corporations, signaling concerns about unsustainable credit growth. Conversely, countries like the Czech Republic and Slovakia have recently decreased or maintained their CCyB rates, reflecting a more neutral or even contracting credit cycle, while still acknowledging the need for resilience against potential future shocks. The overall trend indicates a cautious but increasing adoption of positive CCyBs as a tool to manage financial stability risks.</div>
             </div>
         </div>
         
@@ -394,7 +404,7 @@
                 <input type="text" id="ccyb-country-filter" class="chart-input" placeholder="Filter countries (e.g. HU, FR, DE)">
             </div>
             <div class="plot-inline"><div>                            <div id="ccyb_ts_plot" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("ccyb_ts_plot")) {                    Plotly.newPlot(                        "ccyb_ts_plot",                        [{"hovertemplate":"country=Slovakia\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Slovakia","line":{"color":"#636efa","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Slovakia","orientation":"v","showlegend":true,"x":["2014-10-09T00:00:00","2015-02-02T00:00:00","2015-04-30T00:00:00","2015-07-22T00:00:00","2015-10-23T00:00:00","2016-01-29T00:00:00","2016-05-02T00:00:00","2017-08-01T00:00:00","2017-11-01T00:00:00","2018-02-01T00:00:00","2018-05-01T00:00:00","2018-08-01T00:00:00","2018-11-01T00:00:00","2019-02-01T00:00:00","2019-05-01T00:00:00","2019-08-01T00:00:00","2019-11-01T00:00:00","2020-02-01T00:00:00","2020-05-01T00:00:00","2020-05-01T00:00:00","2020-08-01T00:00:00","2020-08-01T00:00:00","2020-11-01T00:00:00","2021-02-01T00:00:00","2021-11-01T00:00:00","2022-02-01T00:00:00","2023-08-01T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgPwAAAAAAAOA\u002fAAAAAAAA4D8AAAAAAADgPwAAAAAAAPQ\u002fAAAAAAAA9D8AAAAAAAD0PwAAAAAAAPQ\u002fAAAAAAAA+D8AAAAAAAD4PwAAAAAAAPg\u002fAAAAAAAA+D8AAAAAAAD4PwAAAAAAAPA\u002fAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAA8D8AAAAAAADwPwAAAAAAAPg\u002f"},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Lithuania\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Lithuania","line":{"color":"#EF553B","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Lithuania","orientation":"v","showlegend":true,"x":["2015-06-30T00:00:00","2015-09-30T00:00:00","2015-12-31T00:00:00","2016-03-31T00:00:00","2016-06-30T00:00:00","2016-09-30T00:00:00","2016-12-31T00:00:00","2017-03-31T00:00:00","2017-06-30T00:00:00","2017-09-30T00:00:00","2018-12-31T00:00:00","2018-12-31T00:00:00","2019-06-30T00:00:00","2019-06-30T00:00:00","2019-06-30T00:00:00","2019-06-30T00:00:00","2019-06-30T00:00:00","2019-09-30T00:00:00","2019-12-31T00:00:00","2020-04-01T00:00:00","2020-10-01T00:00:00","2020-12-31T00:00:00","2023-10-01T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgPwAAAAAAAOA\u002fAAAAAAAA8D8AAAAAAADwPwAAAAAAAPA\u002fAAAAAAAA8D8AAAAAAADwPwAAAAAAAPA\u002fAAAAAAAA8D8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwPw=="},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Norway\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Norway","line":{"color":"#00cc96","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Norway","orientation":"v","showlegend":true,"x":["2015-06-30T00:00:00","2016-06-30T00:00:00","2016-06-30T00:00:00","2017-03-31T00:00:00","2017-06-30T00:00:00","2017-09-30T00:00:00","2017-12-31T00:00:00","2017-12-31T00:00:00","2017-12-31T00:00:00","2017-12-31T00:00:00","2017-12-31T00:00:00","2017-12-31T00:00:00","2017-12-31T00:00:00","2017-12-31T00:00:00","2019-12-31T00:00:00","2019-12-31T00:00:00","2019-12-31T00:00:00","2019-12-31T00:00:00","2019-12-31T00:00:00","2020-03-13T00:00:00","2020-03-13T00:00:00","2020-03-13T00:00:00","2020-06-18T00:00:00","2022-06-30T00:00:00","2022-12-31T00:00:00","2023-03-31T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAA8D8AAAAAAAD4PwAAAAAAAPg\u002fAAAAAAAA+D8AAAAAAAD4PwAAAAAAAPg\u002fAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAARAAAAAAAAABEAAAAAAAAAEQAAAAAAAAARAAAAAAAAABEAAAAAAAADwPwAAAAAAAPA\u002fAAAAAAAA8D8AAAAAAADwPwAAAAAAAPg\u002fAAAAAAAAAEAAAAAAAAAEQA=="},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Sweden\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Sweden","line":{"color":"#ab63fa","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Sweden","orientation":"v","showlegend":true,"x":["2015-09-13T00:00:00","2015-09-13T00:00:00","2015-09-13T00:00:00","2016-06-27T00:00:00","2016-06-27T00:00:00","2016-06-27T00:00:00","2017-03-19T00:00:00","2017-03-19T00:00:00","2017-03-19T00:00:00","2017-03-19T00:00:00","2017-03-19T00:00:00","2017-03-19T00:00:00","2017-03-19T00:00:00","2017-03-19T00:00:00","2017-03-19T00:00:00","2017-03-19T00:00:00","2019-09-19T00:00:00","2019-09-19T00:00:00","2019-09-19T00:00:00","2019-09-19T00:00:00","2019-09-19T00:00:00","2019-09-19T00:00:00","2020-03-16T00:00:00","2020-03-16T00:00:00","2020-03-16T00:00:00","2020-03-16T00:00:00","2022-09-29T00:00:00","2023-06-22T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA\u002fAAAAAAAA+D8AAAAAAAD4PwAAAAAAAPg\u002fAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAEQAAAAAAAAARAAAAAAAAABEAAAAAAAAAEQAAAAAAAAARAAAAAAAAABEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPA\u002fAAAAAAAAAEA="},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Czech Republic\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Czech Republic","line":{"color":"#FFA15A","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Czech Republic","orientation":"v","showlegend":true,"x":["2015-10-01T00:00:00","2016-01-01T00:00:00","2016-04-01T00:00:00","2016-07-01T00:00:00","2016-10-01T00:00:00","2017-01-01T00:00:00","2017-04-01T00:00:00","2017-07-01T00:00:00","2017-10-01T00:00:00","2018-01-01T00:00:00","2018-04-01T00:00:00","2018-07-01T00:00:00","2018-10-01T00:00:00","2019-01-01T00:00:00","2019-04-01T00:00:00","2019-07-01T00:00:00","2019-10-01T00:00:00","2020-01-01T00:00:00","2020-04-01T00:00:00","2020-04-01T00:00:00","2020-04-01T00:00:00","2020-07-01T00:00:00","2020-07-01T00:00:00","2021-01-01T00:00:00","2021-04-01T00:00:00","2021-10-01T00:00:00","2022-01-01T00:00:00","2022-04-01T00:00:00","2022-07-01T00:00:00","2022-10-01T00:00:00","2023-01-01T00:00:00","2023-04-01T00:00:00","2023-07-01T00:00:00","2023-10-01T00:00:00","2024-04-01T00:00:00","2024-07-01T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOA\u002fAAAAAAAA4D8AAAAAAADgPwAAAAAAAOA\u002fAAAAAAAA4D8AAAAAAADgPwAAAAAAAPA\u002fAAAAAAAA8D8AAAAAAAD0PwAAAAAAAPQ\u002fAAAAAAAA+D8AAAAAAAD4PwAAAAAAAPw\u002fAAAAAAAA8D8AAAAAAAAAQAAAAAAAAPw\u002fAAAAAAAAAEAAAAAAAADgPwAAAAAAAABAAAAAAAAAAEAAAAAAAADgPwAAAAAAAOA\u002fAAAAAAAA4D8AAAAAAADwPwAAAAAAAPg\u002fAAAAAAAAAEAAAAAAAAAEQAAAAAAAAAJAAAAAAAAAAEAAAAAAAAD8PwAAAAAAAPQ\u002f"},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=France\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"France","line":{"color":"#19d3f3","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"France","orientation":"v","showlegend":true,"x":["2015-12-30T00:00:00","2016-04-01T00:00:00","2016-07-01T00:00:00","2017-07-01T00:00:00","2017-10-01T00:00:00","2018-01-02T00:00:00","2018-03-29T00:00:00","2019-07-01T00:00:00","2019-07-01T00:00:00","2019-10-01T00:00:00","2020-04-01T00:00:00","2020-04-02T00:00:00","2020-07-10T00:00:00","2020-10-01T00:00:00","2020-10-06T00:00:00","2021-01-02T00:00:00","2023-04-07T00:00:00","2024-01-02T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADQPwAAAAAAANA\u002fAAAAAAAA0D8AAAAAAAAAAAAAAAAAAOA\u002fAAAAAAAA4D8AAAAAAADgPwAAAAAAAAAAAAAAAAAAAAAAAAAAAADgPwAAAAAAAPA\u002f"},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Denmark\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Denmark","line":{"color":"#FF6692","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Denmark","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2017-01-01T00:00:00","2017-04-01T00:00:00","2017-04-01T00:00:00","2017-07-01T00:00:00","2017-07-01T00:00:00","2017-10-01T00:00:00","2018-01-01T00:00:00","2018-10-01T00:00:00","2019-03-31T00:00:00","2019-06-01T00:00:00","2019-09-30T00:00:00","2019-12-31T00:00:00","2020-03-12T00:00:00","2020-03-31T00:00:00","2020-06-30T00:00:00","2020-09-30T00:00:00","2020-12-30T00:00:00","2021-06-24T00:00:00","2021-09-30T00:00:00","2021-12-17T00:00:00","2022-09-30T00:00:00","2022-12-31T00:00:00","2023-03-31T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4D8AAAAAAADgPwAAAAAAAPA\u002fAAAAAAAA8D8AAAAAAAAAAAAAAAAAAPA\u002fAAAAAAAA+D8AAAAAAAD4PwAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8D8AAAAAAAAAQAAAAAAAAARA"},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Estonia\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Estonia","line":{"color":"#B6E880","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Estonia","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2020-03-23T00:00:00","2022-12-07T00:00:00","2023-12-01T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8D8AAAAAAAD4Pw=="},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Romania\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Romania","line":{"color":"#FF97FF","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Romania","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2018-09-25T00:00:00","2019-06-07T00:00:00","2019-09-11T00:00:00","2019-12-16T00:00:00","2020-05-08T00:00:00","2020-07-15T00:00:00","2020-10-14T00:00:00","2020-12-18T00:00:00","2022-10-17T00:00:00","2023-10-23T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgPwAAAAAAAPA\u002f"},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Netherlands\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Netherlands","line":{"color":"#FECB52","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Netherlands","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-04-12T00:00:00","2016-07-20T00:00:00","2017-01-01T00:00:00","2017-03-23T00:00:00","2017-07-03T00:00:00","2017-10-02T00:00:00","2018-11-23T00:00:00","2019-03-02T00:00:00","2019-06-14T00:00:00","2019-10-10T00:00:00","2020-01-01T00:00:00","2020-03-25T00:00:00","2020-06-13T00:00:00","2020-09-24T00:00:00","2020-12-19T00:00:00","2021-12-18T00:00:00","2022-03-26T00:00:00","2023-05-25T00:00:00","2024-05-31T00:00:00","2025-09-25T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8D8AAAAAAAAAQAAAAAAAAAAA"},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Luxembourg\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Luxembourg","line":{"color":"#636efa","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Luxembourg","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-04-01T00:00:00","2016-07-01T00:00:00","2016-10-01T00:00:00","2017-01-01T00:00:00","2017-04-01T00:00:00","2017-07-01T00:00:00","2017-10-01T00:00:00","2018-01-01T00:00:00","2018-04-01T00:00:00","2018-07-01T00:00:00","2018-10-01T00:00:00","2020-01-01T00:00:00","2020-04-01T00:00:00","2020-04-01T00:00:00","2020-10-01T00:00:00","2021-01-01T00:00:00","2021-01-01T00:00:00","2021-01-01T00:00:00","2021-01-01T00:00:00","2021-01-01T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0D8AAAAAAADQPwAAAAAAANA\u002fAAAAAAAA0D8AAAAAAADgPwAAAAAAAOA\u002fAAAAAAAA4D8AAAAAAADgPwAAAAAAAOA\u002f"},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Poland\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Poland","line":{"color":"#EF553B","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Poland","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2016-01-01T00:00:00","2025-09-25T00:00:00","2026-09-30T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPA\u002fAAAAAAAAAEA="},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Ireland\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Ireland","line":{"color":"#00cc96","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Ireland","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-04-01T00:00:00","2016-07-01T00:00:00","2016-10-01T00:00:00","2017-01-01T00:00:00","2017-04-01T00:00:00","2017-12-31T00:00:00","2018-10-01T00:00:00","2019-01-01T00:00:00","2019-04-01T00:00:00","2019-07-05T00:00:00","2019-07-05T00:00:00","2019-07-05T00:00:00","2019-07-05T00:00:00","2019-07-05T00:00:00","2019-07-05T00:00:00","2020-04-01T00:00:00","2020-04-01T00:00:00","2020-04-01T00:00:00","2020-04-01T00:00:00","2020-04-01T00:00:00","2023-06-15T00:00:00","2023-11-24T00:00:00","2024-06-07T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwPwAAAAAAAPA\u002fAAAAAAAA8D8AAAAAAADwPwAAAAAAAPA\u002fAAAAAAAA8D8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4D8AAAAAAADwPwAAAAAAAPg\u002f"},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Slovenia\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Slovenia","line":{"color":"#ab63fa","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Slovenia","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-04-12T00:00:00","2016-07-01T00:00:00","2016-10-25T00:00:00","2017-01-24T00:00:00","2017-03-29T00:00:00","2017-08-01T00:00:00","2017-10-10T00:00:00","2018-01-30T00:00:00","2018-05-08T00:00:00","2018-07-31T00:00:00","2018-11-13T00:00:00","2019-02-18T00:00:00","2019-04-23T00:00:00","2019-07-30T00:00:00","2019-11-05T00:00:00","2020-01-28T00:00:00","2020-05-14T00:00:00","2020-09-01T00:00:00","2020-11-10T00:00:00","2023-12-31T00:00:00","2025-01-01T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOA\u002fAAAAAAAA8D8="},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Germany\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Germany","line":{"color":"#FFA15A","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Germany","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-04-01T00:00:00","2016-07-01T00:00:00","2016-10-01T00:00:00","2017-01-01T00:00:00","2017-04-01T00:00:00","2017-07-01T00:00:00","2017-10-01T00:00:00","2018-01-01T00:00:00","2018-04-01T00:00:00","2018-07-01T00:00:00","2018-10-01T00:00:00","2019-01-01T00:00:00","2019-04-01T00:00:00","2020-04-01T00:00:00","2020-07-01T00:00:00","2020-07-01T00:00:00","2020-07-01T00:00:00","2020-08-01T00:00:00","2020-11-01T00:00:00","2021-02-01T00:00:00","2023-02-01T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0D8AAAAAAADQPwAAAAAAANA\u002fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA6D8="},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Portugal\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Portugal","line":{"color":"#19d3f3","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Portugal","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-04-01T00:00:00","2016-07-01T00:00:00","2016-10-01T00:00:00","2017-01-01T00:00:00","2017-04-01T00:00:00","2017-07-01T00:00:00","2017-10-02T00:00:00","2018-01-02T00:00:00","2018-04-01T00:00:00","2018-07-01T00:00:00","2018-10-01T00:00:00","2019-01-01T00:00:00","2019-04-01T00:00:00","2019-07-01T00:00:00","2019-10-01T00:00:00","2020-01-01T00:00:00","2020-04-01T00:00:00","2020-07-01T00:00:00","2020-10-01T00:00:00","2021-01-01T00:00:00","2026-01-01T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA6D8="},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Greece\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Greece","line":{"color":"#FF6692","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Greece","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-04-01T00:00:00","2016-07-01T00:00:00","2016-10-01T00:00:00","2017-01-01T00:00:00","2017-04-01T00:00:00","2017-07-01T00:00:00","2017-10-01T00:00:00","2018-01-01T00:00:00","2018-04-01T00:00:00","2018-07-01T00:00:00","2018-10-01T00:00:00","2019-01-01T00:00:00","2019-04-01T00:00:00","2019-07-01T00:00:00","2019-10-01T00:00:00","2020-01-01T00:00:00","2020-04-01T00:00:00","2020-07-01T00:00:00","2020-10-01T00:00:00","2021-01-01T00:00:00","2025-10-01T00:00:00","2026-10-01T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0D8AAAAAAADgPw=="},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Hungary\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Hungary","line":{"color":"#B6E880","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Hungary","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-04-01T00:00:00","2016-07-01T00:00:00","2016-10-01T00:00:00","2017-01-01T00:00:00","2017-04-01T00:00:00","2017-07-01T00:00:00","2017-10-01T00:00:00","2018-01-01T00:00:00","2018-04-01T00:00:00","2018-07-01T00:00:00","2018-10-01T00:00:00","2019-01-01T00:00:00","2019-04-01T00:00:00","2019-07-01T00:00:00","2019-10-01T00:00:00","2020-01-01T00:00:00","2020-04-01T00:00:00","2020-07-01T00:00:00","2020-10-01T00:00:00","2021-01-01T00:00:00","2024-07-01T00:00:00","2025-07-01T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4D8AAAAAAADwPw=="},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Cyprus\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Cyprus","line":{"color":"#FF97FF","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Cyprus","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-04-01T00:00:00","2016-07-01T00:00:00","2016-10-01T00:00:00","2017-01-01T00:00:00","2017-04-01T00:00:00","2017-07-01T00:00:00","2017-10-01T00:00:00","2018-01-01T00:00:00","2018-04-01T00:00:00","2018-07-01T00:00:00","2018-10-01T00:00:00","2019-01-01T00:00:00","2019-04-01T00:00:00","2019-07-01T00:00:00","2019-10-01T00:00:00","2020-01-01T00:00:00","2020-04-01T00:00:00","2020-07-01T00:00:00","2020-10-01T00:00:00","2021-01-01T00:00:00","2021-04-01T00:00:00","2023-11-30T00:00:00","2024-06-02T00:00:00","2026-01-14T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgPwAAAAAAAPA\u002fAAAAAAAA+D8="},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Belgium\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Belgium","line":{"color":"#FECB52","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Belgium","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-04-01T00:00:00","2016-07-01T00:00:00","2016-10-01T00:00:00","2017-01-01T00:00:00","2017-07-01T00:00:00","2017-10-01T00:00:00","2018-01-01T00:00:00","2018-04-01T00:00:00","2018-07-01T00:00:00","2019-01-01T00:00:00","2020-04-01T00:00:00","2020-04-01T00:00:00","2020-07-01T00:00:00","2020-07-01T00:00:00","2020-07-01T00:00:00","2020-07-01T00:00:00","2020-10-01T00:00:00","2021-01-01T00:00:00","2024-04-01T00:00:00","2024-10-01T00:00:00","2026-07-01T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgPwAAAAAAAOA\u002fAAAAAAAAAAAAAAAAAADgPwAAAAAAAAAAAAAAAAAAAAAAAAAAAADgPwAAAAAAAPA\u002fAAAAAAAA9D8="},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Bulgaria\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Bulgaria","line":{"color":"#636efa","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Bulgaria","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-04-01T00:00:00","2016-07-01T00:00:00","2016-10-01T00:00:00","2017-01-01T00:00:00","2017-04-01T00:00:00","2017-07-01T00:00:00","2017-10-01T00:00:00","2018-01-01T00:00:00","2018-04-01T00:00:00","2018-07-01T00:00:00","2019-10-01T00:00:00","2020-01-01T00:00:00","2020-04-01T00:00:00","2020-04-01T00:00:00","2020-07-01T00:00:00","2020-07-01T00:00:00","2020-10-01T00:00:00","2020-10-01T00:00:00","2021-01-01T00:00:00","2021-01-01T00:00:00","2022-10-01T00:00:00","2023-01-01T00:00:00","2023-10-01T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOA\u002fAAAAAAAA4D8AAAAAAADgPwAAAAAAAPA\u002fAAAAAAAA8D8AAAAAAADgPwAAAAAAAOA\u002fAAAAAAAA8D8AAAAAAAD4PwAAAAAAAOA\u002fAAAAAAAA8D8AAAAAAAD4PwAAAAAAAABA"},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Spain\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Spain","line":{"color":"#EF553B","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Spain","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-04-01T00:00:00","2016-07-01T00:00:00","2016-10-01T00:00:00","2017-01-01T00:00:00","2017-04-01T00:00:00","2017-07-01T00:00:00","2017-10-01T00:00:00","2018-01-01T00:00:00","2018-04-01T00:00:00","2018-07-01T00:00:00","2018-10-01T00:00:00","2019-01-01T00:00:00","2019-04-01T00:00:00","2019-07-01T00:00:00","2019-10-01T00:00:00","2020-01-01T00:00:00","2020-04-01T00:00:00","2020-07-01T00:00:00","2020-10-01T00:00:00","2021-01-01T00:00:00","2025-10-01T00:00:00","2026-10-01T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4D8AAAAAAADwPw=="},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Croatia\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Croatia","line":{"color":"#00cc96","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Croatia","orientation":"v","showlegend":true,"x":["2016-01-01T00:00:00","2016-04-01T00:00:00","2016-07-01T00:00:00","2016-10-01T00:00:00","2017-01-01T00:00:00","2017-04-01T00:00:00","2017-07-01T00:00:00","2017-07-01T00:00:00","2018-01-01T00:00:00","2018-04-01T00:00:00","2018-07-01T00:00:00","2018-10-01T00:00:00","2019-01-01T00:00:00","2019-04-01T00:00:00","2019-07-01T00:00:00","2019-10-01T00:00:00","2020-01-01T00:00:00","2020-04-01T00:00:00","2020-07-01T00:00:00","2020-07-01T00:00:00","2020-10-01T00:00:00","2021-01-01T00:00:00","2021-01-01T00:00:00","2021-04-01T00:00:00","2021-10-01T00:00:00","2022-01-01T00:00:00","2023-03-31T00:00:00","2023-12-31T00:00:00","2024-06-30T00:00:00","2027-01-01T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOA\u002fAAAAAAAA8D8AAAAAAAD4PwAAAAAAAABA"},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Latvia\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Latvia","line":{"color":"#ab63fa","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Latvia","orientation":"v","showlegend":true,"x":["2016-02-01T00:00:00","2016-05-01T00:00:00","2016-08-01T00:00:00","2016-11-01T00:00:00","2017-02-01T00:00:00","2017-05-01T00:00:00","2017-08-01T00:00:00","2017-11-01T00:00:00","2017-11-01T00:00:00","2018-02-01T00:00:00","2018-05-01T00:00:00","2018-08-01T00:00:00","2019-02-01T00:00:00","2019-05-01T00:00:00","2019-08-01T00:00:00","2019-11-01T00:00:00","2020-02-01T00:00:00","2020-05-01T00:00:00","2020-08-01T00:00:00","2020-11-01T00:00:00","2021-02-01T00:00:00","2021-05-01T00:00:00","2021-08-01T00:00:00","2021-11-01T00:00:00","2022-02-01T00:00:00","2024-12-18T00:00:00","2025-06-18T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgPwAAAAAAAPA\u002f"},"yaxis":"y","type":"scatter"},{"hovertemplate":"country=Iceland\u003cbr\u003edate=%{x}\u003cbr\u003erate=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"Iceland","line":{"color":"#FFA15A","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"Iceland","orientation":"v","showlegend":true,"x":["2017-03-01T00:00:00","2017-05-18T00:00:00","2017-07-05T00:00:00","2017-11-01T00:00:00","2017-12-16T00:00:00","2018-04-06T00:00:00","2018-06-28T00:00:00","2018-10-17T00:00:00","2019-01-05T00:00:00","2019-05-15T00:00:00","2019-06-29T00:00:00","2019-10-09T00:00:00","2020-02-01T00:00:00","2020-02-01T00:00:00","2020-03-18T00:00:00","2020-04-01T00:00:00","2020-06-28T00:00:00","2020-10-01T00:00:00","2021-07-01T00:00:00","2021-09-23T00:00:00","2021-12-16T00:00:00","2022-09-29T00:00:00","2024-03-15T00:00:00"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA\u002fAAAAAAAA9D8AAAAAAAD0PwAAAAAAAPQ\u002fAAAAAAAA9D8AAAAAAAD0PwAAAAAAAPQ\u002fAAAAAAAA\u002fD8AAAAAAAD8PwAAAAAAAPw\u002fAAAAAAAAAEAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAEQA=="},"yaxis":"y","type":"scatter"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scattermap":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermap"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"geo":{"bgcolor":"white","lakecolor":"white","landcolor":"white","showlakes":true,"showland":true,"subunitcolor":"#C8D4E3"},"hoverlabel":{"align":"left"},"hovermode":"closest","mapbox":{"style":"light"},"paper_bgcolor":"white","plot_bgcolor":"white","polar":{"angularaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""},"bgcolor":"white","radialaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"yaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"zaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"ternary":{"aaxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"baxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"bgcolor":"white","caxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""}},"title":{"x":0.05},"xaxis":{"automargin":true,"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":"","title":{"standoff":15},"zerolinecolor":"#EBF0F8","zerolinewidth":2},"yaxis":{"automargin":true,"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":"","title":{"standoff":15},"zerolinecolor":"#EBF0F8","zerolinewidth":2}}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"title":{"text":""}},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"Rate (%)"}},"legend":{"title":{"text":"country"},"tracegroupgap":0,"orientation":"h","y":-0.2,"x":0.5,"xanchor":"center"},"title":{"text":"Historical CCyB Rates"},"margin":{"b":100}},                        {"responsive": true}                    )                };            </script>        </div></div>
-            <div class="ai-box" style="margin-top:20px">Over the past year, a notable shift in countercyclical capital buffer (CCyB) objectives has emerged, with authorities increasingly prioritizing proactive resilience building rather than solely reacting to identified imbalances. This shift is evident in countries like Germany, Denmark, Norway, Sweden, Slovakia, Bulgaria, Lithuania, Romania, Estonia, France, Iceland, Ireland, Czech Republic, Slovenia, Latvia, Hungary, Portugal, Croatia, and Poland, which have either increased their CCyB rates or adopted new frameworks for their application. Authorities cite a range of risks, including the persistent build-up of cyclical systemic risk, dynamic credit allocation particularly in real estate, underestimated credit risk, overvalued loan collateral, interest rate risk, and the lingering uncertainty from geopolitical events like the war in Ukraine. Some nations, such as Belgium and Poland, are also simplifying their macroprudential frameworks by consolidating buffers or adopting "positive neutral" CCyB rates to enhance preparedness for unforeseen shocks and model risk.</div>
+            <div class="ai-box" style="margin-top:20px">Over the past 12 months, a notable shift in Countercyclical Capital Buffer (CCyB) policy has occurred, moving from a predominantly cautious stance to a more proactive approach in several European countries. While many nations maintained zero or low CCyB rates throughout much of the pandemic, recent decisions reveal an increasing trend of increases, particularly in the latter half of 2022 and into 2023 and 2024. Authorities cite a confluence of factors for these adjustments, including robust credit growth, particularly in mortgages and corporate lending, and concerns about rising real estate prices, as seen in Germany, Denmark, Norway, and Slovakia. Furthermore, the lingering uncertainty from geopolitical events like the war in Ukraine and persistent inflation are cited as risks that necessitate stronger capital buffers, as highlighted by Denmark and Norway. Some countries, like Belgium and Portugal, are also revising their frameworks to implement "positive neutral" CCyB rates, aiming to build resilience proactively even in the absence of overt overheating, reflecting a broader objective of enhancing financial stability against unforeseen shocks.</div>
         </div>
 
         <div class="card">
@@ -410,7 +420,7 @@
                         <iframe class="plot-frame" src="reports/plots/cross_section_bar.html" loading="lazy"></iframe>
                     
                 </div>
-                <div class="ai-box"><h4 style="margin-top:0">Detailed Analysis</h4>In the last 12 months, several European countries have increased their Countercyclical Capital Buffer (CCyB) rates to mitigate rising cyclical systemic risks, particularly those stemming from robust credit growth and elevated real estate prices. Germany, for instance, raised its CCyB to 0.75% to address dynamic credit allocation in residential real estate and potential underestimation of credit risk. Denmark and Norway have both increased their CCyB to 2.5%, citing building risks in the financial sector and a desire to bolster banks' resilience against potential economic downturns, while Sweden and Slovakia have moved to 2% and 1.5% respectively, aiming to secure larger buffers and enhance resilience to future shocks. Conversely, countries like Austria, Italy, and Malta have maintained their CCyB at 0%, citing weak financial cycles and negative credit-to-GDP gaps, indicating no immediate need to activate the buffer. Luxembourg, however, has increased its CCyB to 0.5% due to a widening credit-to-GDP gap driven by sustained credit to the non-financial sector and households, and a downward revision of GDP due to the pandemic.</div>
+                <div class="ai-box"><h4 style="margin-top:0">Detailed Analysis</h4>In the last 12 months, several European countries have increased their Countercyclical Capital Buffer (CCyB) rates to mitigate rising cyclical systemic risks, particularly those stemming from robust credit growth and elevated real estate prices. Germany, Denmark, Norway, Sweden, Slovakia, Bulgaria, Lithuania, Romania, Estonia, France, Iceland, Ireland, Czech Republic, Slovenia, Latvia, Hungary, Belgium, Poland, Croatia, and Greece have all either increased their CCyB rates or set new positive rates, aiming to bolster banking sector resilience against potential shocks and overheating. For instance, Germany and Denmark have raised their buffers to 0.75% and 2.5% respectively, targeting dynamic credit allocation and potential overvaluation in real estate. Similarly, Norway and Sweden have increased their rates to 2.5% and 2%, respectively, citing concerns over household and corporate indebtedness and property price inflation. Countries like Slovakia and Bulgaria are implementing increases to combat rapid loan growth and persistent high credit growth rates, respectively, while Estonia and Ireland are raising their buffers due to increased vulnerabilities from fast credit expansion and a desire to build resilience against future shocks. France has increased its CCyB to 1% to address robust credit dynamics and significant debt levels, and Iceland and Ireland are raising their buffers to 2.5% and 1.5% respectively, to enhance resilience against accumulated risks and external developments. The Czech Republic has adjusted its rate to 1.25% to address cyclical risks and potential credit losses, while Slovenia and Latvia are introducing positive neutral CCyB rates of 1% to build capital buffers proactively. Hungary and Greece are also implementing positive neutral CCyB rates of 1% and 0.5% respectively, to strengthen resilience and address emerging risks. Belgium has increased its CCyB to 1.25% to cover broad cyclical risks and potential spillovers from real estate developments, and Poland is planning a gradual increase to 2% to build capital buffers against unforeseen shocks. Croatia has raised its CCyB to 2% to address expanding financial cycles and robust credit activity, and Spain has set its CCyB to 1% to address credit dynamics and debt levels. Cyprus has increased its CCyB to 1.5% due to increased cyclical risks from credit expansion and high real estate prices, and Portugal has set its CCyB to 0.75% for a neutral risk environment. These actions collectively reflect a coordinated effort to preemptively address building financial imbalances and ensure the stability of the banking sector in the face of evolving economic conditions.</div>
             </div>
         </div>
 
@@ -422,7 +432,7 @@
                         <iframe class="plot-frame" src="reports/plots/risk_plot.html" loading="lazy"></iframe>
                     
                  </div>
-                 <div class="ai-box">Over the last 12 months, a divergence in policy responses to credit growth risks is evident across countries, with some increasing their countercyclical capital buffer (CCyB) rates to bolster resilience against emerging financial cycle imbalances, while others maintain zero rates due to subdued credit growth or exceptional circumstances. Germany, Denmark, Norway, Slovakia, Bulgaria, Lithuania, Estonia, France, Iceland, Ireland, Belgium, Croatia, and Poland have all increased their CCyB rates, signaling concerns about rising credit growth, real estate price inflation, or general financial cycle expansion, aiming to build capital buffers for future shocks. Conversely, countries like Austria, Italy, Malta, Finland, and Luxembourg have maintained zero or low CCyB rates, citing weak credit cycles, economic uncertainty due to the pandemic, or negative credit-to-GDP gaps, indicating a focus on supporting credit flow amidst prevailing economic conditions. The policy objectives range from preemptively strengthening banks against potential downturns (e.g., Ireland, Belgium) to managing specific sectoral risks (e.g., Croatia's housing loans) or adapting to evolving financial cycle dynamics (e.g., Poland's neutral rate approach).</div>
+                 <div class="ai-box">Over the past 12 months, a divergence in macroprudential policy responses is evident, with some countries like Germany, Denmark, Norway, Slovakia, Bulgaria, Lithuania, Estonia, Ireland, and Croatia increasing their countercyclical capital buffer (CCyB) rates due to rising credit growth and associated risks, while others like Austria, Italy, Malta, Finland, and the Netherlands maintained or set their CCyB at zero, citing weak credit cycles or the need for caution amidst economic uncertainty. Notably, Luxembourg and France have implemented increases, signaling a proactive stance against emerging vulnerabilities, particularly in mortgage and corporate lending, as seen in Luxembourg's widening credit-to-GDP gap and France's robust credit dynamics. Conversely, countries like Sweden and Slovenia are adopting a "positive neutral" CCyB approach, aiming to build resilience preemptively even in the absence of overt overheating, reflecting a shift towards a more forward-looking risk management strategy across Europe.</div>
              </div>
         </div>
 
@@ -431,14 +441,15 @@
             
                 <iframe class="table-frame" src="reports/partials/ccyb_decisions.html" loading="lazy"></iframe>
             
-            <div class="ai-box" style="margin-top:20px">Central banks globally have been actively adjusting countercyclical capital buffer (CCyB) rates over the past year to address escalating systemic risks and bolster financial sector resilience.  Key concerns driving these decisions include rapid credit growth, particularly in mortgage markets, and the acceleration of housing price bubbles, as seen in Croatia, Greece, and Belgium.  Authorities in Poland and Cyprus have also cited broader cyclical systemic risks and the need to strengthen banking sector capital against potential external shocks.  While some countries like Spain have implemented CCyB adjustments without explicitly detailing targeted risks, the overarching policy objective remains to build buffers during periods of economic expansion to mitigate potential downturns and ensure financial stability.</div>
+            <div class="ai-box" style="margin-top:20px">Central banks globally have been actively adjusting their countercyclical capital buffer (CCyB) rates over the past year to address escalating systemic risks and bolster financial sector resilience.  A primary concern driving these decisions has been the acceleration of financial cycles, evidenced by robust credit growth and rising real estate prices, as seen in Croatia, Belgium, and Greece.  Authorities in Poland and Cyprus have specifically cited concerns about the banking sector's capital adequacy in the face of cyclical risks and potential external shocks.  While some countries like Spain have implemented CCyB adjustments without explicitly detailing targeted risks, the overarching policy objective remains to build buffers against potential downturns and safeguard against systemic vulnerabilities stemming from rapid credit expansion and asset price inflation.</div>
         </div>
 
             <h2 id="syrb-section">Systemic Risk Buffer (SyRB)</h2>
 
         <div class="card">
             <div class="card-title">Section Summary</div>
-            <div class="ai-box"><ul><ul>    <li>Over the last 12 months, there has been a notable shift towards implementing more targeted Systemic Risk Buffer (SyRB) measures, with the number of active sectoral SyRB measures increasing from approximately 4 to 8. This reflects a strategic objective to address specific sector vulnerabilities and emerging risks, particularly within real estate, rather than relying solely on broad economic stability interventions. Countries like Germany and Lithuania have introduced sectoral buffers for residential and commercial real estate to mitigate cyclical risks and stabilize credit demand, while Denmark's substantial real estate sector buffer highlights concerns regarding lending growth and macroeconomic conditions.</li>    <li>The primary risks being addressed by SyRB measures in the past year are concentrated in the real estate sector and broader credit cycle vulnerabilities. While some countries, such as Belgium and France, have de-activated buffers indicating a perceived reduction in specific risks, others like Finland, Italy, and Slovenia have maintained or implemented buffers to counter systemic credit risk, with attention to cross-border exposures. The Czech Republic's introduction of a buffer signals a broader objective to manage systemic risks stemming from economic openness, energy transition, and cyber threats, underscoring a proactive approach to a more diverse risk landscape.</li></ul></ul></div>
+            <div class="ai-box"><ul><li>Over the last 12 months, there has been a significant increase in the number of active general Systemic Risk Buffer (SyRB) measures, rising from approximately 5 to over 11. This trend indicates a heightened objective of broad economic stabilization and stimulus, while the stable number of sectoral measures (around 7) suggests a continued, targeted approach to specific industry challenges. The primary risk addressed by the increase in general measures is potential overstimulation and inflation, whereas sectoral measures aim to mitigate market distortions and competitive imbalances.</li>
+<li>The primary focus of SyRB measures over the past year has been to address systemic risks originating from the real estate sector and broader credit market vulnerabilities. Countries have implemented or adjusted buffers to counter elevated credit growth in residential real estate (e.g., Belgium, Slovenia, Portugal, Denmark), stabilize commercial real estate markets (e.g., Austria), and mitigate general credit and cross-border exposures (e.g., Finland, Italy). Some jurisdictions, such as the Czech Republic, have also introduced measures to address risks related to economic openness, foreign trade concentration, energy transformation, and cyber threats, reflecting a comprehensive macroprudential strategy.</li></ul></div>
         </div>
         
         <div class="card">
@@ -449,7 +460,7 @@
                         <iframe class="plot-frame" src="reports/plots/syrb_counts_trend.html" loading="lazy"></iframe>
                     
                 </div>
-                <div class="ai-box">Over the last 12 months, the number of active general SyRB measures has remained relatively stable, hovering around 10-11, suggesting a consistent approach to broad economic stability objectives. In contrast, sectoral SyRB measures have seen a notable upward trend, increasing from approximately 4 to 8, indicating a growing focus on addressing specific industry vulnerabilities or promoting targeted growth. This divergence implies a potential shift in risk management strategy, with a greater emphasis on nuanced interventions rather than blanket policies. The rising number of sectoral measures could signal an increased awareness of sector-specific risks, such as supply chain disruptions or emerging market challenges, and a proactive effort to mitigate them. However, this also introduces the risk of policy fragmentation and the potential for unintended consequences if not carefully calibrated.</div>
+                <div class="ai-box">Over the last 12 months, the number of active general SyRB measures has seen a notable increase, suggesting a broader objective of economic stabilization or stimulus. This rise, from around 5 to over 11 measures, indicates a proactive stance in addressing potential economic headwinds. Conversely, sectoral SyRB measures have remained relatively stable, hovering around 7, implying a more targeted approach to specific industry challenges. The primary risk associated with the increase in general measures is the potential for unintended consequences or overstimulation, which could lead to inflation or asset bubbles. For sectoral measures, the risk lies in the possibility of creating market distortions or favoring certain industries over others, potentially leading to inefficiencies and competitive imbalances. The divergence in trends suggests a strategic allocation of resources, with a focus on broad economic support while maintaining targeted interventions for specific sectors.</div>
             </div>
         </div>
         
@@ -461,7 +472,7 @@
                         <iframe class="plot-frame" src="reports/plots/syrb_sector.html" loading="lazy"></iframe>
                     
                 </div>
-                <div class="ai-box">Denmark exhibits the highest SyRB exposure at nearly 7%, primarily driven by Real Estate (CRE & RRE), while Norway and Portugal show significant exposure in General and Residential Real Estate respectively. Countries like Sweden, France, and Belgium have substantial "General" exposure, indicating a broad risk profile. Lithuania and Germany present notable Real Estate (CRE & RRE) concentrations, and Hungary shows a significant Commercial Real Estate (CRE) component. The remaining countries, including Italy, Austria, and Slovenia, display lower overall exposure, with a mix of "General" and Real Estate sectors, suggesting diversified but less concentrated risk pockets.</div>
+                <div class="ai-box">Denmark exhibits the highest SyRB exposure, primarily driven by Real Estate (CRE & RRE), indicating a significant concentration in this sector. Norway and Portugal follow with substantial exposures, with Norway leaning towards General and Portugal towards Residential Real Estate (RRE). Sweden, France, and Iceland show moderate exposures, with a mix of General and Other categories. Lithuania and Malta have lower but notable Real Estate (CRE & RRE) exposures, while Germany and Austria display limited exposure across General and Real Estate (CRE & RRE) sectors. The Czech Republic and Slovenia show minimal exposure, with Slovenia having a small Residential Real Estate (RRE) component.</div>
             </div>
         </div>
 
@@ -470,7 +481,7 @@
             
                 <iframe class="table-frame" src="reports/partials/syrb_active.html" loading="lazy"></iframe>
             
-            <div class="ai-box" style="margin-top:20px">Over the past 12 months, active Systemic Risk Buffer (SyRB) measures have predominantly targeted real estate exposures and broader country-wide risks, reflecting objectives to stabilize credit markets and bolster financial sector resilience. Countries like Germany and Lithuania have implemented sectoral buffers for residential and commercial real estate, aiming to curb cyclical risks and stabilize credit demand, while Portugal and Slovenia have focused on residential property collateral to mitigate risks from retail exposures. Broader systemic risk buffers have been introduced or maintained in Finland, Croatia, and Norway, addressing country-wide exposures and the resilience of domestic institutions. Emerging risks highlighted include the impact of economic openness and energy transformation in the Czech Republic, and the need for risk reduction in Sweden and Iceland. The de-activation of a sectoral buffer in France signals a perceived reduction in specific risks, while Denmark's substantial sectoral buffer for real estate companies underscores concerns about lending growth and macroeconomic conditions.</div>
+            <div class="ai-box" style="margin-top:20px">Over the past 12 months, active Systemic Risk Buffer (SyRB) measures reveal a diverse landscape of country objectives and identified risks, with a notable focus on real estate exposures and general systemic importance. Countries like Finland and Croatia have implemented or reset general SyRBs to address country-wide exposures and the stability of their domestic institutions, while Austria and Italy have targeted commercial real estate and domestic credit/counterparty risks respectively. The Czech Republic's general SyRB reflects concerns over economic openness, foreign trade concentration, energy transformation, and cyber risks, underscoring a broader macroprudential strategy. Conversely, France's deactivation of a sectoral SyRB signals a perceived reduction in risk, and Germany has adjusted its residential real estate SyRB to stabilize the market and mitigate cyclical risks. Portugal and Denmark have maintained high sectoral SyRBs on residential real estate, highlighting significant lending concentration and macroeconomic vulnerabilities within their property markets.</div>
         </div>
         
         <div class="card">
@@ -478,7 +489,28 @@
             
                 <iframe class="table-frame" src="reports/partials/syrb_decisions.html" loading="lazy"></iframe>
             
-            <div class="ai-box" style="margin-top:20px">Over the past 12 months, Systemic Risk Buffer (SyRB) decisions have primarily focused on mitigating risks within the real estate sector and addressing broader credit and cyclical vulnerabilities. Authorities have acted to curb excessive credit growth and associated risks in residential real estate, as seen in Belgium's de-activation of its buffer. Conversely, several jurisdictions, including Finland, Italy, and Slovenia, have implemented or maintained buffers to counter systemic credit risk, with specific attention to cross-border exposures and domestic credit institutions. Austria has also employed both general and sectoral buffers to manage domestic credit risk and commercial real estate exposures, while Germany has targeted risks in both residential and commercial real estate linked to credit demand and cyclical factors. France has de-activated a sectoral buffer, indicating a reduction in specific credit risks. Finally, the Czech Republic has introduced a buffer to address a range of systemic risks, including those stemming from economic openness, foreign trade concentration, the energy transition, and cyber threats.</div>
+            <div class="ai-box" style="margin-top:20px">Over the past twelve months, SyRB decisions have primarily focused on mitigating systemic risks stemming from the real estate sector and broader credit market vulnerabilities. Authorities have acted to address elevated credit growth and associated risks in residential real estate, as seen in decisions for Belgium and Slovenia, aiming to prevent the build-up of financial imbalances. Furthermore, several jurisdictions, including Finland and Italy, have implemented or maintained buffers to counter general credit risk and cross-border exposures, recognizing the interconnectedness of financial systems. Some decisions, like those for Austria and France, have targeted specific sectoral risks, including commercial real estate and other identified vulnerabilities, with the objective of enhancing financial stability. While some countries have opted to deactivate or maintain zero rates for their buffers, reflecting a perceived reduction in immediate threats, others have introduced or adjusted rates to address ongoing concerns about credit risk, cyclical vulnerabilities, and emerging threats like cyber risk, as exemplified by the Czech Republic's decision.</div>
+        </div>
+
+        <h2 id="capital-stack-section" style="margin-top:40px;">Capital stack</h2>
+        <div class="card">
+            <div class="card-title">Capital Buffer Stack</div>
+            <div class="grid-2">
+                <div>
+                    
+                        <iframe class="plot-frame" src="reports/plots/capital_overall_buffers.html" loading="lazy"></iframe>
+                        
+                            <a class="download-link" href="reports/downloads/capital_overall_buffers.xlsx" download>Download data</a>
+                        
+                    
+                </div>
+                <div class="ai-box">Overall capital buffer requirements show significant variation across countries, with Denmark exhibiting the highest total buffer at 16%, largely driven by a substantial systemic risk buffer (SyRB) and a significant countercyclical capital buffer (CCyB). In contrast, countries like Great Britain and Luxembourg have considerably lower total buffers, reflecting potentially lower perceived systemic risks or different regulatory approaches. Many Northern and Central European countries, such as Norway, Belgium, and Iceland, maintain robust buffers, often with a notable contribution from buffers for globally or other domestically systemically important institutions (GSII/O-SII) and SyRB, suggesting a focus on mitigating risks from large, interconnected financial institutions. Conversely, Southern and Eastern European nations generally display lower overall requirements, with a more pronounced reliance on the common capital conservation buffer (CCoB) and smaller contributions from other buffers, indicating a potentially less complex or less risky financial system in the last 12 months. The presence and size of the systemic risk buffers (SyRB and sSyRB) are key differentiators, highlighting countries' specific concerns about financial stability and the potential for systemic crises.</div>
+            </div>
+            <div style="margin-top:18px;">
+                
+                    <iframe class="table-frame" src="reports/partials/capital_overall.html" loading="lazy"></iframe>
+                
+            </div>
         </div>
 
         </section>
@@ -488,8 +520,8 @@
 
         <div class="card">
             <div class="card-title">Section Summary</div>
-            <div class="ai-box"><ul><li>In the last 12 months, European countries have actively utilized borrower-based measures (BBMs) to address escalating housing credit risks and excessive household leverage. This proactive approach aims to bolster financial stability by preventing the build-up of systemic risk within mortgage markets.</li>
-<li>Key objectives include safeguarding against potential overheating in housing markets and ensuring borrowers' capacity to service debt under adverse economic scenarios. Countries like Bulgaria, Croatia, and Greece have implemented or reinforced measures such as Loan-to-Value (LTV) and Debt-Service-to-Income (DSTI) limits to mitigate risks to credit quality and affordability.</li></ul></div>
+            <div class="ai-box"><ul>Here's a high-level summary of the Borrower-Based Measures (BBM) section, focusing on the last 12 months:<li><b>Objective:</b> To enhance financial stability and mitigate housing credit risks, national authorities have intensified the implementation and reinforcement of borrower-based measures. This proactive stance aims to curb excessive household indebtedness and prevent potential overheating in real estate markets.</li>
+<li><b>Risks Addressed:</b> The primary risks being addressed include unsustainable housing leverage, declining affordability for new entrants, and potential deterioration of credit quality within the mortgage sector. These measures are designed to safeguard borrowers and the broader financial system against the adverse effects of rapid credit expansion and evolving economic conditions.</li></ul></div>
         </div>
 
         <div class="card">
@@ -503,7 +535,7 @@
                         
                     
                 </div>
-                <div class="ai-box">The adoption of borrower-based measures has seen a steady increase over the past 12 months, indicating a growing global focus on mitigating systemic financial risks. Countries are increasingly implementing these measures to address concerns related to excessive credit growth, particularly in the mortgage and corporate sectors. The primary risks being targeted include the build-up of household debt, which can lead to increased vulnerability to economic downturns and potential defaults, and the accumulation of corporate leverage, which can destabilize financial markets and hinder economic recovery. Furthermore, these measures aim to curb asset price bubbles fueled by easy credit conditions, thereby promoting financial stability and sustainable economic growth. The consistent upward trend suggests a proactive approach by policymakers to preemptively manage potential financial imbalances.</div>
+                <div class="ai-box">The adoption of borrower-based measures (BBMs) has seen a steady increase over the past 12 months, indicating a growing global focus on mitigating systemic financial risks. Countries are increasingly implementing these measures to address concerns related to excessive credit growth and potential asset bubbles, particularly in the housing market. The trend suggests a proactive approach to preventing the build-up of household and corporate debt vulnerabilities that could destabilize financial systems. This widespread adoption highlights a shared understanding among policymakers of the need for macroprudential tools to manage credit cycles and ensure financial stability. The consistent upward trajectory implies that more nations are recognizing the benefits of these measures in safeguarding their economies from the adverse effects of rapid credit expansion.</div>
             </div>
         </div>
 
@@ -513,7 +545,7 @@
             
                 <iframe class="table-frame" src="reports/partials/bbm_pivot.html" loading="lazy"></iframe>
             
-            <div class="ai-box" style="margin-top:20px">In the last 12 months, borrower-based measures have been actively employed across several European countries to mitigate housing credit risks and curb excessive leverage, reflecting a consistent objective of maintaining financial stability. For instance, Bulgaria introduced new restrictions on Loan-to-Value (LTV), Debt-Service-to-Income (DSTI), and loan maturity ratios, signaling a proactive stance against potential overheating in its housing market. Similarly, Croatia and Greece have implemented or reinforced LTV and DSTI limits, aiming to ensure borrowers can manage their debt obligations even under adverse economic conditions. These measures underscore a shared country objective to prevent the build-up of systemic risk within the mortgage sector, thereby safeguarding against future financial distress.</div>
+            <div class="ai-box" style="margin-top:20px">In the last 12 months, borrower-based measures across several European countries have primarily focused on mitigating housing credit risks by tightening lending standards, reflecting a collective objective to ensure financial stability and prevent excessive household indebtedness. For instance, Bulgaria introduced new restrictions on Loan-to-Value (LTV), Debt-Service-to-Income (DSTI), and loan maturity ratios, aiming to curb rapid credit growth and potential overheating in the real estate market. Similarly, Croatia and Greece have implemented or reinforced caps on LTV and DSTI, with specific provisions for first-time buyers, underscoring a country-level goal to protect vulnerable borrowers and the broader financial system from the fallout of unsustainable lending practices. These measures, while varying in their specific parameters, collectively signal a proactive approach by national authorities to manage the inherent risks within housing credit markets, particularly in the face of evolving economic conditions.</div>
         </div>
 
         <div class="card">
@@ -522,7 +554,7 @@
             
                 <iframe class="table-frame" src="reports/partials/ltv_table.html" loading="lazy"></iframe>
             
-            <div class="ai-box" style="margin-top:20px">In the last 12 months, several European countries have implemented or maintained Loan-to-Value (LTV) limits and first-time buyer (FTB) exemptions to manage housing market risks and promote homeownership. The primary objective of these measures is to prevent excessive household debt and ensure financial stability by curbing speculative borrowing, while FTB exemptions aim to facilitate market entry for new homeowners. However, these policies carry risks, including potentially limiting access to credit for some buyers and the possibility of unintended consequences on housing affordability or market liquidity. For instance, Croatia and the Czech Republic have specific LTV limits with exemptions for primary residence purchases, while Finland has a general LTV limit with a higher allowance for first-time buyers. Belgium also has differentiated LTV limits for owner-occupied versus buy-to-let properties, with tolerances for certain buyer categories.</div>
+            <div class="ai-box" style="margin-top:20px">In the last 12 months, LTV limits across various European countries have aimed to balance financial stability with housing market accessibility, particularly for first-time buyers. The primary objective is to mitigate systemic risk by preventing excessive leverage, thereby safeguarding lenders and the broader economy from potential housing market downturns. While many nations have implemented LTV caps, the data indicates a general absence of explicit first-time buyer (FTB) exemptions or discounts, suggesting a uniform approach to risk management. However, some countries, like Finland, have demonstrated flexibility by adjusting LTV caps, potentially to address market conditions or support specific borrower segments. The inherent risk lies in potentially stifling demand or creating affordability challenges for new entrants to the property market, necessitating careful monitoring and potential policy adjustments.</div>
         </div>
 
             <div class="card">
@@ -530,7 +562,100 @@
             
                 <iframe class="table-frame" src="reports/partials/bbm_decisions.html" loading="lazy"></iframe>
             
-            <div class="ai-box" style="margin-top:20px">Over the past 12 months, borrower-based measures have been widely implemented across several European countries, primarily aiming to curb excessive household indebtedness and mitigate financial stability risks. Authorities in Hungary, Croatia, and Austria have focused on limiting loan-to-value (LTV) ratios and debt-service-to-income (DSTI) levels, with objectives including preventing the build-up of household debt and ensuring borrowers can service their loans under adverse conditions. Norway's stress testing initiatives also underscore a commitment to assessing borrowers' resilience to interest rate shocks and income fluctuations. These measures are intended to safeguard against potential downturns in the real estate market and protect consumers from over-borrowing, thereby enhancing the overall stability of the financial system.</div>
+            <div class="ai-box" style="margin-top:20px">Over the past 12 months, borrower-based measures have been implemented or maintained across several European countries, primarily aiming to curb excessive household indebtedness and mitigate financial stability risks. Authorities in Hungary, Croatia, and Austria have focused on limiting loan-to-value (LTV) ratios and debt-service-to-income (DSTI) levels, with specific considerations for first-time buyers and primary residences, to prevent over-borrowing and potential future defaults. Similarly, Greece has maintained LTV caps to manage risks associated with mortgage lending. Norway's approach has included stress testing to assess borrowers' resilience to adverse economic conditions, such as rising interest rates and stagnant income growth. The overarching objective is to ensure borrowers can service their debts under various economic scenarios, thereby safeguarding the stability of the financial system from the risks of household over-leverage.</div>
+            </div>
+        </section>
+
+        <section id="tab-about" class="tab-content">
+            <h1 id="about-section" class="section-title">About</h1>
+            
+            <div class="card">
+                <div class="card-title">Macro Policy Hub</div>
+                <div class="about-intro">
+                    <p class="about-description">An automated, AI-driven dashboard for tracking Macroprudential Policy (CCyB, SyRB, BBM) across the European Economic Area.</p>
+                    <div class="about-value-box">
+                        <strong>Business Value:</strong> Reduces quarterly macroprudential reporting time from days to minutes by automating data retrieval, cleaning, and initial analysis.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Technology & Architecture</div>
+                <div class="about-grid">
+                    <div class="about-col">
+                        <h3 class="about-subtitle">Technology Stack</h3>
+                        <div class="tech-stack">
+                            <div class="tech-item">
+                                <span class="tech-label">Core</span>
+                                <span class="tech-value">Python, pandas</span>
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">AI/ML</span>
+                                <span class="tech-value">LangChain, LangGraph, Gemini 2.5 Flash</span>
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">Visualization</span>
+                                <span class="tech-value">Plotly</span>
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">Frontend</span>
+                                <span class="tech-value">Jinja2, HTML/CSS/JS</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="about-col">
+                        <h3 class="about-subtitle">Key Features</h3>
+                        <ul class="about-features">
+                            <li>Multi-Pillar Monitoring (CCyB, SyRB, BBM, GSII/O-SII)</li>
+                            <li>AI-Driven Intelligence with Grounded Validation</li>
+                            <li>Modern Mobile-Responsive UI</li>
+                            <li>Robust ETL Pipeline</li>
+                        </ul>
+                        <h3 class="about-subtitle" style="margin-top: 20px;">Data Sources</h3>
+                        <p class="about-data-sources">ESRB publications: CCyB dataset, Measures Overview (SyRB/BBM), Capital-Based Measures (GSII/O-SII).</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">System Architecture</div>
+                <p class="about-arch-desc">Three-stage pipeline: <strong>Data Ingestion & ETL</strong> processes ESRB Excel files into Parquet storage; <strong>AI Analysis & Grounding</strong> uses <strong>LangGraph</strong> to orchestrate validation (extract claims → verify against data/charts → optional Google Search → refine with Gemini 2.5 Flash); <strong>Dashboard Layer</strong> renders HTML with embedded Plotly charts.</p>
+                <div class="mermaid-container">
+                    <div class="mermaid">
+graph TD
+    subgraph Data_Ingestion ["Data Ingestion and ETL"]
+        A[("ESRB Data Source<br/>Excel Files")] -->|Download| B[Python ETL Pipeline]
+        B -->|Clean Normalize| C[("Parquet Storage<br/>Optimized Data")]
+    end
+
+    subgraph AI_Core ["AI Analysis and Grounding"]
+        C -->|Retrieve Context| D{LangGraph<br/>Validator}
+        H -->|Chart Images| D
+        J[Google Search Optional] -->|External Evidence| D
+        D -->|Raw Data Images| E[Google Gemini 2.5<br/>Flash Lite]
+        E -->|Draft Analysis| D
+        D -->|Verified Output| F[Final Analysis]
+    end
+
+    subgraph Presentation ["Dashboard Layer"]
+        F --> G[Jinja2 Template Engine]
+        C -->|Visual Data| H[Plotly Charts]
+        G --> I[("HTML Dashboard<br/>index.html embedded plots")]
+        H --> I
+    end
+
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style C fill:#f9f,stroke:#333,stroke-width:2px
+    style E fill:#bbf,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style D fill:#fef3c7,stroke:#333,stroke-width:2px
+    style I fill:#bfb,stroke:#333,stroke-width:2px
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">License</div>
+                <p class="about-license">This project is open-source, licensed under the <strong>Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)</strong>.</p>
             </div>
         </section>
 

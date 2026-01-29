@@ -9,23 +9,47 @@ from config import FILES
 logger = logging.getLogger(__name__)
 
 class ETLPipeline:
-    def __init__(self, data_dir: Path, ccyb_url: str, syrb_url: str):
+    def __init__(self, data_dir: Path, ccyb_url: str, syrb_url: str, capital_measures_url: str = None):
         self.data_dir = data_dir
         self.ccyb_url = ccyb_url
         self.syrb_url = syrb_url
+        self.capital_measures_url = capital_measures_url
         self.ccyb_file = FILES["ccyb_source"]
         self.syrb_file = FILES["syrb_source"]
+        self.capital_measures_file = FILES.get("capital_measures_source", None)
         self.measures_overview_file = FILES.get("measures_overview_source", self.syrb_file)
 
     def _extract_rate_from_text(self, text):
         if pd.isna(text): return 0.0
         text = str(text).replace(',', '.')
+        # Először próbáljuk meg a specifikus mintákat (SRB of X%, buffer of X%, rate of X%)
+        specific_patterns = [
+            r'(?:SRB|SyRB|systemic\s+risk\s+buffer|buffer)\s+(?:of|is|at|:)\s*(\d+(?:\.\d+)?)\s*%',
+            r'rate\s*(?:of|is|at|:)\s*(\d+(?:\.\d+)?)\s*%',
+            r'(\d+(?:\.\d+)?)\s*%\s*(?:SRB|SyRB|systemic\s+risk\s+buffer|buffer)',
+        ]
+        for pattern in specific_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            if matches:
+                rates = [float(r) for r in matches if 0 <= float(r) <= 20.0]  # Ráta általában 0-20% között van
+                if rates:
+                    return max(rates)  # Ha több specifikus minta van, a legnagyobbat választjuk
+        
+        # Fallback: általános százalék keresés, de csak az elsőt vagy a legkisebbet (hogy elkerüljük a GDP%-ot stb.)
         matches = re.findall(r'(\d+(?:\.\d+)?)\s*%', text)
-        if not matches:
-            matches = re.findall(r'rate\s*(?:of|is)\s*(\d+(?:\.\d+)?)', text, re.IGNORECASE)
         if matches:
-            rates = [float(r) for r in matches if float(r) <= 100.0]
-            return max(rates) if rates else 0.0
+            rates = [float(r) for r in matches if 0 <= float(r) <= 20.0]
+            if rates:
+                # Ha több érték van, válasszuk a legkisebbet (hogy elkerüljük a GDP%-ot, stb.)
+                # De ha csak egy van, azt használjuk
+                return min(rates) if len(rates) > 1 else rates[0]
+        
+        # Utolsó fallback: "rate of X" (százalékjel nélkül)
+        matches = re.findall(r'rate\s*(?:of|is)\s*(\d+(?:\.\d+)?)', text, re.IGNORECASE)
+        if matches:
+            rates = [float(r) for r in matches if 0 <= float(r) <= 20.0]
+            if rates:
+                return max(rates) if rates else 0.0
         return 0.0
 
     def _process_syrb(self):
@@ -75,7 +99,27 @@ class ETLPipeline:
             df['rate_numeric'] = df['description'].apply(self._extract_rate_from_text)
             if 'rate_col' in df.columns:
                 numeric_col_rates = pd.to_numeric(df['rate_col'], errors='coerce')
-                df['rate_numeric'] = numeric_col_rates.fillna(df['rate_numeric'])
+                # Ha a rate_col értékei < 1 és > 0, akkor valószínűleg tizedes tört (0.5 = 0.5%)
+                # Ha > 1, akkor valószínűleg már százalékban van (50 = 50%)
+                # De ha a description-ben is van érték, összevetjük
+                rate_col_filled = numeric_col_rates.fillna(df['rate_numeric'])
+                # Validáció: ha > 3%, ellenőrizzük
+                high_rates = rate_col_filled > 3.0
+                if high_rates.any():
+                    for idx in df[high_rates].index:
+                        country = df.at[idx, 'country']
+                        rate_val = rate_col_filled.at[idx]
+                        desc_val = df.at[idx, 'rate_numeric']
+                        raw_rate_col = df.at[idx, 'rate_col'] if 'rate_col' in df.columns else None
+                        logger.warning(f"High SyRB rate detected for {country}: rate_col={raw_rate_col}, parsed={rate_val}, description_extracted={desc_val}")
+                        # Ha a rate_col értéke > 10 és a description-ben < 10, akkor valószínűleg százalék vs. tizedes hiba
+                        if rate_val > 10 and desc_val < 10 and desc_val > 0:
+                            logger.warning(f"  -> Possible format error: rate_col seems to be in percentage (divide by 100?), using description value {desc_val}%")
+                            rate_col_filled.at[idx] = desc_val
+                        elif rate_val > 10:
+                            logger.warning(f"  -> Rate > 10% seems unusually high, capping at 10%")
+                            rate_col_filled.at[idx] = min(rate_val, 10.0)
+                df['rate_numeric'] = rate_col_filled
 
             # Kategorizálás
             def tag_exp(row):
@@ -209,19 +253,123 @@ class ETLPipeline:
 
     def _process_osii(self):
         """
-        Best-effort extraction of O-SII buffer rates from the ESRB measures overview workbook.
+        Extract GSII/O-SII buffer rates from the ESRB capital-based measures workbook.
+        The "Overview of measures" sheet has a hierarchical structure:
+        - Row 4: Header row
+        - Column 0: Country name
+        - Column 6: G-SII/O-SII buffer (text format like "7 banks: 0.5%-2%")
         """
-        if not self.measures_overview_file or not Path(self.measures_overview_file).exists():
-            return pd.DataFrame()
+        # Először próbáljuk az új capital-based measures fájlt
+        if self.capital_measures_file and Path(self.capital_measures_file).exists():
+            try:
+                xl = pd.ExcelFile(self.capital_measures_file)
+                # Az "Overview of measures" sheet tartalmazza az adatokat
+                if "Overview of measures" in xl.sheet_names:
+                    return self._parse_capital_overview_sheet(xl, "Overview of measures")
+            except Exception as e:
+                logger.warning(f"Failed to read capital-based measures file for GSII/O-SII: {e}")
+        
+        # Fallback: próbáljuk a régi measures_overview fájlt
+        if self.measures_overview_file and Path(self.measures_overview_file).exists():
+            try:
+                xl = pd.ExcelFile(self.measures_overview_file)
+                sheet = next((s for s in xl.sheet_names if "O-SII" in s.upper() or "OSII" in s.upper()), None)
+                if sheet:
+                    return self._parse_osii_sheet(xl, sheet)
+            except Exception as e:
+                logger.warning(f"Failed to read measures overview file for O-SII: {e}")
+        
+        return pd.DataFrame()
+    
+    def _parse_capital_overview_sheet(self, xl, sheet_name):
+        """Parse the Overview of measures sheet to extract GSII/O-SII rates."""
         try:
-            xl = pd.ExcelFile(self.measures_overview_file)
-            sheet = next((s for s in xl.sheet_names if "O-SII" in s.upper() or "OSII" in s.upper()), None)
-            if not sheet:
+            df_raw = xl.parse(sheet_name, header=None)
+            
+            # Header row is row 4 (index 4)
+            header_row = 4
+            if len(df_raw) <= header_row:
                 return pd.DataFrame()
-
-            df_raw = xl.parse(sheet, header=None, nrows=30)
+            
+            # Column mapping:
+            # Col 0: Country
+            # Col 6: G-SII/O-SII buffer (text format)
+            results = []
+            
+            for idx in range(header_row + 1, len(df_raw)):
+                row = df_raw.iloc[idx]
+                country = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ""
+                
+                # Skip empty rows and sub-rows (bank names)
+                if not country or country == "nan" or len(country) < 2:
+                    continue
+                
+                # Skip authority rows (they usually have "Bank" or "Authority" in name and NaN in buffer columns)
+                if any(term in country.lower() for term in ["bank", "authority", "central", "national", "supervisory"]):
+                    continue
+                
+                # Extract G-SII/O-SII buffer from column 6
+                buffer_text = str(row.iloc[6]) if len(row) > 6 and pd.notna(row.iloc[6]) else ""
+                
+                if not buffer_text or buffer_text == "nan":
+                    continue
+                
+                # Parse buffer text (e.g., "7 banks: 0.5%-2%" -> extract max = 2%)
+                max_rate = self._extract_max_rate_from_text(buffer_text)
+                
+                if max_rate > 0:
+                    # Convert country name to ISO2
+                    iso2 = coco.convert(names=[country], to='iso2', not_found=None)
+                    if iso2:
+                        results.append({
+                            'country': country,
+                            'iso2': iso2[0] if isinstance(iso2, list) else iso2,
+                            'rate_numeric': max_rate,
+                            'rate_text': f"{max_rate}%",
+                            'description': buffer_text,
+                            'date': pd.Timestamp.now(),  # Use current date as reference
+                            'status': 'Active'
+                        })
+            
+            if not results:
+                return pd.DataFrame()
+            
+            df = pd.DataFrame(results)
+            # Group by country and take max rate
+            df = df.groupby('iso2', as_index=False).agg({
+                'country': 'first',
+                'rate_numeric': 'max',
+                'rate_text': lambda x: f"{x.max()}%",
+                'description': 'first',
+                'date': 'first',
+                'status': 'first'
+            })
+            
+            return df.sort_values(['country', 'rate_numeric'], ascending=[True, False]).reset_index(drop=True)
+        except Exception as e:
+            logger.error(f"Error parsing capital overview sheet: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return pd.DataFrame()
+    
+    def _extract_max_rate_from_text(self, text):
+        """Extract maximum rate from text like '7 banks: 0.5%-2%' or '0.5%-2%'."""
+        if not text or pd.isna(text):
+            return 0.0
+        text = str(text).replace(',', '.')
+        # Find all percentage values
+        matches = re.findall(r'(\d+(?:\.\d+)?)\s*%', text)
+        if matches:
+            rates = [float(r) for r in matches if 0 <= float(r) <= 20.0]  # Reasonable range
+            return max(rates) if rates else 0.0
+        return 0.0
+    
+    def _parse_osii_sheet(self, xl, sheet_name):
+        """Parse GSII/O-SII sheet from Excel file."""
+        try:
+            df_raw = xl.parse(sheet_name, header=None, nrows=30)
             header_idx = find_header_row(df_raw)
-            df = xl.parse(sheet, skiprows=header_idx)
+            df = xl.parse(sheet_name, skiprows=header_idx)
             df = clean_columns(df)
 
             col_map = {}
@@ -229,16 +377,16 @@ class ETLPipeline:
                 cl = c.lower().strip()
                 if "country" in cl:
                     col_map["country"] = c
-                elif "present status" in cl:
+                elif "present status" in cl or "status" in cl:
                     col_map["status"] = c
-                elif "measure becomes active on" in cl or ("active" in cl and "date" in cl):
+                elif "measure becomes active on" in cl or ("active" in cl and "date" in cl) or "date" in cl:
                     col_map["date"] = c
-                elif ("buffer" in cl and "rate" in cl) or (cl == "rate"):
+                elif ("buffer" in cl and "rate" in cl) or (cl == "rate") or ("rate" in cl and "guide" not in cl):
                     col_map["rate_col"] = c
-                elif "rate" in cl and "guide" not in cl:
-                    col_map.setdefault("rate_col", c)
+                elif "description" in cl:
+                    col_map["description"] = c
 
-            if "country" not in col_map or "rate_col" not in col_map:
+            if "country" not in col_map:
                 return pd.DataFrame()
 
             df = df.rename(columns={v: k for k, v in col_map.items()})
@@ -246,12 +394,28 @@ class ETLPipeline:
             df = df.dropna(subset=["country"])
             df["iso2"] = coco.convert(names=df["country"].tolist(), to="iso2", not_found=None)
 
-            numeric_rates = pd.to_numeric(df["rate_col"], errors="coerce")
-            df["rate_numeric"] = numeric_rates.fillna(df["rate_col"].apply(self._extract_rate_from_text))
+            # Rate extraction: először rate_col, majd description fallback
+            if "rate_col" in df.columns:
+                numeric_rates = pd.to_numeric(df["rate_col"], errors="coerce")
+                df["rate_numeric"] = numeric_rates.fillna(0.0)
+            else:
+                df["rate_numeric"] = 0.0
+            
+            # Ha nincs rate_col vagy üres, próbáljuk a description-ből
+            if "description" in df.columns:
+                desc_rates = df["description"].apply(self._extract_rate_from_text)
+                df["rate_numeric"] = df["rate_numeric"].where(df["rate_numeric"] > 0, desc_rates)
+            
+            # Validáció: ha > 3%, logoljuk
+            high_rates = df[df["rate_numeric"] > 3.0]
+            if not high_rates.empty:
+                for _, row in high_rates.iterrows():
+                    logger.warning(f"High GSII/O-SII rate detected for {row.get('country', 'Unknown')}: {row['rate_numeric']}%")
+            
             df["rate_text"] = df["rate_numeric"].apply(lambda x: f"{x}%" if pd.notna(x) and x > 0 else "0% / Inactive")
             return df.sort_values(["country", "date"], ascending=[True, False]).reset_index(drop=True)
         except Exception as e:
-            logger.error(f"OSII Error: {e}")
+            logger.error(f"GSII/O-SII Error: {e}")
             return pd.DataFrame()
 
     def calculate_trends(self, ccyb_df, syrb_df, bbm_df=None):

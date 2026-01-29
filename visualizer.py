@@ -131,12 +131,12 @@ class Visualizer:
             df_plot = df_cap.copy()
             # plotly needs wide->stacked traces
             x = df_plot["ISO2"].astype(str).tolist()
-            components = ["CCoB", "CCyB", "O-SII", "SyRB", "sSyRB"]
+            components = ["CCoB", "CCyB", "GSII/O-SII", "SyRB", "sSyRB"]
             fig = go.Figure()
             colors = {
                 "CCoB": "#2c3e50",
                 "CCyB": "#3498db",
-                "O-SII": "#9b59b6",
+                "GSII/O-SII": "#9b59b6",
                 "SyRB": "#e67e22",
                 "sSyRB": "#e74c3c",
             }
