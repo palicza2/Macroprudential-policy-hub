@@ -91,15 +91,19 @@ graph TD
 
     subgraph Data_Enrichment ["Data Enrichment"]
         C -->|Country Data| K[Country Profile Generator]
-        K -->|Profiles| L[Knowledge Graph Builder]
-        L -->|Graph Data| M[("Country Profiles<br/>& Graph Data")]
-        M -->|Graph Context| D
+        C -->|Country Data| L[Knowledge Graph Builder]
+        K -->|Profiles| M[("Country Profiles")]
+        L -->|Graph Data| M
+        L -->|Graph Context| D
+        L -->|RAG Context| N[RAG Retriever]
+        N -->|Retrieved Context| E
     end
 
     subgraph Presentation ["Dashboard Layer"]
         F --> G[Jinja2 Template Engine]
         C -->|Visual Data| H[Plotly Charts]
-        M -->|Country & Graph Data| G
+        M -->|Country Data| G
+        L -->|Graph Data| G
         G & H --> I[("HTML Dashboard<br/>(index.html + embedded plots/partials)")]
     end
 
@@ -107,8 +111,9 @@ graph TD
     style C fill:#f9f,stroke:#333,stroke-width:2px
     style E fill:#bbf,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
     style K fill:#fef3c7,stroke:#333,stroke-width:2px
-    style L fill:#fef3c7,stroke:#333,stroke-width:2px
+    style L fill:#fef3c7,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
     style M fill:#f9f,stroke:#333,stroke-width:2px
+    style N fill:#bbf,stroke:#333,stroke-width:2px
     style I fill:#bfb,stroke:#333,stroke-width:2px
 ```
 

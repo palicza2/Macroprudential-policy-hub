@@ -14,7 +14,7 @@ from .data_aggregators import (
     get_active_measures,
     get_comparison,
 )
-from .knowledge_graph_builder import build_knowledge_graph_data
+from knowledge_graph import build_knowledge_graph_data
 
 logger = logging.getLogger(__name__)
 
@@ -74,26 +74,3 @@ class CountryProfileGenerator:
         
         return profile
     
-    def build_knowledge_graph_data(
-        self,
-        countries: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
-        """
-        Knowledge graph adatok generálása.
-        
-        Args:
-            countries: Opcionális országlista. Ha None, akkor minden ország.
-        
-        Returns:
-            {
-                'nodes': [...],
-                'edges': [...]
-            }
-        """
-        return build_knowledge_graph_data(
-            get_country_profile_func=self.get_country_profile,
-            get_iso2_func=get_iso2,
-            get_region_func=get_region,
-            countries=self.countries,
-            target_countries=countries,
-        )

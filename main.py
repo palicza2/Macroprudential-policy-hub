@@ -127,9 +127,9 @@ def main():
     today_str = datetime.now().strftime("%Y-%m-%d")
     plots_inline, plot_figs, download_data, paths = viz.generate_all_plots(data, today_str)
     
-    # 3. AI Elemzés
+    # 3. AI Elemzés (RAG retriever will be initialized after knowledge graph generation)
     logger.info("3. AI Elemzés...")
-    analyzer = LLMAnalyzer(LLM_CONFIG)
+    analyzer = LLMAnalyzer(LLM_CONFIG)  # RAG retriever will be added later
 
     ccyb_decisions = prepare_ccyb_decisions(ccyb_full, analyzer)
     active_syrb, syrb_decisions = prepare_syrb_tables(syrb_full, analyzer)
@@ -302,11 +302,30 @@ def main():
     
     logger.info(f"   -> Generated {len(countries_data)} country profiles")
     
-    # 3d. Knowledge Graph Generation
+    # 3d. Knowledge Graph Generation (Central Component)
     logger.info("3d. Knowledge Graph...")
     graph_data = None
+    rag_retriever = None
     try:
-        graph_data = profile_gen.build_knowledge_graph_data()
+        from knowledge_graph import build_knowledge_graph_data, KnowledgeGraphRAG
+        from country_profiles.region_mapper import get_iso2, get_region
+        
+        # Build knowledge graph using central component
+        graph_data = build_knowledge_graph_data(
+            get_country_profile_func=profile_gen.get_country_profile,
+            get_iso2_func=get_iso2,
+            get_region_func=get_region,
+            countries=profile_gen.countries,
+            target_countries=None,
+        )
+        
+        # Initialize RAG retriever with graph data
+        if graph_data and graph_data.get('nodes'):
+            rag_retriever = KnowledgeGraphRAG(graph_data)
+            # Update analyzer with RAG retriever
+            analyzer.rag_retriever = rag_retriever
+            logger.info(f"   -> Initialized RAG retriever with {len(rag_retriever._chunks)} chunks")
+        
         import json
         knowledge_graph_json = json.dumps(graph_data, default=str, ensure_ascii=False)
         logger.info(f"   -> Generated knowledge graph: {len(graph_data.get('nodes', []))} nodes, {len(graph_data.get('edges', []))} edges")

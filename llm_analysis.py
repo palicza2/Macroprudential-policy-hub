@@ -11,6 +11,7 @@ from config import LLM_CONFIG
 from prompts import SYSTEM_CONTEXT_LAST_12M
 from llm_tasks import build_chart_tasks, build_section_tasks, build_global_task
 from llm_runner import run_tasks, run_task
+from knowledge_graph import KnowledgeGraphRAG
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -25,8 +26,9 @@ def df_to_string(df, rows=50):
     return df.head(rows).to_markdown(index=False)
 
 class LLMAnalyzer:
-    def __init__(self, config):
+    def __init__(self, config, rag_retriever=None):
         self.config = config
+        self.rag_retriever = rag_retriever  # Optional RAG retriever for knowledge graph context
 
     def _get_llm(self, temperature):
         api_key_env = self.config.get("api_key_env", "GOOGLE_API_KEY")
@@ -274,6 +276,7 @@ INPUT:
     def analyze_knowledge_graph(self, graph_data, summary_data):
         """
         Analyze the knowledge graph and compare it with existing data tables.
+        Uses RAG retriever to provide relevant context from the knowledge graph.
         
         Args:
             graph_data: Dict with 'nodes' and 'edges' lists
@@ -322,6 +325,30 @@ Table Data Summary:
 - Active BBM countries: {summary_data.get('active_bbm', 'N/A')}
 """
         
+        # Use RAG retriever to get relevant context
+        rag_context = ""
+        if self.rag_retriever:
+            try:
+                # Retrieve context for key queries
+                queries = [
+                    "similar countries policy mix",
+                    "countries with multiple measures",
+                    "regional patterns",
+                    "measure adoption trends"
+                ]
+                all_contexts = []
+                for query in queries:
+                    contexts = self.rag_retriever.retrieve_context(query, top_k=3)
+                    for ctx in contexts:
+                        if ctx.get('text') not in [c.get('text') for c in all_contexts]:
+                            all_contexts.append(ctx)
+                
+                if all_contexts:
+                    rag_context = "\n\nRelevant Knowledge Graph Context:\n"
+                    rag_context += "\n".join([f"- {ctx.get('text')}" for ctx in all_contexts[:10]])
+            except Exception as e:
+                logger.warning(f"RAG context retrieval failed: {e}")
+        
         prompt = f"""Analyze the knowledge graph data and compare it with the table-based summary data.
 
 TASK: Provide a concise analysis (3-4 paragraphs) that:
@@ -338,6 +365,7 @@ Focus on:
 
 GRAPH DATA:
 {graph_summary}
+{rag_context}
 
 OUTPUT: Write a professional analysis in 3-4 paragraphs, focusing on actionable insights."""
         
@@ -348,3 +376,28 @@ OUTPUT: Write a professional analysis in 3-4 paragraphs, focusing on actionable 
         except Exception as e:
             logger.error(f"Error in analyze_knowledge_graph: {e}")
             return f"Graph analysis unavailable. Graph contains {len(nodes)} nodes and {len(edges)} edges."
+    
+    def get_rag_context(self, query: str, top_k: int = 5) -> str:
+        """
+        Get RAG context from knowledge graph for a query.
+        
+        Args:
+            query: Search query string
+            top_k: Number of top results to return
+        
+        Returns:
+            Formatted context string for LLM prompts
+        """
+        if not self.rag_retriever:
+            return ""
+        
+        try:
+            contexts = self.rag_retriever.retrieve_context(query, top_k=top_k)
+            if not contexts:
+                return ""
+            
+            context_text = "\n".join([f"- {ctx.get('text')}" for ctx in contexts])
+            return f"\nKnowledge Graph Context:\n{context_text}\n"
+        except Exception as e:
+            logger.warning(f"RAG context retrieval failed for query '{query}': {e}")
+            return ""
