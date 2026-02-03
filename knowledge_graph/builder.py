@@ -388,14 +388,39 @@ def build_knowledge_graph_data(
                                 'label': 'HAS_BANK',
                                 'title': f'{country} has bank {bank_name} with {buffer_type} rate {rate:.2f}%',
                                 'color': {'color': '#ec4899'},
-                                'width': 1 + (float(rate) * 2),
+                                'width': 1 + (float(rate) * 10),  # Thicker edge for higher rates
                             })
                         
-                        # Connect similar banks (same rate within 0.1%)
+                        # Connect bank to OSII measure node if exists
+                        osii_node_id = f"O-SII_{country_iso2}"
+                        if osii_node_id in node_ids and rate > 0:
+                            edges.append({
+                                'from': bank_id,
+                                'to': osii_node_id,
+                                'label': 'SUBJECT_TO',
+                                'title': f'Bank subject to {buffer_type} buffer',
+                                'color': {'color': '#f59e0b'},
+                                'width': 1 + (float(rate) * 5),
+                                'dashes': False,
+                            })
+                        
+                        # Connect similar banks within same country (same rate within 0.05%)
                         for existing_node in nodes:
                             if existing_node.get('group') == 'bank' and existing_node.get('id') != bank_id:
                                 existing_rate = existing_node.get('rate', 0)
-                                if abs(existing_rate - rate) < 0.001 and rate > 0:
+                                existing_country = existing_node.get('bank_name', '')  # We need to track country for banks
+                                # Check if banks are in same country by checking their connections
+                                existing_bank_country_edges = [e for e in edges if e.get('to') == existing_node['id'] and e.get('label') == 'HAS_BANK']
+                                current_bank_country_edges = [e for e in edges if e.get('to') == bank_id and e.get('label') == 'HAS_BANK']
+                                
+                                same_country = False
+                                if existing_bank_country_edges and current_bank_country_edges:
+                                    existing_country_id = existing_bank_country_edges[0].get('from')
+                                    current_country_id = current_bank_country_edges[0].get('from')
+                                    same_country = existing_country_id == current_country_id
+                                
+                                # Connect banks with similar rates (within 0.05%) in same country
+                                if same_country and abs(existing_rate - rate) < 0.0005 and rate > 0:
                                     edge_exists = any(
                                         (e.get('from') == bank_id and e.get('to') == existing_node['id']) or
                                         (e.get('from') == existing_node['id'] and e.get('to') == bank_id)
@@ -406,10 +431,31 @@ def build_knowledge_graph_data(
                                             'from': bank_id,
                                             'to': existing_node['id'],
                                             'label': 'SIMILAR_BANK',
-                                            'title': f'Similar rates: {rate:.2f}%',
+                                            'title': f'Similar rates in {country}: {rate:.2f}%',
                                             'color': {'color': '#a78bfa'},
                                             'dashes': [3, 3],
                                             'width': 1,
+                                        })
+                        
+                        # Connect banks with same buffer type (G-SII or O-SII)
+                        for existing_node in nodes:
+                            if existing_node.get('group') == 'bank' and existing_node.get('id') != bank_id:
+                                existing_buffer_type = existing_node.get('buffer_type', '')
+                                if existing_buffer_type == buffer_type and buffer_type in ['G-SII', 'O-SII']:
+                                    edge_exists = any(
+                                        (e.get('from') == bank_id and e.get('to') == existing_node['id']) or
+                                        (e.get('from') == existing_node['id'] and e.get('to') == bank_id)
+                                        for e in edges if e.get('label') == 'SAME_TYPE'
+                                    )
+                                    if not edge_exists:
+                                        edges.append({
+                                            'from': bank_id,
+                                            'to': existing_node['id'],
+                                            'label': 'SAME_TYPE',
+                                            'title': f'Both have {buffer_type} buffer',
+                                            'color': {'color': '#10b981'},
+                                            'dashes': [5, 5],
+                                            'width': 0.5,
                                         })
         except Exception as e:
             logger.warning(f"Failed to add OSII banks to knowledge graph: {e}")

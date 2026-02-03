@@ -261,6 +261,10 @@
         <h2 id="osii-section" style="margin-top:40px;">Other Systemically Important Institutions (O-SII) / Global Systemically Important Institutions (G-SII)</h2>
         
         <div class="card">
+            <div class="ai-box" style="margin-bottom:20px" id="osii-analysis">
+                {{ analyses.get('osii_analysis', 'OSII/GSII analysis will be available after data processing.') }}
+            </div>
+            
             <div class="card-title">OSII/GSII Buffer Rates by Country</div>
             <div class="controls-row">
                 <label for="osii-country-selector" style="margin-right:10px; font-weight:600;">Select Country:</label>
@@ -272,9 +276,6 @@
             </div>
             <div id="osii-table-container" style="margin-top:20px;">
                 {{ osii_table_html | safe }}
-            </div>
-            <div class="ai-box" style="margin-top:20px" id="osii-analysis">
-                {{ analyses.get('osii_analysis', 'OSII/GSII analysis will be available after data processing.') }}
             </div>
             
             <div style="margin-top:30px;">

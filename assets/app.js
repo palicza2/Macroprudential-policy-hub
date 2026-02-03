@@ -828,11 +828,16 @@ function initOSII() {
         var hasBankNames = data.length > 0 && data[0].bank_name;
         
         if (hasBankNames) {
-            // Individual bank table
-            var html = '<table class="data-table"><thead><tr><th>Bank Name</th><th>LEI Code</th><th>Buffer Type</th><th>G-SII Rate</th><th>O-SII Rate</th><th>Total Rate</th><th>Status</th></tr></thead><tbody>';
+            // Filter to only show active banks
+            var activeData = data.filter(function(row) {
+                return !row.status || row.status === 'Active';
+            });
             
-            for (var i = 0; i < data.length; i++) {
-                var row = data[i];
+            // Individual bank table (without Total Rate and Status columns)
+            var html = '<table class="data-table"><thead><tr><th>Bank Name</th><th>LEI Code</th><th>Buffer Type</th><th>G-SII Rate</th><th>O-SII Rate</th></tr></thead><tbody>';
+            
+            for (var i = 0; i < activeData.length; i++) {
+                var row = activeData[i];
                 var gsiiDisplay = (row.gsii_rate && row.gsii_rate > 0) ? row.gsii_rate.toFixed(2) + '%' : '-';
                 var osiiDisplay = (row.osii_rate && row.osii_rate > 0) ? row.osii_rate.toFixed(2) + '%' : '-';
                 
@@ -842,8 +847,6 @@ function initOSII() {
                 html += '<td>' + (row.buffer_type || 'N/A') + '</td>';
                 html += '<td>' + gsiiDisplay + '</td>';
                 html += '<td>' + osiiDisplay + '</td>';
-                html += '<td><strong>' + (row.rate_numeric ? row.rate_numeric.toFixed(2) + '%' : 'N/A') + '</strong></td>';
-                html += '<td>' + (row.status || 'Active') + '</td>';
                 html += '</tr>';
             }
             

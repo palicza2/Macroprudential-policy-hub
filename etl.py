@@ -332,8 +332,12 @@ class ETLPipeline:
                     continue
                 
                 # Check if this is a bank row (has bank name in col 1, even if col0 is empty/NaN)
-                # Bank rows have meaningful text in col1 (length > 5 to avoid single characters or numbers)
-                if col1 and len(col1) > 5 and current_country:
+                # Bank rows have meaningful text in col1 (length > 10 to avoid short strings)
+                # Exclude authority/supervisory body names (these are typically in col0, not col1)
+                # Bank names are typically long strings in col1, while authorities are in col0
+                is_bank_row = col1 and len(col1) > 10 and current_country and (not col0 or len(col0) < 3)
+                
+                if is_bank_row:
                     bank_name = col1
                     lei_code = str(row.iloc[2]).strip() if len(row) > 2 and pd.notna(row.iloc[2]) else ""
                     

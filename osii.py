@@ -109,7 +109,10 @@ def build_osii_table_html(osii_by_country: Dict[str, pd.DataFrame], selected_cou
     
     # Check if we have individual bank data
     if 'bank_name' in df.columns:
-        # Individual bank table
+        # Filter to only show active banks
+        df_active = df[df.get('status', 'Active') == 'Active'].copy() if 'status' in df.columns else df.copy()
+        
+        # Individual bank table (without Total Rate and Status columns)
         html = """
         <table class="data-table">
             <thead>
@@ -119,14 +122,12 @@ def build_osii_table_html(osii_by_country: Dict[str, pd.DataFrame], selected_cou
                     <th>Buffer Type</th>
                     <th>G-SII Rate</th>
                     <th>O-SII Rate</th>
-                    <th>Total Rate</th>
-                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
         """
         
-        for _, row in df.iterrows():
+        for _, row in df_active.iterrows():
             gsii_display = f"{row['gsii_rate']:.2f}%" if pd.notna(row.get('gsii_rate')) and row.get('gsii_rate', 0) > 0 else "-"
             osii_display = f"{row['osii_rate']:.2f}%" if pd.notna(row.get('osii_rate')) and row.get('osii_rate', 0) > 0 else "-"
             
@@ -137,8 +138,6 @@ def build_osii_table_html(osii_by_country: Dict[str, pd.DataFrame], selected_cou
                     <td>{row.get('buffer_type', 'N/A')}</td>
                     <td>{gsii_display}</td>
                     <td>{osii_display}</td>
-                    <td><strong>{row['rate_numeric']:.2f}%</strong></td>
-                    <td>{row.get('status', 'Active')}</td>
                 </tr>
             """
         
