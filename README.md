@@ -171,11 +171,29 @@ To generate the static HTML report:
 - **Step 5:** Optional grounded validation (data + charts + optional external sources).
 - **Step 6:** Renders the final `index.html`.
 
-### 5. Publish to GitHub Pages (Manual)
+### 5. Automated Build & Deployment
 
-This repository is configured as a **publishable repo**: the generated site output is committed so GitHub Pages can serve it directly.
+This repository uses **GitHub Actions** to automatically build and deploy the dashboard:
 
-Typical publish flow:
+- **Automatic builds:** Runs on every push to `master` branch
+- **Scheduled builds:** Runs daily at 2 AM UTC
+- **Manual trigger:** Can be triggered manually from GitHub Actions tab
+
+The workflow:
+1. Installs Python dependencies
+2. Runs `main.py` to generate the dashboard
+3. Commits and pushes the generated `index.html` and assets
+
+**GitHub Secrets Required:**
+- `GOOGLE_API_KEY` - For Gemini AI analysis
+- `CUSTOM_SEARCH_API_KEY` (optional) - For news search
+- `GOOGLE_CSE_ID` (optional) - For news search
+- `SEARCH_ALLOWED_DOMAINS` (optional) - Allowed search domains
+- `SEARCH_ENABLED` (optional) - Enable/disable search ("1" or "0")
+
+**Manual Publish (Alternative):**
+
+If you prefer manual publishing:
 
     python main.py
     git add index.html assets/ reports/ CNAME

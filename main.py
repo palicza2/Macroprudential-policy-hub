@@ -94,11 +94,15 @@ def format_profile_for_llm(profile_data):
 def main():
     logger.info("STARTING...")
     run_grounding = False
-    try:
-        answer = input("Run grounded validation? (y/N): ").strip().lower()
-        run_grounding = answer in ("y", "yes")
-    except Exception:
-        run_grounding = False
+    # Check environment variable first (for CI/CD)
+    if os.getenv("RUN_GROUNDING", "").lower() in ("1", "true", "yes", "y"):
+        run_grounding = True
+    else:
+        try:
+            answer = input("Run grounded validation? (y/N): ").strip().lower()
+            run_grounding = answer in ("y", "yes")
+        except Exception:
+            run_grounding = False
     ensure_dirs(DATA_DIR, FIGURES_DIR, REPORTS_DIR)
     
     logger.info("1. Adatfeldolgozás...")
