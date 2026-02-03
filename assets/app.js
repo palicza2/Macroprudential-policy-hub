@@ -560,6 +560,7 @@ function initKnowledgeGraph() {
         'syrb': {background: '#f59e0b', border: '#d97706'},
         'osii': {background: '#ef4444', border: '#dc2626'},
         'bbm': {background: '#8b5cf6', border: '#7c3aed'},
+        'bank': {background: '#ec4899', border: '#db2777'},
     };
     
     // Node-ok színezése
@@ -884,6 +885,196 @@ function initOSII() {
     }
 }
 
+function initOSIIGraph() {
+    var container = document.getElementById('osii-graph-container');
+    if (!container || !window.vis) {
+        return;
+    }
+    
+    // Get graph data from window
+    var graphData = window.osiiGraphData || {nodes: [], edges: []};
+    
+    if (!graphData.nodes || !graphData.edges) {
+        return;
+    }
+    
+    // Filter to only show countries, banks, and OSII-related nodes/edges
+    var osiiNodes = graphData.nodes.filter(function(node) {
+        return node.group === 'country' || node.group === 'bank' || node.group === 'osii';
+    });
+    
+    // Get country and bank IDs
+    var countryIds = osiiNodes.filter(function(n) { return n.group === 'country'; }).map(function(n) { return n.id; });
+    var bankIds = osiiNodes.filter(function(n) { return n.group === 'bank'; }).map(function(n) { return n.id; });
+    
+    // Filter edges to only show relevant connections
+    var osiiEdges = graphData.edges.filter(function(edge) {
+        var fromIsCountry = countryIds.indexOf(edge.from) !== -1;
+        var toIsCountry = countryIds.indexOf(edge.to) !== -1;
+        var fromIsBank = bankIds.indexOf(edge.from) !== -1;
+        var toIsBank = bankIds.indexOf(edge.to) !== -1;
+        var isOSII = edge.from.indexOf('O-SII') !== -1 || edge.to.indexOf('O-SII') !== -1;
+        var isHAS_BANK = edge.label === 'HAS_BANK';
+        var isSIMILAR_BANK = edge.label === 'SIMILAR_BANK';
+        
+        return (fromIsCountry && (toIsBank || isOSII)) || 
+               (fromIsBank && toIsBank) || 
+               (isHAS_BANK || isSIMILAR_BANK) ||
+               (isOSII && (fromIsCountry || toIsCountry));
+    });
+    
+    // Create vis.js DataSets
+    var nodes = new vis.DataSet(osiiNodes);
+    var edges = new vis.DataSet(osiiEdges);
+    
+    // Node colors
+    var nodeColors = {
+        'country': {background: '#3b82f6', border: '#2563eb'},
+        'osii': {background: '#ef4444', border: '#dc2626'},
+        'bank': {background: '#ec4899', border: '#db2777'},
+    };
+    
+    // Color nodes
+    var coloredNodes = nodes.map(function(node) {
+        var color = nodeColors[node.group] || {background: '#64748b', border: '#475569'};
+        return {
+            id: node.id,
+            label: node.label,
+            group: node.group,
+            title: node.title || node.label,
+            value: node.value || 10,
+            color: color,
+            font: {
+                color: '#ffffff',
+                size: node.group === 'country' ? 16 : (node.group === 'bank' ? 11 : 12),
+                face: 'Inter, sans-serif',
+            },
+            borderWidth: 2,
+            shadow: true,
+            shape: node.group === 'country' ? 'dot' : (node.group === 'bank' ? 'diamond' : 'box'),
+        };
+    });
+    
+    nodes.clear();
+    nodes.add(coloredNodes);
+    
+    // Format edges
+    var formattedEdges = edges.map(function(edge) {
+        return {
+            from: edge.from,
+            to: edge.to,
+            label: edge.label || '',
+            title: edge.title || '',
+            color: edge.color || {color: '#64748b'},
+            width: edge.width || 2,
+            dashes: edge.dashes || false,
+            arrows: {
+                to: {
+                    enabled: true,
+                    scaleFactor: 0.8,
+                },
+            },
+            font: {
+                size: 10,
+                align: 'middle',
+                face: 'Inter, sans-serif',
+            },
+            smooth: {
+                type: 'continuous',
+            },
+        };
+    });
+    
+    edges.clear();
+    edges.add(formattedEdges);
+    
+    var data = {nodes: nodes, edges: edges};
+    
+    var options = {
+        nodes: {
+            borderWidth: 2,
+            shadow: true,
+            font: {
+                size: 12,
+                face: 'Inter, sans-serif',
+            },
+        },
+        edges: {
+            smooth: {
+                type: 'continuous',
+            },
+            arrows: {
+                to: {
+                    enabled: true,
+                    scaleFactor: 0.8,
+                },
+            },
+        },
+        physics: {
+            enabled: true,
+            stabilization: {
+                iterations: 200,
+            },
+            barnesHut: {
+                gravitationalConstant: -2000,
+                centralGravity: 0.1,
+                springLength: 200,
+                springConstant: 0.04,
+                damping: 0.09,
+            },
+        },
+        interaction: {
+            hover: true,
+            tooltipDelay: 100,
+            zoomView: true,
+            dragView: true,
+        },
+        layout: {
+            improvedLayout: true,
+            hierarchical: {
+                enabled: false,
+            },
+        },
+    };
+    
+    var network = new vis.Network(container, data, options);
+    
+    // Fit to view on load
+    network.once('stabilizationEnd', function() {
+        network.fit({
+            animation: true,
+        });
+    });
+    
+    // Update graph when country selector changes
+    var countrySelector = document.getElementById('osii-country-selector');
+    if (countrySelector) {
+        countrySelector.addEventListener('change', function(e) {
+            var selectedCountry = e.target.value;
+            if (selectedCountry && graphData.nodes) {
+                // Find country ISO2
+                var countryNode = graphData.nodes.find(function(n) {
+                    return n.group === 'country' && n.label === selectedCountry;
+                });
+                
+                if (countryNode) {
+                    // Focus on country and its banks
+                    var countryId = countryNode.id;
+                    var connectedBanks = osiiEdges
+                        .filter(function(e) { return e.from === countryId && e.label === 'HAS_BANK'; })
+                        .map(function(e) { return e.to; });
+                    
+                    var focusIds = [countryId].concat(connectedBanks);
+                    network.fit({
+                        nodes: focusIds,
+                        animation: true,
+                    });
+                }
+            }
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     if (window.lucide) {
         window.lucide.createIcons();
@@ -894,6 +1085,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initNewsFilters();
     initCountryProfiles();
     initOSII();
+    initOSIIGraph();
     
     // Initialize knowledge graph if container exists
         // Knowledge graph visualization removed - data is used for AI analysis only

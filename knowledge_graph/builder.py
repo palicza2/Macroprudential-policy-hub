@@ -12,7 +12,8 @@ def build_knowledge_graph_data(
     get_iso2_func,
     get_region_func,
     countries: List[str],
-    target_countries: Optional[List[str]] = None
+    target_countries: Optional[List[str]] = None,
+    osii_data: Optional[Any] = None  # DataFrame with OSII bank data
 ) -> Dict[str, Any]:
     """
     Knowledge graph adatok generálása.
@@ -331,6 +332,89 @@ def build_knowledge_graph_data(
                             'dashes': [2, 2],
                             'width': 1.5,
                         })
+    
+    # OSII/GSII bankok hozzáadása (ha van OSII adat)
+    if osii_data is not None:
+        try:
+            import pandas as pd
+            if isinstance(osii_data, pd.DataFrame) and not osii_data.empty and 'bank_name' in osii_data.columns:
+                # Group banks by country
+                for country in osii_data['country'].dropna().unique():
+                    country_banks = osii_data[osii_data['country'] == country]
+                    country_iso2 = country_banks.iloc[0].get('iso2') if 'iso2' in country_banks.columns else None
+                    
+                    if not country_iso2:
+                        country_iso2 = get_iso2_func(country) or country[:2].upper()
+                    
+                    # Add each bank as a node
+                    for _, bank_row in country_banks.iterrows():
+                        bank_name = bank_row.get('bank_name', '')
+                        if not bank_name or pd.isna(bank_name):
+                            continue
+                        
+                        # Create unique bank ID
+                        bank_safe_name = bank_name[:30].replace(' ', '_').replace('/', '_').replace('(', '').replace(')', '').replace('.', '')
+                        bank_id = f"BANK_{country_iso2}_{bank_safe_name}"
+                        # Make bank_id unique
+                        original_bank_id = bank_id
+                        counter = 1
+                        while bank_id in node_ids:
+                            bank_id = f"{original_bank_id}_{counter}"
+                            counter += 1
+                        
+                        rate = bank_row.get('rate_numeric', 0.0) or 0.0
+                        osii_rate = bank_row.get('osii_rate')
+                        gsii_rate = bank_row.get('gsii_rate')
+                        buffer_type = bank_row.get('buffer_type', 'O-SII')
+                        
+                        # Create bank node
+                        nodes.append({
+                            'id': bank_id,
+                            'label': bank_name[:25] + ('...' if len(bank_name) > 25 else ''),
+                            'group': 'bank',
+                            'title': f"{bank_name}\n{buffer_type}: {rate:.2f}%" + (f"\nG-SII: {gsii_rate:.2f}%" if gsii_rate and gsii_rate > 0 else "") + (f"\nO-SII: {osii_rate:.2f}%" if osii_rate and osii_rate > 0 else ""),
+                            'value': float(rate) * 20 if rate > 0 else 5,  # Scale for visibility
+                            'bank_name': bank_name,
+                            'rate': float(rate),
+                            'buffer_type': buffer_type,
+                        })
+                        node_ids.add(bank_id)
+                        
+                        # Connect bank to country
+                        if country_iso2 and country_iso2 in [n['id'] for n in nodes if n.get('group') == 'country']:
+                            edges.append({
+                                'from': country_iso2,
+                                'to': bank_id,
+                                'label': 'HAS_BANK',
+                                'title': f'{country} has bank {bank_name} with {buffer_type} rate {rate:.2f}%',
+                                'color': {'color': '#ec4899'},
+                                'width': 1 + (float(rate) * 2),
+                            })
+                        
+                        # Connect similar banks (same rate within 0.1%)
+                        for existing_node in nodes:
+                            if existing_node.get('group') == 'bank' and existing_node.get('id') != bank_id:
+                                existing_rate = existing_node.get('rate', 0)
+                                if abs(existing_rate - rate) < 0.001 and rate > 0:
+                                    edge_exists = any(
+                                        (e.get('from') == bank_id and e.get('to') == existing_node['id']) or
+                                        (e.get('from') == existing_node['id'] and e.get('to') == bank_id)
+                                        for e in edges if e.get('label') == 'SIMILAR_BANK'
+                                    )
+                                    if not edge_exists:
+                                        edges.append({
+                                            'from': bank_id,
+                                            'to': existing_node['id'],
+                                            'label': 'SIMILAR_BANK',
+                                            'title': f'Similar rates: {rate:.2f}%',
+                                            'color': {'color': '#a78bfa'},
+                                            'dashes': [3, 3],
+                                            'width': 1,
+                                        })
+        except Exception as e:
+            logger.warning(f"Failed to add OSII banks to knowledge graph: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
     
     return {
         'nodes': nodes,

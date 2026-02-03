@@ -276,11 +276,23 @@
             <div class="ai-box" style="margin-top:20px" id="osii-analysis">
                 {{ analyses.get('osii_analysis', 'OSII/GSII analysis will be available after data processing.') }}
             </div>
+            
+            <div style="margin-top:30px;">
+                <h3 class="subtle-title">Knowledge Graph Visualization</h3>
+                <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 15px;">
+                    Interactive visualization showing countries, banks, and their OSII/GSII buffer relationships. 
+                    Click and drag nodes to explore connections. Use filters to focus on specific countries or banks.
+                </p>
+                <div id="osii-graph-container" style="width: 100%; height: 600px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;"></div>
+            </div>
         </div>
         
         <script>
             // Make OSII data available to JavaScript
             window.osiiByCountry = {{ osii_by_country_json | safe }};
+            
+            // Make knowledge graph data available for OSII visualization
+            window.osiiGraphData = {{ knowledge_graph_json | safe }};
         </script>
 
         <h2 id="capital-stack-section" style="margin-top:40px;">Capital stack</h2>

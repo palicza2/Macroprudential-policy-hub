@@ -312,13 +312,14 @@ def main():
         from knowledge_graph import build_knowledge_graph_data, KnowledgeGraphRAG
         from country_profiles.region_mapper import get_iso2, get_region
         
-        # Build knowledge graph using central component
+        # Build knowledge graph using central component (including OSII banks)
         graph_data = build_knowledge_graph_data(
             get_country_profile_func=profile_gen.get_country_profile,
             get_iso2_func=get_iso2,
             get_region_func=get_region,
             countries=profile_gen.countries,
             target_countries=None,
+            osii_data=data.get('latest_osii_df'),  # Add OSII bank data
         )
         
         # Initialize RAG retriever with graph data
