@@ -270,3 +270,81 @@ INPUT:
         results[exec_task.id] = run_task(analyzer=self, task=exec_task)
 
         return results
+    
+    def analyze_knowledge_graph(self, graph_data, summary_data):
+        """
+        Analyze the knowledge graph and compare it with existing data tables.
+        
+        Args:
+            graph_data: Dict with 'nodes' and 'edges' lists
+            summary_data: Dict with summary statistics from tables (CCyB, SyRB, BBM counts)
+        
+        Returns:
+            Analysis text comparing graph insights with table data
+        """
+        if not graph_data or not graph_data.get('nodes'):
+            return "Knowledge graph data not available for analysis."
+        
+        nodes = graph_data.get('nodes', [])
+        edges = graph_data.get('edges', [])
+        
+        # Count nodes by type
+        country_count = len([n for n in nodes if n.get('group') == 'country'])
+        ccyb_count = len([n for n in nodes if n.get('group') == 'ccyb'])
+        syrb_count = len([n for n in nodes if n.get('group') == 'syrb'])
+        osii_count = len([n for n in nodes if n.get('group') == 'osii'])
+        bbm_count = len([n for n in nodes if n.get('group') == 'bbm'])
+        
+        # Count edges by type
+        has_edges = len([e for e in edges if e.get('label') == 'HAS'])
+        similar_edges = len([e for e in edges if e.get('label') == 'SIMILAR'])
+        similar_measure_edges = len([e for e in edges if e.get('label') == 'SIMILAR_MEASURE'])
+        coexists_edges = len([e for e in edges if e.get('label') == 'COEXISTS'])
+        
+        # Build summary text
+        graph_summary = f"""
+Knowledge Graph Statistics:
+- Countries: {country_count}
+- CCyB measures: {ccyb_count}
+- SyRB measures: {syrb_count}
+- O-SII measures: {osii_count}
+- BBM measures: {bbm_count}
+- Total nodes: {len(nodes)}
+- Total edges: {len(edges)}
+  - HAS (country → measure): {has_edges}
+  - SIMILAR (similar countries): {similar_edges}
+  - SIMILAR_MEASURE (similar measures): {similar_measure_edges}
+  - COEXISTS (measures in same country): {coexists_edges}
+
+Table Data Summary:
+- Active CCyB countries: {summary_data.get('active_ccyb', 'N/A')}
+- Active SyRB countries: {summary_data.get('active_syrb', 'N/A')}
+- Active BBM countries: {summary_data.get('active_bbm', 'N/A')}
+"""
+        
+        prompt = f"""Analyze the knowledge graph data and compare it with the table-based summary data.
+
+TASK: Provide a concise analysis (3-4 paragraphs) that:
+1. Identifies key insights from the knowledge graph structure
+2. Compares graph statistics with table-based counts (validate consistency)
+3. Highlights interesting patterns or relationships visible in the graph
+4. Notes any discrepancies or additional insights the graph reveals
+
+Focus on:
+- Policy mix patterns (which countries use multiple measures)
+- Regional similarities or differences
+- Measure adoption patterns
+- Any notable clusters or outliers
+
+GRAPH DATA:
+{graph_summary}
+
+OUTPUT: Write a professional analysis in 3-4 paragraphs, focusing on actionable insights."""
+        
+        try:
+            llm = self._get_llm(temperature=0.3)
+            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+            return self._clean_text(res, is_global=False)
+        except Exception as e:
+            logger.error(f"Error in analyze_knowledge_graph: {e}")
+            return f"Graph analysis unavailable. Graph contains {len(nodes)} nodes and {len(edges)} edges."

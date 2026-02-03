@@ -34,6 +34,8 @@ def render_report(
     news_feed_html: str,
     bbm_ref_date: str,
     ltv_ref_date: str,
+    countries_data: Dict[str, Any] = None,
+    knowledge_graph_json: str = '{"nodes": [], "edges": []}',
 ) -> str:
     dirs = ensure_report_dirs(reports_dir)
     partials_dir = dirs["partials"]
@@ -45,6 +47,19 @@ def render_report(
     download_links = {k: write_download(base_dir, downloads_dir, k, v) for k, v in download_data.items()}
 
     env = Environment(loader=FileSystemLoader(str(template_dir)))
+    
+    # Serialize countries_data to JSON for embedding in HTML
+    countries_data_json = "{}"
+    if countries_data and len(countries_data) > 0:
+        import json
+        try:
+            countries_data_json = json.dumps(countries_data, default=str, ensure_ascii=False)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to serialize countries_data: {e}")
+            countries_data_json = "{}"
+    
     html = env.get_template(template_name).render(
         generation_date=generation_date,
         analyses=analyses,
@@ -55,6 +70,8 @@ def render_report(
         news_feed_html=news_feed_html,
         bbm_ref_date=bbm_ref_date,
         ltv_ref_date=ltv_ref_date,
+        countries_data_json=countries_data_json,
+        knowledge_graph_json=knowledge_graph_json,
     )
     return html
 

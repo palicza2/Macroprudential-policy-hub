@@ -161,6 +161,35 @@ def _build_data_context(data_inputs: Dict[str, Any]) -> str:
         "LATEST BBM TABLE:\n" + df_to_string(data_inputs.get("latest_bbm_df")),
         "CAPITAL OVERALL TABLE:\n" + df_to_string(data_inputs.get("capital_overall_df")),
     ]
+    
+    # Add knowledge graph summary if available
+    graph_data = data_inputs.get("knowledge_graph_data")
+    if graph_data:
+        nodes = graph_data.get("nodes", [])
+        edges = graph_data.get("edges", [])
+        if nodes:
+            country_count = len([n for n in nodes if n.get("group") == "country"])
+            ccyb_count = len([n for n in nodes if n.get("group") == "ccyb"])
+            syrb_count = len([n for n in nodes if n.get("group") == "syrb"])
+            osii_count = len([n for n in nodes if n.get("group") == "osii"])
+            bbm_count = len([n for n in nodes if n.get("group") == "bbm"])
+            
+            has_edges = len([e for e in edges if e.get("label") == "HAS"])
+            similar_edges = len([e for e in edges if e.get("label") == "SIMILAR"])
+            similar_measure_edges = len([e for e in edges if e.get("label") == "SIMILAR_MEASURE"])
+            
+            graph_summary = f"""KNOWLEDGE GRAPH SUMMARY:
+- Countries: {country_count}
+- CCyB measures: {ccyb_count}
+- SyRB measures: {syrb_count}
+- O-SII measures: {osii_count}
+- BBM measures: {bbm_count}
+- HAS relationships (country → measure): {has_edges}
+- SIMILAR relationships (similar countries): {similar_edges}
+- SIMILAR_MEASURE relationships (similar measures): {similar_measure_edges}
+"""
+            parts.append(graph_summary)
+    
     return "\n\n".join(parts)
 
 

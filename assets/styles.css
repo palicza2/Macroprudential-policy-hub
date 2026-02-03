@@ -916,3 +916,126 @@ h2::before {
         max-height: 400px;
     }
 }
+
+/* Country Profiles Styles */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.status-item {
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 8px;
+    border-left: 4px solid #3b82f6;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.status-label {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.status-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+    width: fit-content;
+}
+
+.status-badge.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.inactive {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.changes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.change-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 3px solid #3b82f6;
+}
+
+.change-date {
+    font-weight: 600;
+    color: #64748b;
+    min-width: 120px;
+}
+
+.change-type {
+    padding: 4px 8px;
+    background: #e0e7ff;
+    color: #3730a3;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.change-detail {
+    flex: 1;
+    color: #1e293b;
+}
+
+.measure-detail {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 3px solid #10b981;
+}
+
+.measure-detail h4 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: #1e293b;
+    font-size: 1.1rem;
+}
+
+.measure-detail-item {
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.measure-detail-item strong {
+    color: #64748b;
+    min-width: 120px;
+    display: inline-block;
+}
+
+.comparison-item {
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.comparison-item strong {
+    color: #1e293b;
+}

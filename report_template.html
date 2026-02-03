@@ -6,12 +6,15 @@
     <title>EU Macroprudential Dashboard</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/vis-network@latest/standalone/umd/vis-network.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="assets/styles.css">
     <script src="assets/app.js" defer></script>
     <script>
         mermaid.initialize({ startOnLoad: true, theme: 'default' });
+        // Embed countries data for country profiles
+        window.countriesData = {{ countries_data_json|safe }};
     </script>
 </head>
 <body>
@@ -42,6 +45,12 @@
         <a href="#capital-stack-section" class="nav-link sub-nav" data-tab="capital">Capital stack</a>
         <a href="#" class="nav-link" data-tab="borrower">
             <i data-lucide="users"></i> Borrower Measures
+        </a>
+        <a href="#" class="nav-link" data-tab="country-profiles">
+            <i data-lucide="map-pin"></i> Country Profiles
+        </a>
+        <a href="#" class="nav-link" data-tab="knowledge-graph">
+            <i data-lucide="git-branch"></i> Knowledge Graph Analysis
         </a>
         <a href="#" class="nav-link" data-tab="about" style="margin-top: auto;">
             <i data-lucide="info"></i> About
@@ -333,6 +342,87 @@
             </div>
         </section>
 
+        <section id="tab-country-profiles" class="tab-content">
+            <h1 id="country-profiles-section" class="section-title">Country Profiles</h1>
+            
+            <div class="card">
+                <div class="card-title">
+                    <span>Select Country</span>
+                </div>
+                <select id="country-selector" class="chart-input" style="width: 100%; max-width: 400px; margin-top: 12px;">
+                    <option value="">-- Select Country --</option>
+                </select>
+            </div>
+            
+            <div id="country-profile-content" style="display: none;">
+                <!-- Current Status -->
+                <div class="card">
+                    <div class="card-title">📊 Current Status</div>
+                    <div class="status-grid" id="current-status-grid">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Historical Evolution -->
+                <div class="card">
+                    <div class="card-title">📈 Historical Evolution</div>
+                    <div id="country-evolution-chart"></div>
+                </div>
+                
+                <!-- Recent Changes -->
+                <div class="card">
+                    <div class="card-title">🔄 Recent Changes (Last 12 Months)</div>
+                    <div class="changes-list" id="recent-changes-list">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Active Measures Details -->
+                <div class="card">
+                    <div class="card-title">📋 Active Measures Details</div>
+                    <div id="active-measures-details">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- AI Analysis -->
+                <div class="card">
+                    <div class="card-title">🤖 AI Analysis</div>
+                    <div class="ai-box" id="country-ai-analysis">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Comparison -->
+                <div class="card">
+                    <div class="card-title">📊 Comparison with Peers</div>
+                    <div id="country-comparison">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-knowledge-graph" class="tab-content">
+            <h1 id="knowledge-graph-section" class="section-title">Knowledge Graph</h1>
+            
+            {% if analyses.get('knowledge_graph_analysis') %}
+            <div class="card">
+                <div class="card-title">🧠 AI Analysis: Knowledge Graph Insights</div>
+                <div class="analysis-content">
+                    <p class="about-description" style="margin-bottom: 16px;">
+                        The knowledge graph represents relationships between countries, measures, and policy patterns. 
+                        This AI analysis compares graph-derived insights with table-based data to identify patterns, 
+                        validate consistency, and highlight notable policy clusters.
+                    </p>
+                    {{ analyses.get('knowledge_graph_analysis')|safe }}
+                </div>
+            </div>
+            {% endif %}
+            
+            <script type="application/json" id="knowledge-graph-data">{{ knowledge_graph_json|safe }}</script>
+        </section>
+
         <section id="tab-about" class="tab-content">
             <h1 id="about-section" class="section-title">About</h1>
             
@@ -374,7 +464,9 @@
                         <h3 class="about-subtitle">Key Features</h3>
                         <ul class="about-features">
                             <li>Multi-Pillar Monitoring (CCyB, SyRB, BBM, GSII/O-SII)</li>
-                            <li>AI-Driven Intelligence with Grounded Validation</li>
+                            <li>Country Profiles with comprehensive policy overview</li>
+                            <li>Knowledge Graph Analysis for AI-enhanced insights and validation</li>
+                            <li>AI-Driven Intelligence with Grounded Validation (using graph data)</li>
                             <li>Modern Mobile-Responsive UI</li>
                             <li>Robust ETL Pipeline</li>
                         </ul>
@@ -386,7 +478,7 @@
 
             <div class="card">
                 <div class="card-title">System Architecture</div>
-                <p class="about-arch-desc">Three-stage pipeline: <strong>Data Ingestion & ETL</strong> processes ESRB Excel files into Parquet storage; <strong>AI Analysis & Grounding</strong> uses <strong>LangGraph</strong> to orchestrate validation (extract claims → verify against data/charts → optional Google Search → refine with Gemini 2.5 Flash); <strong>Dashboard Layer</strong> renders HTML with embedded Plotly charts.</p>
+                <p class="about-arch-desc">Three-stage pipeline: <strong>Data Ingestion & ETL</strong> processes ESRB Excel files into Parquet storage; <strong>Data Enrichment</strong> generates country profiles and knowledge graph relationships for enhanced AI context; <strong>AI Analysis & Grounding</strong> uses <strong>LangGraph</strong> to orchestrate validation (extract claims → verify against data/charts/graph relationships → optional Google Search → refine with Gemini 2.5 Flash); <strong>Dashboard Layer</strong> renders HTML with embedded Plotly charts and AI-generated insights.</p>
                 <div class="mermaid-container">
                     <div class="mermaid">
 graph TD
@@ -404,9 +496,17 @@ graph TD
         D -->|Verified Output| F[Final Analysis]
     end
 
+    subgraph Data_Enrichment ["Data Enrichment"]
+        C -->|Country Data| K[Country Profile Generator]
+        K -->|Profiles| L[Knowledge Graph Builder]
+        L -->|Graph Data| M[("Country Profiles<br/>& Graph Data")]
+        M -->|Graph Context| D
+    end
+
     subgraph Presentation ["Dashboard Layer"]
         F --> G[Jinja2 Template Engine]
         C -->|Visual Data| H[Plotly Charts]
+        M -->|Country & Graph Data| G
         G --> I[("HTML Dashboard<br/>index.html embedded plots")]
         H --> I
     end
@@ -415,6 +515,9 @@ graph TD
     style C fill:#f9f,stroke:#333,stroke-width:2px
     style E fill:#bbf,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
     style D fill:#fef3c7,stroke:#333,stroke-width:2px
+    style K fill:#fef3c7,stroke:#333,stroke-width:2px
+    style L fill:#fef3c7,stroke:#333,stroke-width:2px
+    style M fill:#f9f,stroke:#333,stroke-width:2px
     style I fill:#bfb,stroke:#333,stroke-width:2px
                     </div>
                 </div>

@@ -18,12 +18,78 @@ from render import render_report, df_to_html_table
 from ccyb import prepare_ccyb_decisions
 from syrb import prepare_syrb_tables
 from capital_overall import build_capital_overall_df
+from country_profiles import CountryProfileGenerator
+import json
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 for noisy_lib in ['kaleido', 'urllib3', 'matplotlib', 'chromies', 'werkzeug']:
     logging.getLogger(noisy_lib).setLevel(logging.CRITICAL)
 
 logger = logging.getLogger("MAIN")
+
+
+def serialize_profile(profile):
+    """Convert profile data to JSON-serializable format."""
+    import pandas as pd
+    from datetime import datetime
+    
+    def convert_value(v):
+        if v is None:
+            return None
+        if isinstance(v, (pd.Timestamp, datetime)):
+            try:
+                return v.isoformat() if pd.notna(v) else None
+            except:
+                return str(v) if v else None
+        elif isinstance(v, pd.Series):
+            return v.tolist()
+        elif isinstance(v, dict):
+            return {k: convert_value(val) for k, val in v.items()}
+        elif isinstance(v, list):
+            return [convert_value(item) for item in v]
+        elif isinstance(v, pd.DataFrame):
+            if v.empty:
+                return []
+            return v.to_dict('records')
+        elif pd.isna(v):
+            return None
+        elif isinstance(v, (int, float)):
+            return float(v) if pd.notna(v) else None
+        else:
+            return v
+    
+    try:
+        return {k: convert_value(v) for k, v in profile.items()}
+    except Exception as e:
+        logger.warning(f"Error serializing profile: {e}")
+        return {}
+
+
+def format_profile_for_llm(profile_data):
+    """Format profile data as text for LLM analysis."""
+    status = profile_data.get('current_status', {})
+    changes = profile_data.get('recent_changes', [])
+    
+    text = f"Country: {profile_data.get('country', 'Unknown')}\n\n"
+    text += "Current Status:\n"
+    if status.get('ccyb'):
+        text += f"- CCyB: {status['ccyb'].get('rate', 0)}%\n"
+    if status.get('syrb'):
+        text += f"- SyRB: {status['syrb'].get('rate', 0)}%\n"
+    if status.get('osii'):
+        text += f"- O-SII: {status['osii'].get('rate', 0)}%\n"
+    if status.get('total_capital'):
+        text += f"- Total Capital: {status['total_capital'].get('total', 0)}%\n"
+    
+    text += "\nRecent Changes (Last 12 Months):\n"
+    for change in changes[:5]:
+        date_str = change.get('date', 'N/A')
+        if isinstance(date_str, str) and len(date_str) > 10:
+            date_str = date_str[:10]
+        text += f"- {date_str}: {change.get('type', '')} {change.get('change', '')}\n"
+    
+    return text
+
 
 def main():
     logger.info("STARTING...")
@@ -207,13 +273,104 @@ def main():
         'capital_overall_df': capital_overall_df,
     }
 
+    # 3c. Country Profiles Generation (before analysis to provide graph data)
+    logger.info("3c. Country Profiles...")
+    profile_gen = CountryProfileGenerator({
+        'ccyb_df': data.get('ccyb_df'),
+        'syrb_df': data.get('syrb_df'),
+        'bbm_df': data.get('bbm_df'),
+        'osii_df': data.get('osii_df'),
+        'capital_overall_df': capital_overall_df,
+    })
+    
+    logger.info(f"   -> Found {len(profile_gen.countries)} countries")
+    countries_data = {}
+    for country in profile_gen.countries:
+        try:
+            profile = profile_gen.get_country_profile(country)
+            # Convert dates to strings for JSON serialization
+            profile_serializable = serialize_profile(profile)
+            countries_data[country] = profile_serializable
+        except Exception as e:
+            logger.warning(f"Failed to generate profile for {country}: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
+    
+    logger.info(f"   -> Generated {len(countries_data)} country profiles")
+    
+    # 3d. Knowledge Graph Generation
+    logger.info("3d. Knowledge Graph...")
+    graph_data = None
+    try:
+        graph_data = profile_gen.build_knowledge_graph_data()
+        import json
+        knowledge_graph_json = json.dumps(graph_data, default=str, ensure_ascii=False)
+        logger.info(f"   -> Generated knowledge graph: {len(graph_data.get('nodes', []))} nodes, {len(graph_data.get('edges', []))} edges")
+    except Exception as e:
+        logger.warning(f"Failed to generate knowledge graph: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
+        knowledge_graph_json = '{"nodes": [], "edges": []}'
+        graph_data = {"nodes": [], "edges": []}
+    
+    # Add knowledge graph data to analysis inputs for grounding and AI analysis
+    if graph_data:
+        analysis_inputs['knowledge_graph_data'] = graph_data
+    
     analyses = analyzer.run_analysis(analysis_inputs, paths, {})
 
-    # 3b. Grounded validation against data, charts, and external sources
+    # 3b. Grounded validation against data, charts, and external sources (now with graph data)
     if run_grounding:
         logger.info("3b. Grounded Validation...")
         validator = GroundingValidator(LLM_CONFIG, SEARCH_CONFIG, analyzer._clean_text)
         analyses = validator.run(analyses, analysis_inputs, data)
+    
+    # 3e. Knowledge Graph AI Analysis
+    logger.info("3e. Knowledge Graph AI Analysis...")
+    try:
+        # Prepare summary data from tables
+        latest_ccyb = data.get('latest_ccyb_df', pd.DataFrame())
+        active_ccyb_count = 0
+        if not latest_ccyb.empty and 'rate' in latest_ccyb.columns:
+            active_ccyb_count = len(latest_ccyb[latest_ccyb['rate'] > 0])
+        
+        active_syrb_count = len(active_syrb) if active_syrb is not None and not active_syrb.empty else 0
+        active_bbm_count = len(active_bbm) if active_bbm is not None and not active_bbm.empty else 0
+        
+        summary_data = {
+            'active_ccyb': active_ccyb_count,
+            'active_syrb': active_syrb_count,
+            'active_bbm': active_bbm_count,
+        }
+        
+        if graph_data and graph_data.get('nodes'):
+            kg_analysis = analyzer.analyze_knowledge_graph(graph_data, summary_data)
+            analyses['knowledge_graph_analysis'] = kg_analysis
+            logger.info("   -> Generated knowledge graph AI analysis")
+        else:
+            analyses['knowledge_graph_analysis'] = "Knowledge graph data not available for analysis."
+    except Exception as e:
+        logger.warning(f"Failed to generate knowledge graph AI analysis: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
+        analyses['knowledge_graph_analysis'] = "Knowledge graph analysis unavailable."
+    
+    # Generate AI analysis for each country profile
+    for country, profile_data in countries_data.items():
+        try:
+            analysis_key = f"country_profile_{country.lower().replace(' ', '_')}"
+            if analysis_key not in analyses:
+                # Generate AI analysis for country profile
+                profile_text = format_profile_for_llm(profile_data)
+                country_analysis = analyzer.summarize_text(
+                    profile_text,
+                    f"Provide a comprehensive 3-4 paragraph analysis of {country}'s macroprudential policy profile, focusing on current policy stance, recent trends, policy objectives, and comparison with regional context."
+                )
+                analyses[analysis_key] = country_analysis
+                profile_data['ai_analysis'] = country_analysis
+        except Exception as e:
+            logger.warning(f"Failed to generate AI analysis for {country}: {e}")
+            profile_data['ai_analysis'] = ''
     
     # 4. Render
     logger.info("4. Riport...")
@@ -260,6 +417,8 @@ def main():
         news_feed_html=news_feed_html,
         bbm_ref_date=bbm_ref_date,
         ltv_ref_date=ltv_ref_date,
+        countries_data=countries_data,
+        knowledge_graph_json=knowledge_graph_json,
     )
     
     with open("index.html", "w", encoding="utf-8") as f: f.write(rendered_html)

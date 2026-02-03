@@ -17,6 +17,8 @@ Reduces the time required for quarterly macroprudential reporting from days to m
 - **Part I: CCyB Monitor:** Tracks Countercyclical Capital Buffer rates, calculating diffusion indices and analyzing the credit gap vs. rate decoupling.
 - **Part II: SyRB Monitor:** A dedicated section for the **Systemic Risk Buffer**, distinguishing between **General** and **Sectoral** measures (e.g., Residential/Commercial Real Estate).
 - **Part III: BBM Monitor:** Borrower-Based Measures adoption, cross-country active tools matrix, and recent decisions.
+- **Part IV: Country Profiles:** Interactive country-specific pages with current status, historical evolution, recent changes, active measures, and peer comparison.
+- **Part V: Knowledge Graph Analysis:** AI-powered analysis of policy relationships and patterns, comparing graph-derived insights with table-based data for validation and pattern identification.
 
 ### 2. AI-Driven Intelligence (Gemini 2.5 Flash Lite) 🧠
 
@@ -24,7 +26,8 @@ Reduces the time required for quarterly macroprudential reporting from days to m
 - **Section Summaries:** Specific high-level summaries for both CCyB and SyRB chapters.
 - **Professional Keyword Extraction:** Automatically converts complex legal descriptions into concise, risk-focused tags (e.g., _"Sectoral systemic risk, mortgage loan portfolios"_), filtered to remove technical noise.
 - **Sequential Analysis:** High-level summaries are built upon individual chart analyses for maximum context and accuracy.
-- **Grounded Validation:** LangGraph-based verification of AI text against data, chart context, and (optional) Google Search sources.
+- **Grounded Validation:** LangGraph-based verification of AI text against data, chart context, knowledge graph relationships, and (optional) Google Search sources.
+- **Knowledge Graph Analysis:** AI analysis of policy relationships, comparing graph structure with table data to identify patterns, validate consistency, and highlight policy clusters.
 
 ### 3. Modern, Mobile-First UI 📱
 
@@ -35,6 +38,8 @@ Reduces the time required for quarterly macroprudential reporting from days to m
 - **Interactive Charts:** Zoomable Plotly visualizations (Diffusion Trends, Risk Analysis, Sectoral Focus).
 - **Smart Filtering:** Instant JavaScript-based filtering for historical time-series charts.
 - **Data Portability:** Integrated download links for processed trend data (Excel).
+- **Country Profiles:** Dynamic country-specific pages with comprehensive macroprudential policy overview.
+- **Knowledge Graph Analysis:** AI-driven insights from policy relationship graphs, used for enhanced analysis and validation.
 - **Refactored Output:** `index.html` stays lightweight by embedding charts/tables from `reports/plots` and `reports/partials`.
 
 ### 4. Robust ETL Pipeline ⚙️
@@ -55,13 +60,14 @@ Reduces the time required for quarterly macroprudential reporting from days to m
 
 ### 6. LLM Flow (Detailed) 🤖
 
-- **Inputs:** Structured tables (CCyB/SyRB/BBM/News) and chart images where relevant.
+- **Inputs:** Structured tables (CCyB/SyRB/BBM/News), knowledge graph relationships, and chart images where relevant.
 - **Chart Analyses:** Per-chart interpretations focused on last-12-month objectives and risks.
 - **Section Summaries:** Synthesizes recent trends and policy intent by country group, avoiding tool mechanics.
 - **Global Executive Summary:** Integrates section summaries into a multi-paragraph strategic narrative.
+- **Knowledge Graph Analysis:** AI analysis comparing graph structure with table data to identify patterns and validate consistency.
 - **Text Cleaning:** Converts LLM output to HTML-safe summaries with consistent emphasis.
 - **News Enrichment:** Generates 2–3 sentence summaries and assigns policy/theme tags.
-- **Optional Grounding:** Multimodal validation against data tables, chart images, and optional Google Search context.
+- **Optional Grounding:** Multimodal validation against data tables, chart images, knowledge graph relationships, and optional Google Search context.
 
 ---
 
@@ -83,15 +89,26 @@ graph TD
         D -->|Verified Output| F[Final Analysis]
     end
 
+    subgraph Data_Enrichment ["Data Enrichment"]
+        C -->|Country Data| K[Country Profile Generator]
+        K -->|Profiles| L[Knowledge Graph Builder]
+        L -->|Graph Data| M[("Country Profiles<br/>& Graph Data")]
+        M -->|Graph Context| D
+    end
+
     subgraph Presentation ["Dashboard Layer"]
         F --> G[Jinja2 Template Engine]
         C -->|Visual Data| H[Plotly Charts]
+        M -->|Country & Graph Data| G
         G & H --> I[("HTML Dashboard<br/>(index.html + embedded plots/partials)")]
     end
 
     style A fill:#f9f,stroke:#333,stroke-width:2px
     style C fill:#f9f,stroke:#333,stroke-width:2px
     style E fill:#bbf,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style K fill:#fef3c7,stroke:#333,stroke-width:2px
+    style L fill:#fef3c7,stroke:#333,stroke-width:2px
+    style M fill:#f9f,stroke:#333,stroke-width:2px
     style I fill:#bfb,stroke:#333,stroke-width:2px
 ```
 
@@ -106,8 +123,9 @@ graph TD
     │   └── report_template.html     # Jinja2 HTML template
     ├── etl.py                       # Main ETL: Downloads & Cleans CCyB/SyRB data
     ├── visualizer.py                # Generates interactive Plotly components & PNGs
-    ├── llm_analysis.py              # AI Logic: Summaries, Professional Keyword Extraction
-    ├── grounding_validator.py       # LangGraph validation: data + charts + search grounding
+    ├── llm_analysis.py              # AI Logic: Summaries, Professional Keyword Extraction, Knowledge Graph Analysis
+    ├── grounding_validator.py       # LangGraph validation: data + charts + graph relationships + search grounding
+    ├── country_profiles.py          # Country profile generation and knowledge graph data builder
     ├── main.py                      # Main orchestrator script
     ├── config.py                    # Centralized configuration (URLs, Model settings)
     ├── utils.py                     # Helper functions
@@ -189,7 +207,18 @@ The generated `index.html` includes:
     - _Active Measures Cross-Country Comparison:_ Pivot table of active tools.
     - _LTV Measures:_ Country list, limit ranges, FTB discounts, and exceptions.
     - _Latest Decisions:_ AI-cleaned BBM decisions.
-5.  **News Section:**
+5.  **Country Profiles:**
+    - _Current Status:_ Snapshot of active measures (CCyB, SyRB, O-SII, BBM) and total capital buffer.
+    - _Historical Evolution:_ Time-series trends for CCyB and SyRB rates.
+    - _Recent Changes:_ Last 12 months of policy changes and activations.
+    - _Active Measures Details:_ Comprehensive breakdown of each active measure.
+    - _Comparison with Peers:_ Regional averages and similar countries by capital buffer level.
+6.  **Knowledge Graph Analysis:**
+    - _AI-Powered Insights:_ Analysis of policy relationships and patterns derived from knowledge graph structure.
+    - _Data Validation:_ Comparison of graph statistics with table-based counts to ensure consistency.
+    - _Pattern Identification:_ Highlights policy mix patterns, regional similarities, and measure adoption trends.
+    - _Grounding Integration:_ Graph data used to enhance AI validation and provide additional context for analysis.
+7.  **News Section:**
     - _Highlights Summary:_ AI synthesis of the last 12 months.
     - _News Feed:_ Cards with tags, source icons, dates, and country pills.
     - _Filters:_ Keyword search + policy/theme filters.
