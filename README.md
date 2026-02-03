@@ -176,7 +176,6 @@ To generate the static HTML report:
 This repository uses **GitHub Actions** to automatically build and deploy the dashboard:
 
 - **Automatic builds:** Runs on every push to `master` branch
-- **Scheduled builds:** Runs daily at 2 AM UTC
 - **Manual trigger:** Can be triggered manually from GitHub Actions tab
 
 The workflow:
