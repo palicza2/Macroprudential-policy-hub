@@ -303,13 +303,26 @@ class ETLPipeline:
             
             for idx in range(header_row + 1, len(df_raw)):
                 row = df_raw.iloc[idx]
-                col0 = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ""
-                col1 = str(row.iloc[1]).strip() if len(row) > 1 and pd.notna(row.iloc[1]) else ""
+                col0_val = row.iloc[0] if len(row) > 0 else None
+                col1_val = row.iloc[1] if len(row) > 1 else None
                 
-                # Check if this is a country row (has country name in col 0, no bank name in col 1)
-                if col0 and col0 != "nan" and len(col0) > 2 and (not col1 or col1 == "nan"):
+                # Convert to strings, handling NaN and empty values
+                col0 = ""
+                if pd.notna(col0_val):
+                    col0 = str(col0_val).strip()
+                    if col0 == "nan" or not col0:
+                        col0 = ""
+                
+                col1 = ""
+                if pd.notna(col1_val):
+                    col1 = str(col1_val).strip()
+                    if col1 == "nan" or not col1:
+                        col1 = ""
+                
+                # Check if this is a country row (has country name in col 0, no meaningful bank name in col 1)
+                if col0 and len(col0) > 2 and (not col1 or len(col1) < 3):
                     # Skip authority rows
-                    if any(term in col0.lower() for term in ["bank", "authority", "central", "national", "supervisory", "finanzmarktaufsicht", "minister", "commission", "komisja", "banca", "banco", "eesti", "footnotes"]):
+                    if any(term in col0.lower() for term in ["bank", "authority", "central", "national", "supervisory", "finanzmarktaufsicht", "minister", "commission", "komisja", "banca", "banco", "eesti", "footnotes", "finanssivalvonta", "finansinspektionen", "autorit", "haut conseil", "bundesanstalt"]):
                         continue
                     # This is a country row
                     current_country = col0
@@ -319,36 +332,48 @@ class ETLPipeline:
                     continue
                 
                 # Check if this is a bank row (has bank name in col 1, even if col0 is empty/NaN)
-                if col1 and col1 != "nan" and len(col1) > 2 and current_country:
+                # Bank rows have meaningful text in col1 (length > 5 to avoid single characters or numbers)
+                if col1 and len(col1) > 5 and current_country:
                     bank_name = col1
                     lei_code = str(row.iloc[2]).strip() if len(row) > 2 and pd.notna(row.iloc[2]) else ""
                     
                     # Extract G-SII buffer (col 5)
                     gsii_rate = None
-                    if len(row) > 5 and pd.notna(row.iloc[5]):
-                        try:
-                            gsii_val = str(row.iloc[5]).strip()
-                            if gsii_val and gsii_val != "nan":
-                                gsii_rate = float(gsii_val)
-                        except (ValueError, TypeError):
-                            pass
+                    if len(row) > 5:
+                        col5_val = row.iloc[5]
+                        if pd.notna(col5_val):
+                            try:
+                                if isinstance(col5_val, (int, float)):
+                                    gsii_rate = float(col5_val)
+                                else:
+                                    gsii_val = str(col5_val).strip().replace(',', '.')
+                                    if gsii_val and gsii_val != "nan" and gsii_val:
+                                        gsii_rate = float(gsii_val)
+                            except (ValueError, TypeError):
+                                pass
                     
                     # Extract O-SII buffer (col 6)
                     osii_rate = None
-                    if len(row) > 6 and pd.notna(row.iloc[6]):
-                        try:
-                            osii_val = str(row.iloc[6]).strip()
-                            if osii_val and osii_val != "nan":
-                                osii_rate = float(osii_val)
-                        except (ValueError, TypeError):
-                            pass
+                    if len(row) > 6:
+                        col6_val = row.iloc[6]
+                        if pd.notna(col6_val):
+                            try:
+                                if isinstance(col6_val, (int, float)):
+                                    osii_rate = float(col6_val)
+                                else:
+                                    osii_val = str(col6_val).strip().replace(',', '.')
+                                    # Skip text descriptions like "10 banks: 0.45%-1.75%"
+                                    if osii_val and osii_val != "nan" and not any(x in osii_val.lower() for x in ["banks", "bank"]):
+                                        osii_rate = float(osii_val)
+                            except (ValueError, TypeError):
+                                pass
                     
                     # Use O-SII rate if available, otherwise G-SII rate
-                    # If both are None but we have a bank name, still include it (rate might be 0 or in other columns)
+                    # If both are None, set rate to 0.0 (bank exists but no buffer requirement)
                     rate = osii_rate if osii_rate is not None else (gsii_rate if gsii_rate is not None else 0.0)
                     buffer_type = "O-SII" if osii_rate is not None and osii_rate > 0 else ("G-SII" if gsii_rate is not None and gsii_rate > 0 else "O-SII")
                     
-                    # Include all banks, even if rate is 0 (they might have other buffer requirements)
+                    # Include all banks, even if rate is 0 (they might have other buffer requirements or be listed for completeness)
                     if bank_name and current_country:
                         results.append({
                             'country': current_country,
