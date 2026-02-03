@@ -16,55 +16,17 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
     
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-    
-    - name: Cache pip packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    - name: Set up environment variables
-      env:
-        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-        CUSTOM_SEARCH_API_KEY: ${{ secrets.CUSTOM_SEARCH_API_KEY }}
-        GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
-        SEARCH_ALLOWED_DOMAINS: ${{ secrets.SEARCH_ALLOWED_DOMAINS }}
-        SEARCH_ENABLED: ${{ secrets.SEARCH_ENABLED }}
-      run: |
-        echo "GOOGLE_API_KEY=$GOOGLE_API_KEY" >> $GITHUB_ENV
-        echo "CUSTOM_SEARCH_API_KEY=$CUSTOM_SEARCH_API_KEY" >> $GITHUB_ENV
-        echo "GOOGLE_CSE_ID=$GOOGLE_CSE_ID" >> $GITHUB_ENV
-        echo "SEARCH_ALLOWED_DOMAINS=$SEARCH_ALLOWED_DOMAINS" >> $GITHUB_ENV
-        echo "SEARCH_ENABLED=$SEARCH_ENABLED" >> $GITHUB_ENV
-    
-    - name: Run main.py (non-interactive)
-      env:
-        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-        CUSTOM_SEARCH_API_KEY: ${{ secrets.CUSTOM_SEARCH_API_KEY }}
-        GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
-        SEARCH_ALLOWED_DOMAINS: ${{ secrets.SEARCH_ALLOWED_DOMAINS }}
-        SEARCH_ENABLED: ${{ secrets.SEARCH_ENABLED }}
-        RUN_GROUNDING: "false"  # Set to "true" to enable grounding validation
-      run: |
-        python main.py
-    
-    - name: Commit and push changes
+    - name: Commit and push existing files
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add index.html assets/ reports/ figures/ data/*.parquet
-        git diff --staged --quiet || git commit -m "Auto-update dashboard [skip ci]"
-        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:master
+        # Only commit if there are changes to commit
+        if [ -n "$(git status --porcelain index.html assets/ reports/ figures/ 2>/dev/null)" ]; then
+          git add index.html assets/ reports/ figures/ || true
+          git commit -m "Auto-update dashboard files [skip ci]" || true
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:master || true
+        else
+          echo "No changes to commit"
+        fi
