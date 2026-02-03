@@ -112,28 +112,7 @@ def build_knowledge_graph_data(
                     'width': 2 + (float(syrb['rate']) / 2),
                 })
             
-            # O-SII kapcsolat
-            osii = current_status.get('osii')
-            if osii and osii.get('rate', 0) > 0:
-                node_id = f"O-SII_{iso2}"
-                if node_id not in node_ids:
-                    nodes.append({
-                        'id': node_id,
-                        'label': f"O-SII: {osii['rate']:.2f}%",
-                        'group': 'osii',
-                        'title': f"O-SII rate: {osii['rate']:.2f}%",
-                        'value': float(osii['rate']) if osii.get('rate') else 5,
-                    })
-                    node_ids.add(node_id)
-                
-                edges.append({
-                    'from': iso2,
-                    'to': node_id,
-                    'label': 'HAS',
-                    'title': 'Has active O-SII buffer',
-                    'color': {'color': '#64748b'},
-                    'width': 2 + (float(osii['rate']) / 2),
-                })
+            # O-SII kapcsolat - eltávolítva, mert az OSII értékeket a bankok edge-jein mutatjuk
             
             # BBM kapcsolat
             bbm = current_status.get('bbm', [])
@@ -380,28 +359,24 @@ def build_knowledge_graph_data(
                         })
                         node_ids.add(bank_id)
                         
-                        # Connect bank to country
+                        # Connect bank to country with OSII/GSII rate information on the edge
                         if country_iso2 and country_iso2 in [n['id'] for n in nodes if n.get('group') == 'country']:
+                            # Create edge label with buffer type and rate
+                            edge_label = f"{buffer_type}: {rate:.2f}%"
+                            if gsii_rate and gsii_rate > 0 and osii_rate and osii_rate > 0:
+                                edge_label = f"G-SII: {gsii_rate:.2f}%, O-SII: {osii_rate:.2f}%"
+                            elif gsii_rate and gsii_rate > 0:
+                                edge_label = f"G-SII: {gsii_rate:.2f}%"
+                            elif osii_rate and osii_rate > 0:
+                                edge_label = f"O-SII: {osii_rate:.2f}%"
+                            
                             edges.append({
                                 'from': country_iso2,
                                 'to': bank_id,
-                                'label': 'HAS_BANK',
-                                'title': f'{country} has bank {bank_name} with {buffer_type} rate {rate:.2f}%',
+                                'label': edge_label,
+                                'title': f'{country} → {bank_name}\n{buffer_type} buffer: {rate:.2f}%' + (f'\nG-SII: {gsii_rate:.2f}%' if gsii_rate and gsii_rate > 0 else '') + (f'\nO-SII: {osii_rate:.2f}%' if osii_rate and osii_rate > 0 else ''),
                                 'color': {'color': '#ec4899'},
-                                'width': 1 + (float(rate) * 10),  # Thicker edge for higher rates
-                            })
-                        
-                        # Connect bank to OSII measure node if exists
-                        osii_node_id = f"O-SII_{country_iso2}"
-                        if osii_node_id in node_ids and rate > 0:
-                            edges.append({
-                                'from': bank_id,
-                                'to': osii_node_id,
-                                'label': 'SUBJECT_TO',
-                                'title': f'Bank subject to {buffer_type} buffer',
-                                'color': {'color': '#f59e0b'},
-                                'width': 1 + (float(rate) * 5),
-                                'dashes': False,
+                                'width': 1 + (float(rate) * 20),  # Thicker edge for higher rates
                             })
                         
                         # Connect similar banks within same country (same rate within 0.05%)
@@ -457,6 +432,78 @@ def build_knowledge_graph_data(
                                             'dashes': [5, 5],
                                             'width': 0.5,
                                         })
+            
+            # Connect banks from same banking group (based on name similarity)
+            # Common banking groups: Raiffeisen, Erste, UniCredit, BNP Paribas, etc.
+            bank_groups = {
+                'raiffeisen': ['raiffeisen'],
+                'erste': ['erste'],
+                'unicredit': ['unicredit', 'unicredit bank'],
+                'bnp paribas': ['bnp paribas'],
+                'santander': ['santander'],
+                'intesa': ['intesa'],
+                'commerzbank': ['commerzbank'],
+                'deutsche bank': ['deutsche bank'],
+                'societe generale': ['societe generale', 'société générale'],
+                'credit agricole': ['credit agricole', 'crédit agricole'],
+                'ing': ['ing bank', 'ing group'],
+                'kbc': ['kbc'],
+                'sparkassen': ['sparkassen', 'sparkasse'],
+                'volksbank': ['volksbank'],
+                'hypo': ['hypo'],
+            }
+            
+            # Extract bank group from bank name
+            def extract_bank_group(bank_name):
+                if not bank_name:
+                    return None
+                bank_name_lower = bank_name.lower()
+                for group_name, keywords in bank_groups.items():
+                    for keyword in keywords:
+                        if keyword in bank_name_lower:
+                            return group_name
+                return None
+            
+            # Group banks by banking group
+            banks_by_group = {}
+            for node in nodes:
+                if node.get('group') == 'bank':
+                    bank_name = node.get('bank_name', '')
+                    group = extract_bank_group(bank_name)
+                    if group:
+                        if group not in banks_by_group:
+                            banks_by_group[group] = []
+                        banks_by_group[group].append(node)
+            
+            # Connect banks from same group (cross-country connections)
+            for group_name, group_banks in banks_by_group.items():
+                if len(group_banks) > 1:
+                    for i, bank1 in enumerate(group_banks):
+                        for bank2 in group_banks[i+1:]:
+                            # Check if banks are in different countries
+                            bank1_country_edges = [e for e in edges if e.get('to') == bank1['id'] and e.get('label') and ('O-SII' in e.get('label', '') or 'G-SII' in e.get('label', ''))]
+                            bank2_country_edges = [e for e in edges if e.get('to') == bank2['id'] and e.get('label') and ('O-SII' in e.get('label', '') or 'G-SII' in e.get('label', ''))]
+                            
+                            bank1_country = bank1_country_edges[0].get('from') if bank1_country_edges else None
+                            bank2_country = bank2_country_edges[0].get('from') if bank2_country_edges else None
+                            
+                            # Only connect if different countries
+                            if bank1_country and bank2_country and bank1_country != bank2_country:
+                                edge_exists = any(
+                                    (e.get('from') == bank1['id'] and e.get('to') == bank2['id']) or
+                                    (e.get('from') == bank2['id'] and e.get('to') == bank1['id'])
+                                    for e in edges if e.get('label') == 'BANK_GROUP'
+                                )
+                                if not edge_exists:
+                                    edges.append({
+                                        'from': bank1['id'],
+                                        'to': bank2['id'],
+                                        'label': 'BANK_GROUP',
+                                        'title': f'Same banking group: {group_name.title()}',
+                                        'color': {'color': '#6366f1'},
+                                        'dashes': [10, 5],
+                                        'width': 2,
+                                    })
         except Exception as e:
             logger.warning(f"Failed to add OSII banks to knowledge graph: {e}")
             import traceback

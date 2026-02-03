@@ -901,29 +901,30 @@ function initOSIIGraph() {
         return;
     }
     
-    // Filter to only show countries, banks, and OSII-related nodes/edges
+    // Filter to only show countries and banks (no separate OSII nodes)
     var osiiNodes = graphData.nodes.filter(function(node) {
-        return node.group === 'country' || node.group === 'bank' || node.group === 'osii';
+        return node.group === 'country' || node.group === 'bank';
     });
     
     // Get country and bank IDs
     var countryIds = osiiNodes.filter(function(n) { return n.group === 'country'; }).map(function(n) { return n.id; });
     var bankIds = osiiNodes.filter(function(n) { return n.group === 'bank'; }).map(function(n) { return n.id; });
     
-    // Filter edges to only show relevant connections
+    // Filter edges to only show country-bank connections and bank-bank connections
     var osiiEdges = graphData.edges.filter(function(edge) {
         var fromIsCountry = countryIds.indexOf(edge.from) !== -1;
         var toIsCountry = countryIds.indexOf(edge.to) !== -1;
         var fromIsBank = bankIds.indexOf(edge.from) !== -1;
         var toIsBank = bankIds.indexOf(edge.to) !== -1;
-        var isOSII = edge.from.indexOf('O-SII') !== -1 || edge.to.indexOf('O-SII') !== -1;
-        var isHAS_BANK = edge.label === 'HAS_BANK';
         var isSIMILAR_BANK = edge.label === 'SIMILAR_BANK';
+        var isSAME_TYPE = edge.label === 'SAME_TYPE';
+        var isBANK_GROUP = edge.label === 'BANK_GROUP';
+        var hasOSIILabel = edge.label && (edge.label.indexOf('O-SII') !== -1 || edge.label.indexOf('G-SII') !== -1);
         
-        return (fromIsCountry && (toIsBank || isOSII)) || 
-               (fromIsBank && toIsBank) || 
-               (isHAS_BANK || isSIMILAR_BANK) ||
-               (isOSII && (fromIsCountry || toIsCountry));
+        // Include country-to-bank edges (with OSII/GSII labels) and bank-to-bank edges
+        return (fromIsCountry && toIsBank) || 
+               (fromIsBank && toIsBank && (isSIMILAR_BANK || isSAME_TYPE || isBANK_GROUP)) ||
+               hasOSIILabel;
     });
     
     // Create vis.js DataSets

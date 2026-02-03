@@ -565,7 +565,15 @@ class ETLPipeline:
         latest_syrb = get_latest(syrb_df)
         latest_ccyb = get_latest(ccyb_df)
         latest_bbm = bbm_df[bbm_df['active_status'] == 'Active'].reset_index(drop=True) if not bbm_df.empty else pd.DataFrame()
-        latest_osii = get_latest(osii_df) if osii_df is not None and not osii_df.empty else pd.DataFrame()
+        # For OSII, we want all banks, not just the latest per country
+        # Filter to only active banks if status column exists
+        if osii_df is not None and not osii_df.empty:
+            if 'status' in osii_df.columns:
+                latest_osii = osii_df[osii_df['status'] == 'Active'].reset_index(drop=True)
+            else:
+                latest_osii = osii_df.copy()
+        else:
+            latest_osii = pd.DataFrame()
         
         if not syrb_df.empty: syrb_df.to_parquet(FILES["syrb_processed"])
         if not ccyb_df.empty: ccyb_df.to_parquet(FILES["ccyb_processed"])
