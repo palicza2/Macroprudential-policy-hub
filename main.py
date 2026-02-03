@@ -276,6 +276,7 @@ def main():
         'ltv_table_df': ltv_table,
         'news_df': news_df,
         'capital_overall_df': capital_overall_df,
+        'latest_osii_df': data.get('latest_osii_df'),
     }
 
     # 3c. Country Profiles Generation (before analysis to provide graph data)

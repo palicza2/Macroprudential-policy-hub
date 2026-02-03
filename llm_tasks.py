@@ -132,6 +132,21 @@ def build_chart_tasks(
     ]
 
 
+def build_osii_analysis_task(osii_data_str: str) -> LLMTask:
+    """Build OSII/GSII analysis task."""
+    return LLMTask(
+        id="osii_analysis",
+        data=osii_data_str,
+        temp=0.3,
+        prompt=(
+            "Analyze OSII/GSII buffer rates by country and bank with focus on the last 12 months. "
+            "Emphasize country patterns, bank-level differences, and what objectives/risks these buffers address; avoid explaining tool mechanics. "
+            "Be specific about which countries have higher/lower rates and notable bank-level variations. "
+            "Write ONE paragraph of 6-7 sentences."
+        ),
+    )
+
+
 def build_section_tasks(results: Dict[str, str]) -> List[LLMTask]:
     sys_ctx = SYSTEM_CONTEXT_LAST_12M
     return [

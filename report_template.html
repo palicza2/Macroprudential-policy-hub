@@ -504,16 +504,16 @@
 
             <div class="card">
                 <div class="card-title">System Architecture</div>
-                <p class="about-arch-desc">Three-stage pipeline: <strong>Data Ingestion & ETL</strong> processes ESRB Excel files into Parquet storage; <strong>Data Enrichment</strong> generates country profiles and knowledge graph relationships for enhanced AI context; <strong>AI Analysis & Grounding</strong> uses <strong>LangGraph</strong> to orchestrate validation (extract claims → verify against data/charts/graph relationships → optional Google Search → refine with Gemini 2.5 Flash); <strong>Dashboard Layer</strong> renders HTML with embedded Plotly charts and AI-generated insights.</p>
+                <p class="about-arch-desc">Four-stage pipeline: <strong>Data Ingestion & ETL</strong> processes ESRB Excel files (CCyB, SyRB, BBM, GSII/O-SII) into Parquet storage with individual bank-level extraction; <strong>Data Enrichment</strong> generates country profiles and knowledge graph relationships (countries, measures, banks) for enhanced AI context; <strong>AI Analysis & Grounding</strong> uses <strong>LangGraph</strong> to orchestrate validation (extract claims → verify against data/charts/graph relationships → optional Google Search → refine with Gemini 2.5 Flash), including OSII/GSII bank-level analysis; <strong>Dashboard Layer</strong> renders HTML with embedded Plotly charts, interactive country/bank selectors, and AI-generated insights.</p>
                 <div class="mermaid-container">
                     <div class="mermaid">
 graph TD
-    subgraph Data_Ingestion ["Data Ingestion and ETL"]
+    subgraph Data_Ingestion["Data Ingestion and ETL"]
         A[("ESRB Data Source<br/>Excel Files")] -->|Download| B[Python ETL Pipeline]
-        B -->|Clean Normalize| C[("Parquet Storage<br/>Optimized Data")]
+        B -->|Clean Normalize Extract Banks| C[("Parquet Storage<br/>Optimized Data")]
     end
 
-    subgraph AI_Core ["AI Analysis and Grounding"]
+    subgraph AI_Core["AI Analysis and Grounding"]
         C -->|Retrieve Context| D{LangGraph<br/>Validator}
         H -->|Chart Images| D
         J[Google Search Optional] -->|External Evidence| D
@@ -522,14 +522,14 @@ graph TD
         D -->|Verified Output| F[Final Analysis]
     end
 
-    subgraph Data_Enrichment ["Data Enrichment"]
+    subgraph Data_Enrichment["Data Enrichment"]
         C -->|Country Data| K[Country Profile Generator]
         K -->|Profiles| L[Knowledge Graph Builder]
         L -->|Graph Data| M[("Country Profiles<br/>& Graph Data")]
         M -->|Graph Context| D
     end
 
-    subgraph Presentation ["Dashboard Layer"]
+    subgraph Presentation["Dashboard Layer"]
         F --> G[Jinja2 Template Engine]
         C -->|Visual Data| H[Plotly Charts]
         M -->|Country & Graph Data| G

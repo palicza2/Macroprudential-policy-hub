@@ -307,9 +307,9 @@ class ETLPipeline:
                 col1 = str(row.iloc[1]).strip() if len(row) > 1 and pd.notna(row.iloc[1]) else ""
                 
                 # Check if this is a country row (has country name in col 0, no bank name in col 1)
-                if col0 and col0 != "nan" and len(col0) > 2 and not col1:
+                if col0 and col0 != "nan" and len(col0) > 2 and (not col1 or col1 == "nan"):
                     # Skip authority rows
-                    if any(term in col0.lower() for term in ["bank", "authority", "central", "national", "supervisory", "finanzmarktaufsicht"]):
+                    if any(term in col0.lower() for term in ["bank", "authority", "central", "national", "supervisory", "finanzmarktaufsicht", "minister", "commission", "komisja", "banca", "banco", "eesti", "footnotes"]):
                         continue
                     # This is a country row
                     current_country = col0
@@ -318,7 +318,7 @@ class ETLPipeline:
                         current_iso2 = current_iso2[0] if current_iso2 else None
                     continue
                 
-                # Check if this is a bank row (has bank name in col 1)
+                # Check if this is a bank row (has bank name in col 1, even if col0 is empty/NaN)
                 if col1 and col1 != "nan" and len(col1) > 2 and current_country:
                     bank_name = col1
                     lei_code = str(row.iloc[2]).strip() if len(row) > 2 and pd.notna(row.iloc[2]) else ""
@@ -344,10 +344,12 @@ class ETLPipeline:
                             pass
                     
                     # Use O-SII rate if available, otherwise G-SII rate
-                    rate = osii_rate if osii_rate is not None else (gsii_rate if gsii_rate is not None else None)
-                    buffer_type = "O-SII" if osii_rate is not None else ("G-SII" if gsii_rate is not None else None)
+                    # If both are None but we have a bank name, still include it (rate might be 0 or in other columns)
+                    rate = osii_rate if osii_rate is not None else (gsii_rate if gsii_rate is not None else 0.0)
+                    buffer_type = "O-SII" if osii_rate is not None and osii_rate > 0 else ("G-SII" if gsii_rate is not None and gsii_rate > 0 else "O-SII")
                     
-                    if rate is not None and rate > 0:
+                    # Include all banks, even if rate is 0 (they might have other buffer requirements)
+                    if bank_name and current_country:
                         results.append({
                             'country': current_country,
                             'iso2': current_iso2,

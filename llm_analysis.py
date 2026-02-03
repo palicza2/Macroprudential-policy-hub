@@ -9,7 +9,7 @@ from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
 from config import LLM_CONFIG
 from prompts import SYSTEM_CONTEXT_LAST_12M
-from llm_tasks import build_chart_tasks, build_section_tasks, build_global_task
+from llm_tasks import build_chart_tasks, build_section_tasks, build_global_task, build_osii_analysis_task
 from llm_runner import run_tasks, run_task
 from knowledge_graph import KnowledgeGraphRAG
 
@@ -246,6 +246,7 @@ INPUT:
         ltv_table_str = df_to_string(data_inputs.get('ltv_table_df'))
         news_str = df_to_string(data_inputs.get('news_df'))
         capital_overall_str = df_to_string(data_inputs.get('capital_overall_df'))
+        osii_data_str = df_to_string(data_inputs.get('latest_osii_df'))
         
         # 1) Chart/table tasks
         chart_tasks = build_chart_tasks(
@@ -260,6 +261,12 @@ INPUT:
             capital_overall_str=capital_overall_str,
         )
         results = run_tasks(analyzer=self, tasks=chart_tasks, plot_paths=plot_paths)
+        
+        # 1b) OSII/GSII analysis task
+        if osii_data_str and osii_data_str != "No numeric data available.":
+            logger.info("  🧠 Analysis: osii_analysis...")
+            osii_task = build_osii_analysis_task(osii_data_str)
+            results[osii_task.id] = run_task(analyzer=self, task=osii_task)
 
         # 2) Section summaries
         logger.info("  🧠 Section Summaries...")

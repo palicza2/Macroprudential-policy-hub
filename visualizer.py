@@ -36,10 +36,51 @@ class Visualizer:
         # 2. CCyB Time Series
         df_hist = data.get('ccyb_df')
         if df_hist is not None and not df_hist.empty:
-            active_countries = df_hist[df_hist['rate'] > 0]['country'].unique()
-            df_plot = df_hist[df_hist['country'].isin(active_countries)].sort_values('date')
-            fig = px.line(df_plot, x='date', y='rate', color='country', title='Historical CCyB Rates', template='plotly_white')
-            fig.update_layout(xaxis_title="", yaxis_title="Rate (%)", legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"), margin=dict(b=100))
+            # Ensure we have the right columns and data types
+            if 'country' not in df_hist.columns and 'iso2' in df_hist.columns:
+                # If we only have iso2, we might need to convert it or use it as country identifier
+                df_hist = df_hist.copy()
+            
+            # Sort by country and date to ensure proper time series
+            df_hist = df_hist.sort_values(['country', 'date']).copy()
+            
+            # For each country, ensure we have a proper time series (not cumulative)
+            # The rate should be the actual rate at that date, not cumulative
+            df_plot = df_hist.copy()
+            
+            # Filter out invalid rates (should be between 0 and ~5% typically)
+            df_plot = df_plot[
+                (df_plot['rate'] >= 0) & 
+                (df_plot['rate'] <= 5.0)  # Reasonable upper bound for CCyB
+            ].copy()
+            
+            # Use step plot to show actual rate changes (not interpolated line)
+            fig = go.Figure()
+            
+            # Group by country and create step traces
+            for country in df_plot['country'].unique():
+                country_data = df_plot[df_plot['country'] == country].sort_values('date')
+                if not country_data.empty:
+                    fig.add_trace(go.Scatter(
+                        x=country_data['date'],
+                        y=country_data['rate'],
+                        mode='lines+markers',
+                        name=country,
+                        line=dict(shape='hv'),  # Step function (horizontal then vertical)
+                        hovertemplate=f'<b>{country}</b><br>Date: %{{x}}<br>Rate: %{{y:.2f}}%<extra></extra>'
+                    ))
+            
+            fig.update_layout(
+                title='Historical CCyB Rates',
+                template='plotly_white',
+                xaxis_title="Date",
+                yaxis_title="Rate (%)",
+                yaxis=dict(range=[0, 3.0]),  # Set reasonable y-axis range (0-3%)
+                legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
+                margin=dict(b=100),
+                hovermode='closest'
+            )
+            
             plots_inline['ccyb_timeseries'] = fig.to_html(
                 full_html=False,
                 include_plotlyjs=False,
