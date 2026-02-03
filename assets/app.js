@@ -5,7 +5,10 @@ function toggleSidebar() {
     if (overlay) overlay.classList.toggle('active');
 }
 
-function activateTab(tabName) {
+function activateTab(tabName, updateHash) {
+    // updateHash defaults to true
+    if (updateHash === undefined) updateHash = true;
+    
     var buttons = document.querySelectorAll('.tab-btn');
     var contents = document.querySelectorAll('.tab-content');
     var navLinks = document.querySelectorAll('.nav-link[data-tab]');
@@ -21,6 +24,25 @@ function activateTab(tabName) {
     navLinks.forEach(function(link) {
         link.classList.toggle('active', link.dataset.tab === tabName);
     });
+    
+    // Update URL hash for shareable links
+    if (updateHash) {
+        var currentHash = window.location.hash;
+        var newHash = '#' + tabName;
+        
+        // Preserve country parameter if exists
+        if (currentHash && currentHash.indexOf('country=') !== -1) {
+            var countryMatch = currentHash.match(/country=([^&]+)/);
+            if (countryMatch) {
+                newHash += '&country=' + countryMatch[1];
+            }
+        }
+        
+        // Use replaceState to avoid adding to history
+        if (window.location.hash !== newHash) {
+            window.history.replaceState(null, '', newHash);
+        }
+    }
     
     // Re-render Mermaid diagrams when About tab becomes active
     if (tabName === 'about' && typeof mermaid !== 'undefined') {
@@ -72,6 +94,31 @@ function initTabs() {
             }
         });
     });
+    
+    // Handle URL hash on page load
+    function handleInitialHash() {
+        var hash = window.location.hash;
+        if (hash) {
+            // Check for tab name in hash (e.g., #ccyb, #syrb, etc.)
+            var tabMatch = hash.match(/^#([^&]+)/);
+            if (tabMatch) {
+                var tabName = tabMatch[1];
+                // Check if it's a valid tab
+                var validTabs = ['ccyb', 'syrb', 'bbm', 'country-profiles', 'knowledge-graph', 'news', 'about'];
+                if (validTabs.indexOf(tabName) !== -1) {
+                    activateTab(tabName, false); // Don't update hash again
+                }
+            }
+        }
+    }
+    
+    // Handle hash changes (back/forward button)
+    window.addEventListener('hashchange', function() {
+        handleInitialHash();
+    });
+    
+    // Initial load
+    handleInitialHash();
 }
 
 function initPlotFilter() {
@@ -192,27 +239,78 @@ function initCountryProfiles() {
         selector.appendChild(option);
     });
     
+    // Default country: Austria (or first country if Austria not available)
+    var defaultCountry = 'Austria';
+    if (countries.indexOf(defaultCountry) === -1 && countries.length > 0) {
+        defaultCountry = countries[0];
+    }
+    
     // Handle country selection
     selector.addEventListener('change', function(e) {
         var country = e.target.value;
         if (country && countriesData[country]) {
             loadCountryProfile(country, countriesData[country]);
             content.style.display = 'block';
+            
+            // Update URL hash with country parameter
+            var currentHash = window.location.hash;
+            var tabName = 'country-profiles';
+            var newHash = '#' + tabName + '&country=' + encodeURIComponent(country);
+            
+            if (window.location.hash !== newHash) {
+                window.history.replaceState(null, '', newHash);
+            }
         } else {
             content.style.display = 'none';
+            // Remove country from hash if no country selected
+            var currentHash = window.location.hash;
+            if (currentHash && currentHash.indexOf('&country=') !== -1) {
+                var newHash = currentHash.replace(/&country=[^&]*/, '');
+                window.history.replaceState(null, '', newHash);
+            }
         }
     });
     
     // Check URL hash for country parameter
-    var hash = window.location.hash;
-    if (hash && hash.startsWith('#country=')) {
-        var countryFromHash = decodeURIComponent(hash.substring(9));
-        if (countriesData[countryFromHash]) {
-            selector.value = countryFromHash;
-            loadCountryProfile(countryFromHash, countriesData[countryFromHash]);
+    function checkHashForCountry() {
+        var hash = window.location.hash;
+        var selectedCountry = null;
+        
+        if (hash) {
+            // Check for country parameter in hash (e.g., #country-profiles&country=Hungary)
+            var countryMatch = hash.match(/country=([^&]+)/);
+            if (countryMatch) {
+                var countryFromHash = decodeURIComponent(countryMatch[1]);
+                if (countriesData[countryFromHash]) {
+                    selectedCountry = countryFromHash;
+                    
+                    // Ensure country-profiles tab is active
+                    var tabMatch = hash.match(/^#([^&]+)/);
+                    if (tabMatch && tabMatch[1] !== 'country-profiles') {
+                        activateTab('country-profiles', false);
+                    }
+                }
+            }
+        }
+        
+        // If no country from hash, use default
+        if (!selectedCountry && defaultCountry && countriesData[defaultCountry]) {
+            selectedCountry = defaultCountry;
+        }
+        
+        // Load selected/default country
+        if (selectedCountry) {
+            selector.value = selectedCountry;
+            loadCountryProfile(selectedCountry, countriesData[selectedCountry]);
             content.style.display = 'block';
         }
     }
+    
+    // Check on initial load
+    checkHashForCountry();
+    
+    // Check on hash change
+    window.addEventListener('hashchange', checkHashForCountry);
 }
 
 function loadCountryProfile(country, profileData) {
