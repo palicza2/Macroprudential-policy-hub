@@ -19,6 +19,7 @@ from ccyb import prepare_ccyb_decisions
 from syrb import prepare_syrb_tables
 from capital_overall import build_capital_overall_df
 from country_profiles import CountryProfileGenerator
+from osii import prepare_osii_by_country, build_osii_table_html, get_osii_countries
 import json
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -426,6 +427,11 @@ def main():
 
     news_feed_html = build_news_feed_html(news_df, today_str=today_str)
 
+    # OSII/GSII data processing
+    osii_by_country = prepare_osii_by_country(data.get('latest_osii_df'))
+    osii_countries = get_osii_countries(data.get('latest_osii_df'))
+    osii_table_html = build_osii_table_html(osii_by_country, selected_country="Austria")
+
     rendered_html = render_report(
         base_dir=BASE_DIR,
         reports_dir=REPORTS_DIR,
@@ -442,6 +448,9 @@ def main():
         ltv_ref_date=ltv_ref_date,
         countries_data=countries_data,
         knowledge_graph_json=knowledge_graph_json,
+        osii_countries=osii_countries,
+        osii_table_html=osii_table_html,
+        osii_by_country=osii_by_country,
     )
     
     with open("index.html", "w", encoding="utf-8") as f: f.write(rendered_html)

@@ -282,7 +282,7 @@ class ETLPipeline:
         return pd.DataFrame()
     
     def _parse_capital_overview_sheet(self, xl, sheet_name):
-        """Parse the Overview of measures sheet to extract GSII/O-SII rates."""
+        """Parse the Overview of measures sheet to extract GSII/O-SII rates with individual bank details."""
         try:
             df_raw = xl.parse(sheet_name, header=None)
             
@@ -292,42 +292,73 @@ class ETLPipeline:
                 return pd.DataFrame()
             
             # Column mapping:
-            # Col 0: Country
-            # Col 6: G-SII/O-SII buffer (text format)
+            # Col 0: Country (or empty for bank rows)
+            # Col 1: Bank name (for individual banks)
+            # Col 2: LEI code
+            # Col 5: G-SII buffer
+            # Col 6: O-SII buffer
             results = []
+            current_country = None
+            current_iso2 = None
             
             for idx in range(header_row + 1, len(df_raw)):
                 row = df_raw.iloc[idx]
-                country = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ""
+                col0 = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ""
+                col1 = str(row.iloc[1]).strip() if len(row) > 1 and pd.notna(row.iloc[1]) else ""
                 
-                # Skip empty rows and sub-rows (bank names)
-                if not country or country == "nan" or len(country) < 2:
+                # Check if this is a country row (has country name in col 0, no bank name in col 1)
+                if col0 and col0 != "nan" and len(col0) > 2 and not col1:
+                    # Skip authority rows
+                    if any(term in col0.lower() for term in ["bank", "authority", "central", "national", "supervisory", "finanzmarktaufsicht"]):
+                        continue
+                    # This is a country row
+                    current_country = col0
+                    current_iso2 = coco.convert(names=[current_country], to='iso2', not_found=None)
+                    if isinstance(current_iso2, list):
+                        current_iso2 = current_iso2[0] if current_iso2 else None
                     continue
                 
-                # Skip authority rows (they usually have "Bank" or "Authority" in name and NaN in buffer columns)
-                if any(term in country.lower() for term in ["bank", "authority", "central", "national", "supervisory"]):
-                    continue
-                
-                # Extract G-SII/O-SII buffer from column 6
-                buffer_text = str(row.iloc[6]) if len(row) > 6 and pd.notna(row.iloc[6]) else ""
-                
-                if not buffer_text or buffer_text == "nan":
-                    continue
-                
-                # Parse buffer text (e.g., "7 banks: 0.5%-2%" -> extract max = 2%)
-                max_rate = self._extract_max_rate_from_text(buffer_text)
-                
-                if max_rate > 0:
-                    # Convert country name to ISO2
-                    iso2 = coco.convert(names=[country], to='iso2', not_found=None)
-                    if iso2:
+                # Check if this is a bank row (has bank name in col 1)
+                if col1 and col1 != "nan" and len(col1) > 2 and current_country:
+                    bank_name = col1
+                    lei_code = str(row.iloc[2]).strip() if len(row) > 2 and pd.notna(row.iloc[2]) else ""
+                    
+                    # Extract G-SII buffer (col 5)
+                    gsii_rate = None
+                    if len(row) > 5 and pd.notna(row.iloc[5]):
+                        try:
+                            gsii_val = str(row.iloc[5]).strip()
+                            if gsii_val and gsii_val != "nan":
+                                gsii_rate = float(gsii_val)
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    # Extract O-SII buffer (col 6)
+                    osii_rate = None
+                    if len(row) > 6 and pd.notna(row.iloc[6]):
+                        try:
+                            osii_val = str(row.iloc[6]).strip()
+                            if osii_val and osii_val != "nan":
+                                osii_rate = float(osii_val)
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    # Use O-SII rate if available, otherwise G-SII rate
+                    rate = osii_rate if osii_rate is not None else (gsii_rate if gsii_rate is not None else None)
+                    buffer_type = "O-SII" if osii_rate is not None else ("G-SII" if gsii_rate is not None else None)
+                    
+                    if rate is not None and rate > 0:
                         results.append({
-                            'country': country,
-                            'iso2': iso2[0] if isinstance(iso2, list) else iso2,
-                            'rate_numeric': max_rate,
-                            'rate_text': f"{max_rate}%",
-                            'description': buffer_text,
-                            'date': pd.Timestamp.now(),  # Use current date as reference
+                            'country': current_country,
+                            'iso2': current_iso2,
+                            'bank_name': bank_name,
+                            'lei_code': lei_code,
+                            'rate_numeric': rate,
+                            'rate_text': f"{rate:.2f}%",
+                            'buffer_type': buffer_type,
+                            'gsii_rate': gsii_rate,
+                            'osii_rate': osii_rate,
+                            'date': pd.Timestamp.now(),
                             'status': 'Active'
                         })
             
@@ -335,16 +366,6 @@ class ETLPipeline:
                 return pd.DataFrame()
             
             df = pd.DataFrame(results)
-            # Group by country and take max rate
-            df = df.groupby('iso2', as_index=False).agg({
-                'country': 'first',
-                'rate_numeric': 'max',
-                'rate_text': lambda x: f"{x.max()}%",
-                'description': 'first',
-                'date': 'first',
-                'status': 'first'
-            })
-            
             return df.sort_values(['country', 'rate_numeric'], ascending=[True, False]).reset_index(drop=True)
         except Exception as e:
             logger.error(f"Error parsing capital overview sheet: {e}")

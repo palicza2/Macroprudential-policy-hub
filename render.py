@@ -36,6 +36,9 @@ def render_report(
     ltv_ref_date: str,
     countries_data: Dict[str, Any] = None,
     knowledge_graph_json: str = '{"nodes": [], "edges": []}',
+    osii_countries: list = None,
+    osii_table_html: str = "",
+    osii_by_country: Dict = None,
 ) -> str:
     dirs = ensure_report_dirs(reports_dir)
     partials_dir = dirs["partials"]
@@ -60,6 +63,22 @@ def render_report(
             logger.warning(f"Failed to serialize countries_data: {e}")
             countries_data_json = "{}"
     
+    # Serialize osii_by_country to JSON for JavaScript
+    osii_by_country_json = "{}"
+    if osii_by_country:
+        import json
+        try:
+            # Convert DataFrames to dict format
+            osii_dict = {}
+            for country, df in osii_by_country.items():
+                osii_dict[country] = df.to_dict('records')
+            osii_by_country_json = json.dumps(osii_dict, default=str, ensure_ascii=False)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to serialize osii_by_country: {e}")
+            osii_by_country_json = "{}"
+    
     html = env.get_template(template_name).render(
         generation_date=generation_date,
         analyses=analyses,
@@ -72,6 +91,9 @@ def render_report(
         ltv_ref_date=ltv_ref_date,
         countries_data_json=countries_data_json,
         knowledge_graph_json=knowledge_graph_json,
+        osii_countries=osii_countries or [],
+        osii_table_html=osii_table_html,
+        osii_by_country_json=osii_by_country_json,
     )
     return html
 

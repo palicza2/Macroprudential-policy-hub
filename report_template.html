@@ -42,6 +42,7 @@
         </a>
         <a href="#ccyb-section" class="nav-link sub-nav" data-tab="capital">CCyB</a>
         <a href="#syrb-section" class="nav-link sub-nav" data-tab="capital">SyRB</a>
+        <a href="#osii-section" class="nav-link sub-nav" data-tab="capital">OSII/GSII</a>
         <a href="#capital-stack-section" class="nav-link sub-nav" data-tab="capital">Capital stack</a>
         <a href="#" class="nav-link" data-tab="borrower">
             <i data-lucide="users"></i> Borrower Measures
@@ -256,6 +257,31 @@
             {% endif %}
             <div class="ai-box" style="margin-top:20px">{{ analyses['syrb_decisions_analysis'] }}</div>
         </div>
+
+        <h2 id="osii-section" style="margin-top:40px;">Other Systemically Important Institutions (O-SII) / Global Systemically Important Institutions (G-SII)</h2>
+        
+        <div class="card">
+            <div class="card-title">OSII/GSII Buffer Rates by Country</div>
+            <div class="controls-row">
+                <label for="osii-country-selector" style="margin-right:10px; font-weight:600;">Select Country:</label>
+                <select id="osii-country-selector" class="chart-input" style="min-width:200px;">
+                    {% for country in osii_countries %}
+                        <option value="{{ country }}" {% if country == 'Austria' %}selected{% endif %}>{{ country }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div id="osii-table-container" style="margin-top:20px;">
+                {{ osii_table_html | safe }}
+            </div>
+            <div class="ai-box" style="margin-top:20px" id="osii-analysis">
+                {{ analyses.get('osii_analysis', 'OSII/GSII analysis will be available after data processing.') }}
+            </div>
+        </div>
+        
+        <script>
+            // Make OSII data available to JavaScript
+            window.osiiByCountry = {{ osii_by_country_json | safe }};
+        </script>
 
         <h2 id="capital-stack-section" style="margin-top:40px;">Capital stack</h2>
         <div class="card">

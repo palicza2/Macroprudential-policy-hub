@@ -800,6 +800,90 @@ function initKnowledgeGraph() {
     }
 }
 
+function initOSII() {
+    var selector = document.getElementById('osii-country-selector');
+    var container = document.getElementById('osii-table-container');
+    
+    if (!selector || !container) {
+        return;
+    }
+    
+    // Get OSII data from window (set by template)
+    var osiiData = window.osiiByCountry || {};
+    
+    function updateOSIITable(country) {
+        if (!osiiData[country]) {
+            container.innerHTML = '<div class="empty-state">No OSII/GSII data available for ' + country + '.</div>';
+            return;
+        }
+        
+        var data = osiiData[country];
+        if (!data || data.length === 0) {
+            container.innerHTML = '<div class="empty-state">No OSII/GSII data available for ' + country + '.</div>';
+            return;
+        }
+        
+        // Build table HTML - check if we have individual bank data
+        var hasBankNames = data.length > 0 && data[0].bank_name;
+        
+        if (hasBankNames) {
+            // Individual bank table
+            var html = '<table class="data-table"><thead><tr><th>Bank Name</th><th>LEI Code</th><th>Buffer Type</th><th>G-SII Rate</th><th>O-SII Rate</th><th>Total Rate</th><th>Status</th></tr></thead><tbody>';
+            
+            for (var i = 0; i < data.length; i++) {
+                var row = data[i];
+                var gsiiDisplay = (row.gsii_rate && row.gsii_rate > 0) ? row.gsii_rate.toFixed(2) + '%' : '-';
+                var osiiDisplay = (row.osii_rate && row.osii_rate > 0) ? row.osii_rate.toFixed(2) + '%' : '-';
+                
+                html += '<tr>';
+                html += '<td><strong>' + (row.bank_name || '') + '</strong></td>';
+                html += '<td>' + (row.lei_code || '-') + '</td>';
+                html += '<td>' + (row.buffer_type || 'N/A') + '</td>';
+                html += '<td>' + gsiiDisplay + '</td>';
+                html += '<td>' + osiiDisplay + '</td>';
+                html += '<td><strong>' + (row.rate_numeric ? row.rate_numeric.toFixed(2) + '%' : 'N/A') + '</strong></td>';
+                html += '<td>' + (row.status || 'Active') + '</td>';
+                html += '</tr>';
+            }
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        } else {
+            // Aggregate table (fallback)
+            var html = '<table class="data-table"><thead><tr><th>Country</th><th>Number of Banks</th><th>Rate Range</th><th>Maximum Rate</th><th>Status</th><th>Description</th></tr></thead><tbody>';
+            
+            for (var i = 0; i < data.length; i++) {
+                var row = data[i];
+                html += '<tr>';
+                html += '<td><strong>' + (row.country || country) + '</strong> (' + (row.iso2 || '') + ')</td>';
+                html += '<td>' + (row.bank_count || 0) + '</td>';
+                html += '<td>' + (row.rate_range || 'N/A') + '</td>';
+                html += '<td><strong>' + (row.max_rate_numeric ? row.max_rate_numeric.toFixed(2) + '%' : 'N/A') + '</strong></td>';
+                html += '<td>' + (row.status || 'Active') + '</td>';
+                html += '<td>' + (row.description || '') + '</td>';
+                html += '</tr>';
+            }
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+    }
+    
+    // Handle country selection
+    selector.addEventListener('change', function(e) {
+        var country = e.target.value;
+        if (country) {
+            updateOSIITable(country);
+        }
+    });
+    
+    // Initialize with default country (Austria)
+    var defaultCountry = selector.value || 'Austria';
+    if (defaultCountry && osiiData[defaultCountry]) {
+        updateOSIITable(defaultCountry);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     if (window.lucide) {
         window.lucide.createIcons();
@@ -809,6 +893,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initResize();
     initNewsFilters();
     initCountryProfiles();
+    initOSII();
     
     // Initialize knowledge graph if container exists
         // Knowledge graph visualization removed - data is used for AI analysis only
