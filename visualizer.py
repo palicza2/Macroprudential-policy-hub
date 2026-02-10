@@ -1,5 +1,6 @@
 import plotly.express as px
 import plotly.graph_objects as go
+import pandas as pd
 from pathlib import Path
 from utils import SuppressOutput
 
@@ -170,6 +171,44 @@ class Visualizer:
         df_cap = data.get("capital_overall_df")
         if df_cap is not None and not df_cap.empty:
             df_plot = df_cap.copy()
+            # Ensure ISO2 column contains only ISO2 codes, not country names or authority names
+            import country_converter as coco
+            def normalize_to_iso2(value):
+                """Convert country name or authority name to ISO2 code if needed."""
+                if pd.isna(value):
+                    return None
+                value_str = str(value).strip()
+                # If it's already a 2-letter uppercase code, return it
+                if len(value_str) == 2 and value_str.isalpha() and value_str.isupper():
+                    return value_str
+                # If it's a 2-letter lowercase code, uppercase it
+                if len(value_str) == 2 and value_str.isalpha():
+                    return value_str.upper()
+                # Try to convert country name to ISO2 using country_converter
+                try:
+                    iso2 = coco.convert(names=[value_str], to='ISO2', not_found=None)
+                    if iso2 and len(iso2) > 0 and iso2[0]:
+                        return iso2[0] if isinstance(iso2, list) else iso2
+                except:
+                    pass
+                # If conversion fails, try to extract country name from authority names
+                # Remove common authority suffixes
+                cleaned = value_str
+                for suffix in ["Ministry of Finance", "Central Bank", "National Bank", "Bank", "Authority", "Ministry"]:
+                    cleaned = cleaned.replace(suffix, "").strip()
+                if cleaned and cleaned != value_str:
+                    try:
+                        iso2 = coco.convert(names=[cleaned], to='ISO2', not_found=None)
+                        if iso2 and len(iso2) > 0 and iso2[0]:
+                            return iso2[0] if isinstance(iso2, list) else iso2
+                    except:
+                        pass
+                # Return as-is if can't convert (shouldn't happen if ETL is correct)
+                return value_str
+            
+            # Normalize ISO2 column to ensure only codes are used
+            df_plot["ISO2"] = df_plot["ISO2"].apply(normalize_to_iso2)
+            
             # plotly needs wide->stacked traces
             x = df_plot["ISO2"].astype(str).tolist()
             components = ["CCoB", "CCyB", "GSII/O-SII", "SyRB", "sSyRB"]

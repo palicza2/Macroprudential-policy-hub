@@ -430,8 +430,9 @@ def main():
     news_feed_html = build_news_feed_html(news_df, today_str=today_str)
 
     # OSII/GSII data processing
-    osii_by_country = prepare_osii_by_country(data.get('latest_osii_df'))
-    osii_countries = get_osii_countries(data.get('latest_osii_df'))
+    # Use osii_df (all banks) instead of latest_osii_df (only active) to show all banks
+    osii_by_country = prepare_osii_by_country(data.get('osii_df'))
+    osii_countries = get_osii_countries(data.get('osii_df'))
     osii_table_html = build_osii_table_html(osii_by_country, selected_country="Austria")
 
     rendered_html = render_report(

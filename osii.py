@@ -109,41 +109,65 @@ def build_osii_table_html(osii_by_country: Dict[str, pd.DataFrame], selected_cou
     
     # Check if we have individual bank data
     if 'bank_name' in df.columns:
-        # Filter to only show active banks
-        df_active = df[df.get('status', 'Active') == 'Active'].copy() if 'status' in df.columns else df.copy()
+        # Show all banks, not just active ones
+        # Sort: active banks first, then by bank name
+        if 'status' in df.columns:
+            df_sorted = df.copy()
+            df_sorted['_sort_key'] = df_sorted['status'].apply(lambda x: 0 if x == 'Active' else 1)
+            df_sorted = df_sorted.sort_values(['_sort_key', 'bank_name']).drop(columns=['_sort_key'])
+        else:
+            df_sorted = df.sort_values('bank_name')
         
-        # Individual bank table (without Total Rate and Status columns)
+        # Individual bank table
         html = """
-        <table class="data-table">
+        <div class="osii-table-wrapper">
+        <table class="osii-table">
             <thead>
                 <tr>
                     <th>Bank Name</th>
                     <th>LEI Code</th>
-                    <th>Buffer Type</th>
-                    <th>G-SII Rate</th>
-                    <th>O-SII Rate</th>
+                    <th>Type</th>
+                    <th>G-SII</th>
+                    <th>O-SII</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
         """
         
-        for _, row in df_active.iterrows():
+        for _, row in df_sorted.iterrows():
             gsii_display = f"{row['gsii_rate']:.2f}%" if pd.notna(row.get('gsii_rate')) and row.get('gsii_rate', 0) > 0 else "-"
             osii_display = f"{row['osii_rate']:.2f}%" if pd.notna(row.get('osii_rate')) and row.get('osii_rate', 0) > 0 else "-"
             
+            # Truncate long bank names
+            bank_name = str(row['bank_name'])
+            if len(bank_name) > 60:
+                bank_name = bank_name[:57] + "..."
+            
+            # Format LEI code (show only first 4 and last 4 chars for compactness)
+            lei_code = str(row.get('lei_code', '') or '-')
+            if len(lei_code) > 12 and lei_code != '-':
+                lei_code = lei_code[:4] + "..." + lei_code[-4:]
+            
+            # Get status and style accordingly
+            status = row.get('status', 'Active') if 'status' in row else 'Active'
+            status_class = 'status-active' if status == 'Active' else 'status-inactive'
+            
             html += f"""
-                <tr>
-                    <td><strong>{row['bank_name']}</strong></td>
-                    <td>{row.get('lei_code', '') or '-'}</td>
-                    <td>{row.get('buffer_type', 'N/A')}</td>
-                    <td>{gsii_display}</td>
-                    <td>{osii_display}</td>
+                <tr class="{status_class}">
+                    <td class="bank-name"><strong>{bank_name}</strong></td>
+                    <td class="lei-code">{lei_code}</td>
+                    <td class="buffer-type">{row.get('buffer_type', 'N/A')}</td>
+                    <td class="rate-cell">{gsii_display}</td>
+                    <td class="rate-cell">{osii_display}</td>
+                    <td class="status-cell"><span class="status-badge status-{status.lower().replace(' ', '-')}">{status}</span></td>
                 </tr>
             """
         
         html += """
             </tbody>
         </table>
+        </div>
         """
     else:
         # Aggregate table (fallback for old format)

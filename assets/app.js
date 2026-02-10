@@ -5,7 +5,7 @@ function toggleSidebar() {
     if (overlay) overlay.classList.toggle('active');
 }
 
-function activateTab(tabName, updateHash) {
+function activateTab(tabName, updateHash, clickedLink) {
     // updateHash defaults to true
     if (updateHash === undefined) updateHash = true;
     
@@ -21,8 +21,20 @@ function activateTab(tabName, updateHash) {
     contents.forEach(function(section) {
         section.classList.toggle('active', section.id === 'tab-' + tabName);
     });
+    
+    // Only activate the clicked link, not all links with the same data-tab
+    // If clickedLink is provided, only activate that specific link
+    // Otherwise, activate only the main tab link (not sub-navs)
     navLinks.forEach(function(link) {
-        link.classList.toggle('active', link.dataset.tab === tabName);
+        var isActive = false;
+        if (clickedLink && link === clickedLink) {
+            // This is the clicked link, activate it
+            isActive = true;
+        } else if (!clickedLink) {
+            // No specific link clicked, activate only main tab links (not sub-navs)
+            isActive = link.dataset.tab === tabName && !link.classList.contains('sub-nav');
+        }
+        link.classList.toggle('active', isActive);
     });
     
     // Update URL hash for shareable links
@@ -79,7 +91,8 @@ function initTabs() {
     navLinks.forEach(function(link) {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            activateTab(link.dataset.tab);
+            // Pass the clicked link to activateTab so only this link becomes active
+            activateTab(link.dataset.tab, true, link);
 
             // Optional in-page anchor jump (e.g., #ccyb-section under Capital)
             var href = link.getAttribute('href') || '';
@@ -99,14 +112,34 @@ function initTabs() {
     function handleInitialHash() {
         var hash = window.location.hash;
         if (hash) {
-            // Check for tab name in hash (e.g., #ccyb, #syrb, etc.)
+            // Check for section hash (e.g., #ccyb-section, #syrb-section, etc.)
+            var sectionMatch = hash.match(/^#([^-]+)-section/);
+            if (sectionMatch) {
+                var sectionName = sectionMatch[1];
+                // Find the nav-link that matches this section
+                var matchingLink = Array.from(navLinks).find(function(link) {
+                    var href = link.getAttribute('href') || '';
+                    return href === hash || href === '#' + sectionName + '-section';
+                });
+                if (matchingLink) {
+                    activateTab(matchingLink.dataset.tab, false, matchingLink);
+                    return;
+                }
+            }
+            
+            // Check for tab name in hash (e.g., #capital, #news, etc.)
             var tabMatch = hash.match(/^#([^&]+)/);
             if (tabMatch) {
                 var tabName = tabMatch[1];
-                // Check if it's a valid tab
-                var validTabs = ['ccyb', 'syrb', 'bbm', 'country-profiles', 'knowledge-graph', 'news', 'about'];
-                if (validTabs.indexOf(tabName) !== -1) {
-                    activateTab(tabName, false); // Don't update hash again
+                // Find the main nav-link for this tab (not sub-navs)
+                var mainLink = Array.from(navLinks).find(function(link) {
+                    return link.dataset.tab === tabName && !link.classList.contains('sub-nav');
+                });
+                if (mainLink) {
+                    activateTab(tabName, false, mainLink);
+                } else {
+                    // Fallback: activate tab without specific link
+                    activateTab(tabName, false);
                 }
             }
         }
@@ -287,7 +320,10 @@ function initCountryProfiles() {
                     // Ensure country-profiles tab is active
                     var tabMatch = hash.match(/^#([^&]+)/);
                     if (tabMatch && tabMatch[1] !== 'country-profiles') {
-                        activateTab('country-profiles', false);
+                        var mainLink = Array.from(document.querySelectorAll('.nav-link[data-tab]')).find(function(link) {
+                            return link.dataset.tab === 'country-profiles' && !link.classList.contains('sub-nav');
+                        });
+                        activateTab('country-profiles', false, mainLink);
                     }
                 }
             }
@@ -683,7 +719,10 @@ function initKnowledgeGraph() {
                 // Navigate to country profile
                 window.location.hash = 'country=' + encodeURIComponent(node.label);
                 // Switch to country profiles tab
-                activateTab('country-profiles');
+                var mainLink = Array.from(document.querySelectorAll('.nav-link[data-tab]')).find(function(link) {
+                    return link.dataset.tab === 'country-profiles' && !link.classList.contains('sub-nav');
+                });
+                activateTab('country-profiles', true, mainLink);
             }
         }
     });
@@ -888,197 +927,6 @@ function initOSII() {
     }
 }
 
-function initOSIIGraph() {
-    var container = document.getElementById('osii-graph-container');
-    if (!container || !window.vis) {
-        return;
-    }
-    
-    // Get graph data from window
-    var graphData = window.osiiGraphData || {nodes: [], edges: []};
-    
-    if (!graphData.nodes || !graphData.edges) {
-        return;
-    }
-    
-    // Filter to only show countries and banks (no separate OSII nodes)
-    var osiiNodes = graphData.nodes.filter(function(node) {
-        return node.group === 'country' || node.group === 'bank';
-    });
-    
-    // Get country and bank IDs
-    var countryIds = osiiNodes.filter(function(n) { return n.group === 'country'; }).map(function(n) { return n.id; });
-    var bankIds = osiiNodes.filter(function(n) { return n.group === 'bank'; }).map(function(n) { return n.id; });
-    
-    // Filter edges to only show country-bank connections and bank-bank connections
-    var osiiEdges = graphData.edges.filter(function(edge) {
-        var fromIsCountry = countryIds.indexOf(edge.from) !== -1;
-        var toIsCountry = countryIds.indexOf(edge.to) !== -1;
-        var fromIsBank = bankIds.indexOf(edge.from) !== -1;
-        var toIsBank = bankIds.indexOf(edge.to) !== -1;
-        var isSIMILAR_BANK = edge.label === 'SIMILAR_BANK';
-        var isSAME_TYPE = edge.label === 'SAME_TYPE';
-        var isBANK_GROUP = edge.label === 'BANK_GROUP';
-        var hasOSIILabel = edge.label && (edge.label.indexOf('O-SII') !== -1 || edge.label.indexOf('G-SII') !== -1);
-        
-        // Include country-to-bank edges (with OSII/GSII labels) and bank-to-bank edges
-        return (fromIsCountry && toIsBank) || 
-               (fromIsBank && toIsBank && (isSIMILAR_BANK || isSAME_TYPE || isBANK_GROUP)) ||
-               hasOSIILabel;
-    });
-    
-    // Create vis.js DataSets
-    var nodes = new vis.DataSet(osiiNodes);
-    var edges = new vis.DataSet(osiiEdges);
-    
-    // Node colors
-    var nodeColors = {
-        'country': {background: '#3b82f6', border: '#2563eb'},
-        'osii': {background: '#ef4444', border: '#dc2626'},
-        'bank': {background: '#ec4899', border: '#db2777'},
-    };
-    
-    // Color nodes
-    var coloredNodes = nodes.map(function(node) {
-        var color = nodeColors[node.group] || {background: '#64748b', border: '#475569'};
-        return {
-            id: node.id,
-            label: node.label,
-            group: node.group,
-            title: node.title || node.label,
-            value: node.value || 10,
-            color: color,
-            font: {
-                color: '#ffffff',
-                size: node.group === 'country' ? 16 : (node.group === 'bank' ? 11 : 12),
-                face: 'Inter, sans-serif',
-            },
-            borderWidth: 2,
-            shadow: true,
-            shape: node.group === 'country' ? 'dot' : (node.group === 'bank' ? 'diamond' : 'box'),
-        };
-    });
-    
-    nodes.clear();
-    nodes.add(coloredNodes);
-    
-    // Format edges
-    var formattedEdges = edges.map(function(edge) {
-        return {
-            from: edge.from,
-            to: edge.to,
-            label: edge.label || '',
-            title: edge.title || '',
-            color: edge.color || {color: '#64748b'},
-            width: edge.width || 2,
-            dashes: edge.dashes || false,
-            arrows: {
-                to: {
-                    enabled: true,
-                    scaleFactor: 0.8,
-                },
-            },
-            font: {
-                size: 10,
-                align: 'middle',
-                face: 'Inter, sans-serif',
-            },
-            smooth: {
-                type: 'continuous',
-            },
-        };
-    });
-    
-    edges.clear();
-    edges.add(formattedEdges);
-    
-    var data = {nodes: nodes, edges: edges};
-    
-    var options = {
-        nodes: {
-            borderWidth: 2,
-            shadow: true,
-            font: {
-                size: 12,
-                face: 'Inter, sans-serif',
-            },
-        },
-        edges: {
-            smooth: {
-                type: 'continuous',
-            },
-            arrows: {
-                to: {
-                    enabled: true,
-                    scaleFactor: 0.8,
-                },
-            },
-        },
-        physics: {
-            enabled: true,
-            stabilization: {
-                iterations: 200,
-            },
-            barnesHut: {
-                gravitationalConstant: -2000,
-                centralGravity: 0.1,
-                springLength: 200,
-                springConstant: 0.04,
-                damping: 0.09,
-            },
-        },
-        interaction: {
-            hover: true,
-            tooltipDelay: 100,
-            zoomView: true,
-            dragView: true,
-        },
-        layout: {
-            improvedLayout: true,
-            hierarchical: {
-                enabled: false,
-            },
-        },
-    };
-    
-    var network = new vis.Network(container, data, options);
-    
-    // Fit to view on load
-    network.once('stabilizationEnd', function() {
-        network.fit({
-            animation: true,
-        });
-    });
-    
-    // Update graph when country selector changes
-    var countrySelector = document.getElementById('osii-country-selector');
-    if (countrySelector) {
-        countrySelector.addEventListener('change', function(e) {
-            var selectedCountry = e.target.value;
-            if (selectedCountry && graphData.nodes) {
-                // Find country ISO2
-                var countryNode = graphData.nodes.find(function(n) {
-                    return n.group === 'country' && n.label === selectedCountry;
-                });
-                
-                if (countryNode) {
-                    // Focus on country and its banks
-                    var countryId = countryNode.id;
-                    var connectedBanks = osiiEdges
-                        .filter(function(e) { return e.from === countryId && e.label === 'HAS_BANK'; })
-                        .map(function(e) { return e.to; });
-                    
-                    var focusIds = [countryId].concat(connectedBanks);
-                    network.fit({
-                        nodes: focusIds,
-                        animation: true,
-                    });
-                }
-            }
-        });
-    }
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     if (window.lucide) {
         window.lucide.createIcons();
@@ -1089,8 +937,5 @@ document.addEventListener('DOMContentLoaded', function() {
     initNewsFilters();
     initCountryProfiles();
     initOSII();
-    initOSIIGraph();
-    
-    // Initialize knowledge graph if container exists
-        // Knowledge graph visualization removed - data is used for AI analysis only
+    // Knowledge graph visualization removed - data is used for AI analysis only
 });

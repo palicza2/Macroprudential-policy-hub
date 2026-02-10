@@ -889,9 +889,8 @@ h2::before {
 .mermaid-container .mermaid {
     width: 100%;
     min-height: 400px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: block;
+    overflow-x: auto;
 }
 
 .about-license {
@@ -1038,4 +1037,164 @@ h2::before {
 
 .comparison-item strong {
     color: #1e293b;
+}
+
+/* OSII Table Styles - Compact and Modern */
+.osii-table-wrapper {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.osii-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    background: var(--bg-card);
+}
+
+.osii-table thead {
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 2px solid var(--border);
+}
+
+.osii-table th {
+    padding: 12px 14px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.osii-table th:first-child {
+    padding-left: 18px;
+}
+
+.osii-table th:last-child {
+    padding-right: 18px;
+}
+
+.osii-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.15s ease;
+}
+
+.osii-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.osii-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.osii-table td {
+    padding: 10px 14px;
+    vertical-align: middle;
+}
+
+.osii-table td:first-child {
+    padding-left: 18px;
+}
+
+.osii-table td:last-child {
+    padding-right: 18px;
+}
+
+.osii-table .bank-name {
+    font-weight: 600;
+    color: var(--primary);
+    max-width: 300px;
+    min-width: 200px;
+}
+
+.osii-table .lei-code {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+.osii-table .buffer-type {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    text-align: center;
+    min-width: 60px;
+}
+
+.osii-table .rate-cell {
+    text-align: right;
+    font-weight: 600;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    min-width: 70px;
+}
+
+.osii-table .rate-cell:contains("-") {
+    color: var(--text-muted);
+}
+
+.osii-table .status-cell {
+    text-align: center;
+    min-width: 80px;
+    white-space: nowrap;
+}
+
+.osii-table .status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.osii-table .status-badge.status-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.osii-table .status-badge.status-inactive,
+.osii-table .status-badge.status-revoked,
+.osii-table .status-badge.status-suspended {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.osii-table tr.status-inactive {
+    opacity: 0.75;
+}
+
+.osii-table tr.status-inactive:hover {
+    opacity: 1;
+}
+
+/* Mobile responsiveness for OSII table */
+@media (max-width: 768px) {
+    .osii-table {
+        font-size: 0.8rem;
+    }
+    
+    .osii-table th,
+    .osii-table td {
+        padding: 8px 10px;
+    }
+    
+    .osii-table .bank-name {
+        max-width: 180px;
+        min-width: 150px;
+    }
+    
+    .osii-table .lei-code {
+        font-size: 0.7rem;
+        min-width: 80px;
+    }
 }

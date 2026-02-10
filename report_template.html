@@ -12,9 +12,28 @@
     <link rel="stylesheet" href="assets/styles.css">
     <script src="assets/app.js" defer></script>
     <script>
-        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+        // Initialize Mermaid with proper settings
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
         // Embed countries data for country profiles
         window.countriesData = {{ countries_data_json|safe }};
+        
+        // Re-render mermaid diagrams after page load to ensure they display
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait a bit for mermaid to initialize
+            setTimeout(function() {
+                if (typeof mermaid !== 'undefined') {
+                    mermaid.init(undefined, '.mermaid');
+                }
+            }, 100);
+        });
     </script>
 </head>
 <body>
@@ -278,22 +297,11 @@
                 {{ osii_table_html | safe }}
             </div>
             
-            <div style="margin-top:30px;">
-                <h3 class="subtle-title">Knowledge Graph Visualization</h3>
-                <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 15px;">
-                    Interactive visualization showing countries, banks, and their OSII/GSII buffer relationships. 
-                    Click and drag nodes to explore connections. Use filters to focus on specific countries or banks.
-                </p>
-                <div id="osii-graph-container" style="width: 100%; height: 600px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;"></div>
-            </div>
         </div>
         
         <script>
             // Make OSII data available to JavaScript
             window.osiiByCountry = {{ osii_by_country_json | safe }};
-            
-            // Make knowledge graph data available for OSII visualization
-            window.osiiGraphData = {{ knowledge_graph_json | safe }};
         </script>
 
         <h2 id="capital-stack-section" style="margin-top:40px;">Capital stack</h2>
@@ -326,58 +334,76 @@
         <section id="tab-borrower" class="tab-content">
             <h1 id="bbm-section" class="section-title">Borrower-based measures</h1>
 
-        <div class="card">
-            <div class="card-title">Section Summary</div>
-            <div class="ai-box">{{ analyses['bbm_section_summary'] | safe }}</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Adoption Count</div>
-            <div class="grid-2">
-                <div>
-                    {% if plot_files.get('bbm_diffusion') %}
-                        <iframe class="plot-frame" src="{{ plot_files['bbm_diffusion'] }}" loading="lazy"></iframe>
-                        {% if download_links.get('bbm_diffusion') %}
-                            <a class="download-link" href="{{ download_links['bbm_diffusion'] }}" download>Download data</a>
-                        {% endif %}
-                    {% else %}
-                        <div class="empty-state">No Data</div>
-                    {% endif %}
-                </div>
-                <div class="ai-box">{{ analyses['bbm_diffusion_analysis'] }}</div>
+            <h2 id="bbm-overview-section">Overview</h2>
+            
+            <div class="card">
+                <div class="card-title">Section Summary</div>
+                <div class="ai-box">{{ analyses['bbm_section_summary'] | safe }}</div>
             </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Active Measures Cross-Country Comparison</div>
-            {% if bbm_ref_date %}<span class="ref-date">Latest reference data: {{ bbm_ref_date }}</span>{% endif %}
-            {% if table_files.get('bbm_pivot') %}
-                <iframe class="table-frame" src="{{ table_files['bbm_pivot'] }}" loading="lazy"></iframe>
-            {% else %}
-                <div class="empty-state">No Data</div>
-            {% endif %}
-            <div class="ai-box" style="margin-top:20px">{{ analyses['bbm_analysis'] }}</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">LTV Measures (Loan-to-Value)</div>
-            {% if ltv_ref_date %}<span class="ref-date">Latest reference data: {{ ltv_ref_date }}</span>{% endif %}
-            {% if table_files.get('ltv_table') %}
-                <iframe class="table-frame" src="{{ table_files['ltv_table'] }}" loading="lazy"></iframe>
-            {% else %}
-                <div class="empty-state">No Data</div>
-            {% endif %}
-            <div class="ai-box" style="margin-top:20px">{{ analyses['ltv_analysis'] }}</div>
-        </div>
 
             <div class="card">
-            <div class="card-title">Latest Borrower-based Measure Decisions</div>
-            {% if table_files.get('bbm_decisions') %}
-                <iframe class="table-frame" src="{{ table_files['bbm_decisions'] }}" loading="lazy"></iframe>
-            {% else %}
-                <div class="empty-state">No Data</div>
-            {% endif %}
-            <div class="ai-box" style="margin-top:20px">{{ analyses['bbm_decisions_analysis'] }}</div>
+                <div class="card-title">Adoption Count</div>
+                <div class="grid-2">
+                    <div>
+                        {% if plot_files.get('bbm_diffusion') %}
+                            <iframe class="plot-frame" src="{{ plot_files['bbm_diffusion'] }}" loading="lazy"></iframe>
+                            {% if download_links.get('bbm_diffusion') %}
+                                <a class="download-link" href="{{ download_links['bbm_diffusion'] }}" download>Download data</a>
+                            {% endif %}
+                        {% else %}
+                            <div class="empty-state">No Data</div>
+                        {% endif %}
+                    </div>
+                    <div class="ai-box">{{ analyses['bbm_diffusion_analysis'] }}</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Active Measures Cross-Country Comparison</div>
+                {% if bbm_ref_date %}<span class="ref-date">Latest reference data: {{ bbm_ref_date }}</span>{% endif %}
+                {% if table_files.get('bbm_pivot') %}
+                    <iframe class="table-frame" src="{{ table_files['bbm_pivot'] }}" loading="lazy"></iframe>
+                {% else %}
+                    <div class="empty-state">No Data</div>
+                {% endif %}
+                <div class="ai-box" style="margin-top:20px">{{ analyses['bbm_analysis'] }}</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Latest Borrower-based Measure Decisions</div>
+                {% if table_files.get('bbm_decisions') %}
+                    <iframe class="table-frame" src="{{ table_files['bbm_decisions'] }}" loading="lazy"></iframe>
+                {% else %}
+                    <div class="empty-state">No Data</div>
+                {% endif %}
+                <div class="ai-box" style="margin-top:20px">{{ analyses['bbm_decisions_analysis'] }}</div>
+            </div>
+
+            <h2 id="bbm-ltv-section">LTV</h2>
+            
+            <div class="card">
+                <div class="card-title">LTV Measures (Loan-to-Value)</div>
+                {% if ltv_ref_date %}<span class="ref-date">Latest reference data: {{ ltv_ref_date }}</span>{% endif %}
+                {% if table_files.get('ltv_table') %}
+                    <iframe class="table-frame" src="{{ table_files['ltv_table'] }}" loading="lazy"></iframe>
+                {% else %}
+                    <div class="empty-state">No Data</div>
+                {% endif %}
+                <div class="ai-box" style="margin-top:20px">{{ analyses['ltv_analysis'] }}</div>
+            </div>
+
+            <h2 id="bbm-dsti-section">DSTI</h2>
+            
+            <div class="card">
+                <div class="card-title">DSTI Measures (Debt Service-to-Income)</div>
+                <div class="empty-state">Content coming soon</div>
+            </div>
+
+            <h2 id="bbm-dti-section">DTI</h2>
+            
+            <div class="card">
+                <div class="card-title">DTI Measures (Debt-to-Income)</div>
+                <div class="empty-state">Content coming soon</div>
             </div>
         </section>
 
