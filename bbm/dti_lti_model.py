@@ -5,7 +5,7 @@ Structured data model for Debt-to-Income and Loan-to-Income measures.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
+from typing import Optional, Union, List
 import pandas as pd
 
 
@@ -45,7 +45,7 @@ class DTILTIRule:
         measure_code: LTI (mortgage only) or DTI (total debt)
         implementation_status: Active, Withdrawn, or Announced
         legal_form: Binding (hard law) or Recommendation (soft law)
-        limit_standard: Standard multiplier (e.g., 4.5)
+        limit_standard: Standard multiplier (e.g., 4.5) or list of multipliers (e.g., [3.0, 8.0] for ranges)
         limit_ftb: Preferential multiplier for First-Time Buyers (nullable)
         limit_btl: Stricter multiplier for Buy-to-Let/Investors (nullable)
         income_basis: Gross (pre-tax) or Net (post-tax) income
@@ -55,7 +55,7 @@ class DTILTIRule:
     measure_code: MeasureCode
     implementation_status: ImplementationStatus
     legal_form: LegalForm
-    limit_standard: Optional[float] = None  # Can be None if limit not found
+    limit_standard: Optional[Union[float, List[float]]] = None  # Can be None, single float, or list of floats (e.g., [3.0, 8.0] for ranges)
     income_basis: IncomeBasis = IncomeBasis.UNKNOWN
     allowance_share: Optional[str] = None
     limit_ftb: Optional[float] = None
@@ -66,12 +66,17 @@ class DTILTIRule:
     
     def to_dict(self) -> dict:
         """Convert to dictionary for DataFrame."""
+        # Convert list to string representation for DataFrame storage
+        limit_standard_val = self.limit_standard
+        if isinstance(limit_standard_val, list):
+            limit_standard_val = ", ".join([f"{x:.1f}x" for x in limit_standard_val])
+        
         return {
             "Country": self.country,
             "Measure_Code": self.measure_code.value,
             "Implementation_Status": self.implementation_status.value,
             "Legal_Form": self.legal_form.value,
-            "Limit_Standard": self.limit_standard,
+            "Limit_Standard": limit_standard_val,
             "Limit_FTB": self.limit_ftb,
             "Limit_BTL": self.limit_btl,
             "Limit_Green": self.limit_green,
@@ -84,12 +89,31 @@ class DTILTIRule:
     @classmethod
     def from_dict(cls, data: dict) -> "DTILTIRule":
         """Create from dictionary."""
+        # Handle limit_standard: can be float, list, or string representation of list
+        limit_standard_val = data.get("Limit_Standard")
+        if pd.notna(limit_standard_val) and limit_standard_val is not None:
+            if isinstance(limit_standard_val, list):
+                limit_standard = limit_standard_val
+            elif isinstance(limit_standard_val, str) and "," in limit_standard_val:
+                # Parse string like "3.0x, 8.0x" to list
+                try:
+                    limit_standard = [float(x.strip().replace("x", "")) for x in limit_standard_val.split(",")]
+                except:
+                    limit_standard = None
+            else:
+                try:
+                    limit_standard = float(limit_standard_val)
+                except:
+                    limit_standard = None
+        else:
+            limit_standard = None
+        
         return cls(
             country=str(data.get("Country", "")).strip(),
             measure_code=MeasureCode(data.get("Measure_Code", "DTI")),
             implementation_status=ImplementationStatus(data.get("Implementation_Status", "Active")),
             legal_form=LegalForm(data.get("Legal_Form", "Binding")),
-            limit_standard=float(data["Limit_Standard"]) if pd.notna(data.get("Limit_Standard")) and data.get("Limit_Standard") is not None else None,
+            limit_standard=limit_standard,
             limit_ftb=float(data["Limit_FTB"]) if pd.notna(data.get("Limit_FTB")) and data.get("Limit_FTB") else None,
             limit_btl=float(data["Limit_BTL"]) if pd.notna(data.get("Limit_BTL")) and data.get("Limit_BTL") else None,
             limit_green=float(data["Limit_Green"]) if pd.notna(data.get("Limit_Green")) and data.get("Limit_Green") else None,
@@ -112,7 +136,7 @@ def create_dti_lti_schema() -> pd.DataFrame:
         "Measure_Code": pd.Series(dtype="string"),  # "LTI" or "DTI"
         "Implementation_Status": pd.Series(dtype="string"),  # "Active", "Withdrawn", "Announced"
         "Legal_Form": pd.Series(dtype="string"),  # "Binding" or "Recommendation"
-        "Limit_Standard": pd.Series(dtype="float64"),
+        "Limit_Standard": pd.Series(dtype="object"),  # Can be float, list, or string representation
         "Limit_FTB": pd.Series(dtype="float64"),  # Nullable
         "Limit_BTL": pd.Series(dtype="float64"),  # Nullable
         "Limit_Green": pd.Series(dtype="float64"),  # Nullable - Green/sustainable mortgage limit
@@ -139,8 +163,11 @@ def rules_to_dataframe(rules: list[DTILTIRule]) -> pd.DataFrame:
     data = [rule.to_dict() for rule in rules]
     df = pd.DataFrame(data)
     
-    # Ensure proper types
-    df["Limit_Standard"] = pd.to_numeric(df["Limit_Standard"], errors="coerce")
+    # Ensure proper types (Limit_Standard can be string if it's a list representation)
+    # Don't convert Limit_Standard to numeric if it's a string representation of a list
+    if "Limit_Standard" in df.columns:
+        # Keep as object type to allow strings (list representations)
+        pass
     df["Limit_FTB"] = pd.to_numeric(df["Limit_FTB"], errors="coerce")
     df["Limit_BTL"] = pd.to_numeric(df["Limit_BTL"], errors="coerce")
     df["Limit_Green"] = pd.to_numeric(df["Limit_Green"], errors="coerce")

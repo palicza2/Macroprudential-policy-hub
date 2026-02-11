@@ -67,11 +67,11 @@ def apply_expert_corrections(df: pd.DataFrame) -> pd.DataFrame:
             if "Income_Basis" in df.columns:
                 df.loc[sk_mask, "Income_Basis"] = "Net"
             if "Limit_Standard" in df.columns:
-                # Set to 8 (upper limit of 3-8 range)
-                df.loc[sk_mask, "Limit_Standard"] = 8.0
+                # Set to list representation: "3.0x, 8.0x" (range)
+                df.loc[sk_mask, "Limit_Standard"] = "3.0x, 8.0x"
             if "Notes" in df.columns:
                 df.loc[sk_mask, "Notes"] = "Decreasing by age"
-            logger.info("   -> Expert correction: SK Income_Basis='Net', Limit_Standard=8.0 (range 3-8), Notes='Decreasing by age'")
+            logger.info("   -> Expert correction: SK Income_Basis='Net', Limit_Standard=[3.0x, 8.0x] (range), Notes='Decreasing by age'")
     
     # 2. Ireland (IE): Swap Standard Limit (3.5x) and FTB Limit (4.0x)
     if "Country" in df.columns and "Limit_Standard" in df.columns and "Limit_FTB" in df.columns:

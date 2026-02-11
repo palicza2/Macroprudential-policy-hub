@@ -24,9 +24,21 @@ def render_dti_lti_table_html(df: pd.DataFrame) -> str:
     
     # Format columns for display
     if "Limit_Standard" in df_copy.columns:
-        df_copy["Limit_Standard"] = df_copy["Limit_Standard"].apply(
-            lambda x: f"{x:.1f}x" if pd.notna(x) and isinstance(x, (int, float)) else ""
-        )
+        def format_limit_standard(x):
+            if pd.isna(x) or x == "" or x is None:
+                return ""
+            # Handle list (stored as string like "3.0x, 8.0x")
+            if isinstance(x, str) and "," in x:
+                return x  # Already formatted as string
+            # Handle list (if still a list)
+            if isinstance(x, list):
+                return ", ".join([f"{v:.1f}x" for v in x])
+            # Handle single float
+            if isinstance(x, (int, float)):
+                return f"{x:.1f}x"
+            return str(x)
+        
+        df_copy["Limit_Standard"] = df_copy["Limit_Standard"].apply(format_limit_standard)
     
     if "Limit_FTB" in df_copy.columns:
         df_copy["Limit_FTB"] = df_copy["Limit_FTB"].apply(
