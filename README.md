@@ -16,7 +16,7 @@ Reduces the time required for quarterly macroprudential reporting from days to m
 
 - **Part I: CCyB Monitor:** Tracks Countercyclical Capital Buffer rates, calculating diffusion indices and analyzing the credit gap vs. rate decoupling.
 - **Part II: SyRB Monitor:** A dedicated section for the **Systemic Risk Buffer**, distinguishing between **General** and **Sectoral** measures (e.g., Residential/Commercial Real Estate).
-- **Part III: BBM Monitor:** Borrower-Based Measures adoption, cross-country active tools matrix, DTI/LTI comparison table (with AI verification and expert corrections), and recent decisions.
+- **Part III: BBM Monitor:** Borrower-Based Measures adoption, cross-country active tools matrix, structured LTV comparison table (with AI verification), DTI/LTI comparison table (with AI verification and expert corrections, supporting multiple limits/ranges), and recent decisions.
 - **Part IV: Country Profiles:** Interactive country-specific pages with current status, historical evolution, recent changes, active measures, and peer comparison.
 - **Part V: Knowledge Graph Analysis:** AI-powered analysis of policy relationships and patterns, comparing graph-derived insights with table-based data for validation and pattern identification.
 
@@ -56,6 +56,7 @@ Reduces the time required for quarterly macroprudential reporting from days to m
 - **Measure Parsing:** Extracts numeric rates, exposure types, statuses, and decision/effective dates.
 - **Derived Tables:** Builds “latest snapshot” tables, decision extracts, and trend datasets.
 - **BBM Matrix:** Maps borrower-based measures to standard short labels and generates a pivot matrix.
+- **Structured BBM Extraction:** Extracts structured LTV and DTI/LTI rules using regex and AI, supporting multiple limits/ranges (e.g., "3.0x, 8.0x" for SK) with explanatory notes.
 - **Outputs:** Writes cleaned parquet datasets plus visualization-ready dataframes.
 
 ### 6. LLM Flow (Detailed) 🤖
@@ -64,6 +65,7 @@ Reduces the time required for quarterly macroprudential reporting from days to m
 - **Chart Analyses:** Per-chart interpretations focused on last-12-month objectives and risks.
 - **Section Summaries:** Synthesizes recent trends and policy intent by country group, avoiding tool mechanics.
 - **Global Executive Summary:** Integrates section summaries into a multi-paragraph strategic narrative.
+- **BBM Rule Extraction & Validation:** AI-powered extraction and validation of LTV and DTI/LTI rules from ESRB descriptions, with support for multiple limits/ranges and expert corrections.
 - **Knowledge Graph Analysis:** AI analysis comparing graph structure with table data to identify patterns and validate consistency.
 - **Text Cleaning:** Converts LLM output to HTML-safe summaries with consistent emphasis.
 - **News Enrichment:** Generates 2–3 sentence summaries and assigns policy/theme tags.
@@ -75,45 +77,61 @@ Reduces the time required for quarterly macroprudential reporting from days to m
 
 ```mermaid
 graph TD
-    subgraph Data_Ingestion ["Data Ingestion & ETL"]
-        A[("ESRB Data Source<br/>(Excel Files)")] -->|Download| B[Python ETL Pipeline]
-        B -->|Clean & Normalize| C[("Parquet Storage<br/>(Optimized Data)")]
+    subgraph Data_Ingestion["Data Ingestion and ETL"]
+        A[ESRB Data Source Excel Files] -->|Download| B[Python ETL Pipeline]
+        B -->|Clean Normalize Extract Banks| C[Parquet Storage Optimized Data]
     end
 
-    subgraph AI_Core ["AI Analysis & Grounding"]
-        C -->|Retrieve Context| D{LangGraph<br/>Validator}
-        H -->|Chart Images| D
+    subgraph Data_Enrichment["Data Enrichment"]
+        C -->|Country Data| K[Country Profile Generator]
+        K -->|Profiles| L[Knowledge Graph Builder]
+        L -->|Graph Data| M[Country Profiles and Graph Data]
+        L -->|Graph Context| N[RAG Retriever]
+    end
+
+    subgraph BBM_Processing["BBM Processing"]
+        C -->|BBM Data| O[LTV Extractor]
+        C -->|BBM Data| P[DTI/LTI Extractor]
+        O -->|Extracted Rules| Q[LTV Validator]
+        P -->|Extracted Rules| R[DTI/LTI Validator]
+        Q -->|Validated Rules| S[BBM Tables]
+        R -->|Validated Rules| S
+    end
+
+    subgraph AI_Core["AI Analysis and Grounding"]
+        C -->|Retrieve Context| D[LangGraph Validator]
+        H[Plotly Charts] -->|Chart Images| D
         J[Google Search Optional] -->|External Evidence| D
-        D -->|Raw Data + Images| E[Google Gemini 2.5<br/>Flash Lite]
+        M -->|Graph Context| D
+        N -->|Retrieved Context| E[Google Gemini 2.5 Flash Lite]
+        S -->|BBM Rules| D
+        D -->|Raw Data Images| E
         E -->|Draft Analysis| D
         D -->|Verified Output| F[Final Analysis]
     end
 
-    subgraph Data_Enrichment ["Data Enrichment"]
-        C -->|Country Data| K[Country Profile Generator]
-        C -->|Country Data| L[Knowledge Graph Builder]
-        K -->|Profiles| M[("Country Profiles")]
-        L -->|Graph Data| M
-        L -->|Graph Context| D
-        L -->|RAG Context| N[RAG Retriever]
-        N -->|Retrieved Context| E
-    end
-
-    subgraph Presentation ["Dashboard Layer"]
+    subgraph Presentation["Dashboard Layer"]
         F --> G[Jinja2 Template Engine]
-        C -->|Visual Data| H[Plotly Charts]
-        M -->|Country Data| G
-        L -->|Graph Data| G
-        G & H --> I[("HTML Dashboard<br/>(index.html + embedded plots/partials)")]
+        C -->|Visual Data| H
+        M -->|Country and Graph Data| G
+        S -->|BBM Tables| G
+        G --> I[HTML Dashboard index.html embedded plots]
+        H --> I
     end
 
     style A fill:#f9f,stroke:#333,stroke-width:2px
     style C fill:#f9f,stroke:#333,stroke-width:2px
     style E fill:#bbf,stroke:#333,stroke-width:2px
+    style D fill:#fef3c7,stroke:#333,stroke-width:2px
     style K fill:#fef3c7,stroke:#333,stroke-width:2px
-    style L fill:#fef3c7,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style L fill:#fef3c7,stroke:#333,stroke-width:2px
     style M fill:#f9f,stroke:#333,stroke-width:2px
     style N fill:#bbf,stroke:#333,stroke-width:2px
+    style O fill:#d4edda,stroke:#333,stroke-width:2px
+    style P fill:#d4edda,stroke:#333,stroke-width:2px
+    style Q fill:#d4edda,stroke:#333,stroke-width:2px
+    style R fill:#d4edda,stroke:#333,stroke-width:2px
+    style S fill:#f9f,stroke:#333,stroke-width:2px
     style I fill:#bfb,stroke:#333,stroke-width:2px
 ```
 
@@ -126,12 +144,32 @@ graph TD
     ├── reports/                     # Generated partials, plots, downloads
     ├── templates/
     │   └── report_template.html     # Jinja2 HTML template
+    ├── pipeline/                    # Stage-based pipeline architecture
+    │   ├── orchestrator.py          # Main pipeline orchestrator
+    │   └── stages/                  # Pipeline stages
+    │       ├── data_stage.py        # ETL stage
+    │       ├── visualization_stage.py # Visualization stage
+    │       ├── ai_stage.py          # AI analysis stage
+    │       ├── bbm_stage.py         # BBM processing stage
+    │       ├── profile_stage.py     # Country profiles stage
+    │       └── render_stage.py      # Rendering stage
+    ├── bbm/                         # Borrower-Based Measures modules
+    │   ├── ltv_model.py            # LTV data model
+    │   ├── ltv_extractor.py        # LTV extraction (regex + AI)
+    │   ├── ltv_validator.py        # LTV AI validation
+    │   ├── ltv_builder.py          # LTV table builder
+    │   ├── ltv_renderer.py         # LTV HTML renderer
+    │   ├── dti_lti_model.py        # DTI/LTI data model
+    │   ├── dti_lti_extractor.py    # DTI/LTI extraction
+    │   ├── dti_lti_validator.py   # DTI/LTI AI validation
+    │   ├── dti_lti_builder.py     # DTI/LTI table builder
+    │   └── dti_lti_renderer.py    # DTI/LTI HTML renderer
     ├── etl.py                       # Main ETL: Downloads & Cleans CCyB/SyRB data
     ├── visualizer.py                # Generates interactive Plotly components & PNGs
-    ├── llm_analysis.py              # AI Logic: Summaries, Professional Keyword Extraction, Knowledge Graph Analysis
+    ├── llm_analysis.py              # AI Logic: Summaries, Keyword Extraction, BBM Rule Extraction & Validation
     ├── grounding_validator.py       # LangGraph validation: data + charts + graph relationships + search grounding
     ├── country_profiles.py          # Country profile generation and knowledge graph data builder
-    ├── main.py                      # Main orchestrator script
+    ├── main.py                      # Main entry point (uses PipelineOrchestrator)
     ├── config.py                    # Centralized configuration (URLs, Model settings)
     ├── utils.py                     # Helper functions
     ├── requirements.txt             # Python dependencies
@@ -227,8 +265,8 @@ The generated `index.html` includes:
     - _Section Summary:_ Overview of borrower-based constraints.
     - _Adoption Count:_ Countries using at least one BBM.
     - _Active Measures Cross-Country Comparison:_ Pivot table of active tools.
-    - _LTV Measures:_ Country list, limit ranges, FTB discounts, and exceptions.
-    - _DTI/LTI Measures:_ Comprehensive comparison table of Debt-to-Income and Loan-to-Income limits across EU/EEA countries, including standard limits, FTB/BTL limits, green limits, income basis, allowances, and regulation links. AI-verified with expert corrections.
+    - _LTV Measures:_ Structured comparison table of Loan-to-Value limits across EU/EEA countries, including standard limits, FTB/BTL limits, exception quotas, legal form, implementation status, and explanatory notes. Supports multiple limits per country (e.g., "80%, 90%") with notes explaining each value. AI-verified with external search validation.
+    - _DTI/LTI Measures:_ Comprehensive comparison table of Debt-to-Income and Loan-to-Income limits across EU/EEA countries, including standard limits (supporting ranges like "3.0x, 8.0x"), FTB/BTL limits, green limits, income basis, allowances, and regulation links. AI-verified with expert corrections. Notes column explains multiple limit meanings (e.g., "Decreasing by age" for SK's 3-8x range).
     - _Latest Decisions:_ AI-cleaned BBM decisions.
 5.  **Country Profiles:**
     - _Current Status:_ Snapshot of active measures (CCyB, SyRB, O-SII, BBM) and total capital buffer.
