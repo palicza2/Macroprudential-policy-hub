@@ -398,6 +398,8 @@ VALIDATION AND FILLING RULES:
   - medium: Most fields supported but some ambiguous or partially extracted
   - low: Significant uncertainty or missing key information
 - IMPORTANT: Try to fill missing limit_standard values by extracting numeric multipliers from the description (e.g., "4.5x", "6 times", "8-times income").
+- If multiple standard limits exist (e.g., ranges like "3-8x" or different limits for different borrower types), extract as list and ensure notes explains what each value means.
+- If limit_standard is a list, notes MUST explain what each value represents (e.g., "3x minimum, 8x maximum, decreasing by age").
 - If use_external_search is enabled, you may verify against external sources but must cite them.
 
 FIELDS (all required):
@@ -862,6 +864,250 @@ OUTPUT: Write a professional analysis in 3-4 paragraphs, focusing on actionable 
         except Exception as e:
             logger.error(f"Error in analyze_knowledge_graph: {e}")
             return f"Graph analysis unavailable. Graph contains {len(nodes)} nodes and {len(edges)} edges."
+    
+    def extract_ltv_rule_ai(self, description: str, country: str) -> Optional[Dict[str, Any]]:
+        """
+        Extract LTV rule from description using AI.
+        
+        Args:
+            description: Measure description
+            country: Country ISO2 code
+            
+        Returns:
+            Dictionary with extracted fields or None
+        """
+        prompt = f"""TASK: Extract LTV (Loan-to-Value) rule details from the description.
+RETURN FORMAT: JSON object.
+
+EXTRACTION RULES:
+- limit_standard: Standard LTV limit (0-100, e.g., 80.0 for 80%). If multiple standard limits exist (e.g., "80% for owner-occupied, 70% for investment"), return as list [80.0, 70.0]
+- limit_ftb: First-Time Buyer limit if mentioned (0-100, nullable)
+- limit_btl: Buy-to-Let/Investor limit if mentioned (0-100, nullable)
+- exception_quota: Speed limit - percentage of volume allowed to exceed (e.g., "15% of volume")
+- notes: Specific conditions or clarifications. IMPORTANT: If limit_standard is a list, notes MUST explain what each value means (e.g., "80% for owner-occupied properties, 70% for investment properties")
+
+FIELDS (all required, use null for missing):
+- limit_standard (float, list of floats, or null)
+- limit_ftb (float or null)
+- limit_btl (float or null)
+- exception_quota (string or null)
+- notes (string or null - MUST explain list meanings if limit_standard is a list)
+
+INPUT:
+Country: {country}
+Description: {description[:2000]}"""
+        
+        try:
+            llm = self._get_llm(temperature=0.0)
+            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+            parsed = json.loads(res)
+            return parsed if isinstance(parsed, dict) else None
+        except Exception as e:
+            logger.warning(f"Error in extract_ltv_rule_ai: {e}")
+            return None
+    
+    def validate_ltv_rules(
+        self,
+        rules: list[dict],
+        descriptions: list[str],
+        use_external_search: bool = False,
+        search_config: Optional[Dict[str, Any]] = None
+    ) -> list[dict]:
+        """
+        Validate extracted LTV rules using AI.
+        
+        Args:
+            rules: List of rule dictionaries with extracted fields
+            descriptions: List of ESRB descriptions (for context)
+            use_external_search: Whether to use external search for validation
+            
+        Returns:
+            List of validation results with confidence scores
+        """
+        if not rules:
+            return []
+        
+        input_text = "\n\n".join([
+            f"RULE {i+1}\n"
+            f"Country: {r.get('country', '')}\n"
+            f"Status: {r.get('implementation_status', '')}\n"
+            f"Legal Form: {r.get('legal_form', '')}\n"
+            f"Limit Standard: {r.get('limit_standard', '') or 'MISSING - TRY TO EXTRACT FROM DESCRIPTION'}\n"
+            f"Limit FTB: {r.get('limit_ftb', '') or 'MISSING - TRY TO EXTRACT IF MENTIONED'}\n"
+            f"Limit BTL: {r.get('limit_btl', '') or 'MISSING - TRY TO EXTRACT IF MENTIONED'}\n"
+            f"Exception Quota: {r.get('exception_quota', '') or 'MISSING - TRY TO EXTRACT IF MENTIONED'}\n"
+            f"ESRB Description:\n{descriptions[i] if i < len(descriptions) else ''}"
+            for i, r in enumerate(rules)
+        ])
+        
+        search_note = ""
+        search_results_text = ""
+        if use_external_search and search_config:
+            try:
+                from grounding_validator import _google_search
+                for i, rule in enumerate(rules):
+                    country = rule.get('country', '')
+                    query = f"{country} LTV loan-to-value macroprudential limit regulation"
+                    results = _google_search(query, search_config)
+                    if results:
+                        search_results_text += f"\n\nRULE {i+1} ({country}) External Sources:\n"
+                        for j, result in enumerate(results[:3], 1):
+                            search_results_text += f"{j}. {result.get('title', '')} - {result.get('link', '')}\n{result.get('snippet', '')}\n"
+                search_note = "\n\nIMPORTANT: Use external sources provided below to verify facts. Always cite sources."
+            except Exception as e:
+                logger.warning(f"External search failed: {e}")
+        
+        prompt = f"""TASK: Validate and FILL MISSING DATA for each extracted LTV rule against the ESRB description.
+RETURN FORMAT: JSON array with one object per rule, same order.
+
+VALIDATION AND FILLING RULES:
+- Verify that each extracted field is explicitly supported by the description.
+- If a field is missing (e.g., limit_standard is null/empty), try to extract it from the description.
+- If a field cannot be verified or found, keep the original value or mark as null.
+- confidence must be one of: "high", "medium", "low"
+  - high: All key fields (limit_standard, legal_form) are clearly supported or successfully extracted
+  - medium: Most fields supported but some ambiguous or partially extracted
+  - low: Significant uncertainty or missing key information
+- IMPORTANT: Try to fill missing limit_standard values by extracting percentages from the description (e.g., "80%", "90% LTV").
+- If use_external_search is enabled, you may verify against external sources but must cite them.
+
+FIELDS (all required):
+- country
+- confidence ("high"/"medium"/"low")
+- limit_standard (extract and fill if missing, or correct if wrong, or keep original)
+- limit_ftb (extract and fill if missing, or null)
+- limit_btl (extract and fill if missing, or null)
+- exception_quota (extract and fill if missing, or null)
+- legal_form (extract and fill if missing, or correct if wrong, or keep original)
+- notes (extract and fill if missing, or null)
+- corrections (array of strings describing any corrections or fillings made)
+- evidence (short quote supporting the validation/filling)
+
+{search_note}
+{search_results_text}
+
+INPUT:
+{input_text}"""
+        
+        try:
+            llm = self._get_llm(temperature=0.0)
+            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+            parsed = None
+            try:
+                parsed = json.loads(res)
+            except Exception:
+                match = re.search(r"(\[[\s\S]*\])", res)
+                if match:
+                    try:
+                        parsed = json.loads(match.group(1))
+                    except Exception:
+                        parsed = None
+            if not isinstance(parsed, list):
+                return [{} for _ in rules]
+            if len(parsed) < len(rules):
+                parsed.extend([{}] * (len(rules) - len(parsed)))
+            return parsed[:len(rules)]
+        except Exception as e:
+            logger.error(f"Error in validate_ltv_rules: {e}")
+            return [{} for _ in rules]
+    
+    def validate_ltv_table(
+        self,
+        table_rows: list[dict],
+        use_external_search: bool = True,
+        search_config: Optional[Dict[str, Any]] = None
+    ) -> list[dict]:
+        """
+        Final validation pass: validate complete LTV table with AI and optional external search.
+        
+        Args:
+            table_rows: List of dictionaries representing table rows
+            use_external_search: Whether to use external search for validation
+            
+        Returns:
+            List of validation results with confidence scores
+        """
+        if not table_rows:
+            return []
+        
+        # Convert table to validation format
+        table_text = "\n\n".join([
+            f"ROW {i+1}\n" + "\n".join([f"{k}: {v}" for k, v in row.items()])
+            for i, row in enumerate(table_rows)
+        ])
+        
+        search_note = ""
+        search_results_text = ""
+        if use_external_search and search_config:
+            try:
+                from grounding_validator import _google_search
+                seen_queries = set()
+                for row in table_rows:
+                    country = row.get('Country', '')
+                    query = f"{country} LTV loan-to-value macroprudential limit regulation"
+                    if query not in seen_queries:
+                        seen_queries.add(query)
+                        results = _google_search(query, search_config)
+                        if results:
+                            search_results_text += f"\n\n{country} External Sources:\n"
+                            for j, result in enumerate(results[:2], 1):
+                                search_results_text += f"{j}. {result.get('title', '')} - {result.get('link', '')}\n{result.get('snippet', '')}\n"
+                search_note = "\n\nIMPORTANT: Use external sources provided below to verify facts. Cite sources for any corrections."
+            except Exception as e:
+                logger.warning(f"External search failed: {e}")
+        
+        prompt = f"""TASK: Perform final validation of the complete LTV table.
+RETURN FORMAT: JSON array with one object per row, same order.
+
+VALIDATION RULES:
+- Verify each row against ESRB data and external sources (if enabled).
+- Check for consistency across countries.
+- confidence must be one of: "high", "medium", "low"
+  - high: All fields verified and consistent
+  - medium: Most fields verified but some uncertainty
+  - low: Significant uncertainty or inconsistencies
+- Update any fields that can be corrected or filled based on external sources.
+
+FIELDS (all required):
+- Country
+- confidence ("high"/"medium"/"low")
+- Limit_Standard (verify or correct)
+- Limit_FTB (verify or correct, or null)
+- Limit_BTL (verify or correct, or null)
+- Exception_Quota (verify or correct, or null)
+- Legal_Form (verify or correct)
+- Implementation_Status (verify or correct)
+- Notes (verify or correct, or null)
+- corrections (array of strings describing any corrections made)
+- evidence (short quote supporting the validation)
+
+{search_note}
+{search_results_text}
+
+INPUT:
+{table_text}"""
+        
+        try:
+            llm = self._get_llm(temperature=0.0)
+            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+            parsed = None
+            try:
+                parsed = json.loads(res)
+            except Exception:
+                match = re.search(r"(\[[\s\S]*\])", res)
+                if match:
+                    try:
+                        parsed = json.loads(match.group(1))
+                    except Exception:
+                        parsed = None
+            if not isinstance(parsed, list):
+                return [{} for _ in table_rows]
+            if len(parsed) < len(table_rows):
+                parsed.extend([{}] * (len(table_rows) - len(parsed)))
+            return parsed[:len(table_rows)]
+        except Exception as e:
+            logger.error(f"Error in validate_ltv_table: {e}")
+            return [{} for _ in table_rows]
     
     def get_rag_context(self, query: str, top_k: int = 5) -> str:
         """
