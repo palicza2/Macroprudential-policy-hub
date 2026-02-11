@@ -1,0 +1,7 @@
+Country,Measure_Code,Implementation_Status,Legal_Form,Limit_Standard,Limit_FTB,Limit_BTL,Limit_Green,Income_Basis,Allowance_Share,Regulation_URL,Notes
+LV,DTI,Active,Binding,6.0,,,8.0,Gross,,,
+NO,DTI,Active,Binding,5.0,,,,Gross,10%,,
+SK,DTI,Active,Binding,8.0,,,,Net,5%,,Decreasing by age
+DK,LTI,Active,Recommendation,4.0,,,,Gross,,,
+UK,LTI,Active,Binding,4.5,,,,Gross,15%,,
+IE,LTI,Active,Binding,3.5,4.0,,,Gross,,,

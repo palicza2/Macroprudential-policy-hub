@@ -332,10 +332,11 @@ class ETLPipeline:
                     continue
                 
                 # Check if this is a bank row (has bank name in col 1, even if col0 is empty/NaN)
-                # Bank rows have meaningful text in col1 (length > 10 to avoid short strings)
+                # Bank rows have meaningful text in col1 (length > 3 to include short bank names like "MBH")
                 # Exclude authority/supervisory body names (these are typically in col0, not col1)
                 # Bank names are typically long strings in col1, while authorities are in col0
-                is_bank_row = col1 and len(col1) > 10 and current_country and (not col0 or len(col0) < 3)
+                # Reduced minimum length from 10 to 3 to include banks with short names (e.g., "MBH")
+                is_bank_row = col1 and len(str(col1).strip()) > 3 and current_country and (not col0 or len(str(col0).strip()) < 3)
                 
                 if is_bank_row:
                     bank_name = col1

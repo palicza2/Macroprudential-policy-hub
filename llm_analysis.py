@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import re
+from typing import Dict, Any, Optional
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
@@ -160,6 +161,455 @@ INPUT:
             logger.error(f"Error in extract_ltv_fields: {e}")
             return [{} for _ in text_list]
 
+    def extract_dti_lti_fields(self, items: list[dict]) -> list[dict]:
+        """
+        Extract structured DTI/LTI policy details from ESRB BBM items.
+        Each item should include: iso2, country, measure_short, description, related_links (optional).
+        Returns list of dicts with keys:
+          - country_iso2
+          - country_name
+          - type (DTI/LTI)
+          - numerator
+          - denominator
+          - limits
+          - legal_basis (Mandatory / Guidance / Unknown)
+          - evidence_excerpt
+          - confidence (high/medium/low)
+        """
+        if not items:
+            return []
+
+        # Keep prompt tight and verification-friendly: require direct quotes as evidence.
+        input_text = "\n\n".join(
+            [
+                "ITEM {i}\nISO2: {iso2}\nCountry: {country}\nMeasure: {measure}\nDescription:\n{desc}\nRelated links:\n{links}".format(
+                    i=idx + 1,
+                    iso2=str(it.get("iso2", "")),
+                    country=str(it.get("country", "")),
+                    measure=str(it.get("measure_short", "")),
+                    desc=str(it.get("description", "")).strip()[:2000],
+                    links=str(it.get("related_links", "") or "").strip()[:500],
+                )
+                for idx, it in enumerate(items)
+            ]
+        )
+
+        prompt = f"""TASK: From each item, extract ONLY what is explicitly stated about DTI/LTI limits.
+RETURN FORMAT: JSON array with one object per item, same order.
+
+RULES:
+- Do NOT invent values.
+- Prefer short phrases (max ~12 words) for numerator/denominator.
+- IMPORTANT: numerator/denominator must describe the components (e.g., "total debt obligations", "gross annual income").
+  Do NOT put the ratio name itself ("DTI" or "LTI") into numerator/denominator.
+- limits: include numeric thresholds and any stated exceptions/allowances.
+- legal_basis must be one of: "Mandatory", "Guidance", "Unknown".
+- evidence_excerpt MUST quote an exact phrase from the Description that supports the limits and type.
+- confidence must be one of: "high", "medium", "low".
+  - high: type+limits clearly stated in Description and evidence_excerpt quotes them
+  - medium: type clear but limits or basis ambiguous
+  - low: unclear / not enough evidence
+- limit_standard: numeric multiplier (e.g., 4.5 for 4.5x income). Extract from "X times income" or "X:1" or percentage/100.
+- limit_ftb: multiplier for First-Time Buyers if explicitly stated (nullable).
+- limit_btl: multiplier for Buy-to-Let/Investors if explicitly stated (nullable).
+- income_basis: "Gross" (pre-tax) or "Net" (post-tax) if explicitly stated, else "Gross".
+- allowance_share: percentage of volume allowed to exceed limit (e.g., "15%") if stated.
+
+FIELDS (all required):
+- country_iso2
+- country_name
+- type
+- numerator
+- denominator
+- limits
+- legal_basis
+- evidence_excerpt
+- confidence
+- limit_standard (float or null)
+- limit_ftb (float or null)
+- limit_btl (float or null)
+- income_basis ("Gross" or "Net")
+- allowance_share (string like "15%" or empty)
+
+INPUT:
+{input_text}"""
+
+        try:
+            llm = self._get_llm(temperature=0.0)
+            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+            parsed = None
+            try:
+                parsed = json.loads(res)
+            except Exception:
+                match = re.search(r"(\[[\s\S]*\])", res)
+                if match:
+                    try:
+                        parsed = json.loads(match.group(1))
+                    except Exception:
+                        parsed = None
+            if not isinstance(parsed, list):
+                return [{} for _ in items]
+            if len(parsed) < len(items):
+                parsed.extend([{}] * (len(items) - len(parsed)))
+            return parsed[: len(items)]
+        except Exception as e:
+            logger.error(f"Error in extract_dti_lti_fields: {e}")
+            return [{} for _ in items]
+
+    def verify_dti_lti_fields(self, items: list[dict], extracted: list[dict]) -> list[dict]:
+        """
+        Second-pass self-check: verify extracted fields against the item Description.
+        If any field can't be justified by the Description, blank it and downgrade confidence.
+        """
+        if not items:
+            return []
+        if not extracted:
+            return [{} for _ in items]
+
+        # Build compact verification input (include related_links for legal basis inference).
+        blocks = []
+        for idx, (it, ex) in enumerate(zip(items, extracted), start=1):
+            blocks.append(
+                "ITEM {i}\nISO2: {iso2}\nCountry: {country}\nMeasure: {measure}\nDescription:\n{desc}\nRelated links:\n{links}\nEXTRACTED_JSON:\n{ex}".format(
+                    i=idx,
+                    iso2=str(it.get("iso2", "")),
+                    country=str(it.get("country", "")),
+                    measure=str(it.get("measure_short", "")),
+                    desc=str(it.get("description", "")).strip()[:2000],
+                    links=str(it.get("related_links", "") or "").strip()[:500],
+                    ex=json.dumps(ex, ensure_ascii=False),
+                )
+            )
+        input_text = "\n\n".join(blocks)
+
+        prompt = f"""TASK: Verify each EXTRACTED_JSON against the Description for each item.
+RETURN FORMAT: JSON array with one object per item, same order.
+
+VERIFICATION RULES:
+- Keep a field ONLY if it is explicitly supported by the Description text.
+- If not explicitly supported, set it to "" (empty string).
+- If numerator/denominator equals "DTI" or "LTI" (or is just the ratio name), set it to "".
+- evidence_excerpt must be an exact quote from Description; if not possible, set "".
+- confidence must be:
+  - "high" only if type + limits + evidence_excerpt are all supported
+  - otherwise "medium" if type is supported but some fields missing
+  - otherwise "low"
+- legal_basis: set "Mandatory" only if Description clearly indicates binding regulation/law/requirement; set "Guidance" if it clearly indicates guidelines/recommendation; else "Unknown".
+
+FIELDS REQUIRED (same keys as before):
+- country_iso2
+- country_name
+- type
+- numerator
+- denominator
+- limits
+- legal_basis
+- evidence_excerpt
+- confidence
+
+INPUT:
+{input_text}"""
+
+        try:
+            llm = self._get_llm(temperature=0.0)
+            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+            parsed = None
+            try:
+                parsed = json.loads(res)
+            except Exception:
+                match = re.search(r"(\[[\s\S]*\])", res)
+                if match:
+                    try:
+                        parsed = json.loads(match.group(1))
+                    except Exception:
+                        parsed = None
+            if not isinstance(parsed, list):
+                return [{} for _ in items]
+            if len(parsed) < len(items):
+                parsed.extend([{}] * (len(items) - len(parsed)))
+            return parsed[: len(items)]
+        except Exception as e:
+            logger.error(f"Error in verify_dti_lti_fields: {e}")
+            return [{} for _ in items]
+
+    def validate_dti_lti_rules(
+        self,
+        rules: list[dict],
+        use_external_search: bool = False,
+        search_config: Optional[Dict[str, Any]] = None
+    ) -> list[dict]:
+        """
+        Validate extracted DTI/LTI rules using AI.
+        
+        Args:
+            rules: List of rule dictionaries with extracted fields
+            use_external_search: Whether to use external search for validation
+            
+        Returns:
+            List of validation results with confidence scores
+        """
+        if not rules:
+            return []
+        
+        input_text = "\n\n".join([
+            f"RULE {i+1}\n"
+            f"Country: {r.get('country', '')}\n"
+            f"Measure: {r.get('measure_code', '')}\n"
+            f"Status: {r.get('implementation_status', '')}\n"
+            f"Legal Form: {r.get('legal_form', '')}\n"
+            f"Limit Standard: {r.get('limit_standard', '') or 'MISSING - TRY TO EXTRACT FROM DESCRIPTION'}\n"
+            f"Limit FTB: {r.get('limit_ftb', '') or 'MISSING - TRY TO EXTRACT IF MENTIONED'}\n"
+            f"Limit BTL: {r.get('limit_btl', '') or 'MISSING - TRY TO EXTRACT IF MENTIONED'}\n"
+            f"Income Basis: {r.get('income_basis', '') or 'MISSING - TRY TO EXTRACT FROM DESCRIPTION'}\n"
+            f"Allowance Share: {r.get('allowance_share', '') or 'MISSING - TRY TO EXTRACT IF MENTIONED'}\n"
+            f"Regulation URL: {r.get('regulation_url', '') or 'MISSING - TRY TO EXTRACT IF MENTIONED'}\n"
+            f"ESRB Description:\n{r.get('description', '')[:2000]}"
+            for i, r in enumerate(rules)
+        ])
+        
+        search_note = ""
+        search_results_text = ""
+        if use_external_search and search_config:
+            # Perform external searches for each rule
+            try:
+                from grounding_validator import _google_search
+                for i, rule in enumerate(rules):
+                    country = rule.get('country', '')
+                    measure = rule.get('measure_code', '')
+                    query = f"{country} {measure} DTI LTI macroprudential limit regulation"
+                    results = _google_search(query, search_config)
+                    if results:
+                        search_results_text += f"\n\nRULE {i+1} ({country} {measure}) External Sources:\n"
+                        for j, result in enumerate(results[:3], 1):
+                            search_results_text += f"{j}. {result.get('title', '')} - {result.get('link', '')}\n{result.get('snippet', '')}\n"
+                search_note = "\n\nIMPORTANT: Use external sources provided below to verify facts. Always cite sources."
+            except Exception as e:
+                logger.warning(f"External search failed: {e}")
+
+        prompt = f"""TASK: Validate and FILL MISSING DATA for each extracted DTI/LTI rule against the ESRB description.
+RETURN FORMAT: JSON array with one object per rule, same order.
+
+VALIDATION AND FILLING RULES:
+- Verify that each extracted field is explicitly supported by the description.
+- If a field is missing (e.g., limit_standard is null/empty), try to extract it from the description.
+- If a field cannot be verified or found, keep the original value or mark as null.
+- confidence must be one of: "high", "medium", "low"
+  - high: All key fields (limit_standard, income_basis, legal_form) are clearly supported or successfully extracted
+  - medium: Most fields supported but some ambiguous or partially extracted
+  - low: Significant uncertainty or missing key information
+- IMPORTANT: Try to fill missing limit_standard values by extracting numeric multipliers from the description (e.g., "4.5x", "6 times", "8-times income").
+- If use_external_search is enabled, you may verify against external sources but must cite them.
+
+FIELDS (all required):
+- country
+- measure_code
+- confidence ("high"/"medium"/"low")
+- limit_standard (extract and fill if missing, or correct if wrong, or keep original)
+- limit_ftb (extract and fill if missing, or null)
+- limit_btl (extract and fill if missing, or null)
+- income_basis (extract and fill if missing, or correct if wrong, or keep original)
+- legal_form (extract and fill if missing, or correct if wrong, or keep original)
+- allowance_share (extract and fill if missing, or correct if wrong, or keep original)
+- regulation_url (extract URL if mentioned in description, or null)
+- corrections (array of strings describing any corrections or fillings made)
+- evidence (short quote supporting the validation/filling)
+
+{search_note}
+{search_results_text}
+
+INPUT:
+{input_text}"""
+        
+        try:
+            llm = self._get_llm(temperature=0.0)
+            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+            parsed = None
+            try:
+                parsed = json.loads(res)
+            except Exception:
+                match = re.search(r"(\[[\s\S]*\])", res)
+                if match:
+                    try:
+                        parsed = json.loads(match.group(1))
+                    except Exception:
+                        parsed = None
+            if not isinstance(parsed, list):
+                return [{} for _ in rules]
+            if len(parsed) < len(rules):
+                parsed.extend([{}] * (len(rules) - len(parsed)))
+            return parsed[:len(rules)]
+        except Exception as e:
+            logger.error(f"Error in validate_dti_lti_rules: {e}")
+            return [{} for _ in rules]
+    
+    def validate_dti_lti_table(
+        self,
+        table_rows: list[dict],
+        use_external_search: bool = True,
+        search_config: Optional[Dict[str, Any]] = None
+    ) -> list[dict]:
+        """
+        Final validation pass: validate complete DTI/LTI table with AI and optional external search.
+        
+        Args:
+            table_rows: List of dictionaries representing table rows
+            use_external_search: Whether to use external search for validation
+            
+        Returns:
+            List of validation results with confidence scores
+        """
+        if not table_rows:
+            return []
+        
+        # Convert table to validation format
+        table_text = "\n\n".join([
+            f"ROW {i+1}\n" + "\n".join([f"{k}: {v}" for k, v in row.items()])
+            for i, row in enumerate(table_rows)
+        ])
+        
+        search_note = ""
+        search_results_text = ""
+        if use_external_search and search_config:
+            # Perform external searches for key countries/measures
+            try:
+                from grounding_validator import _google_search
+                seen_queries = set()
+                for row in table_rows:
+                    country = row.get('Country', '')
+                    measure = row.get('Measure_Code', '')
+                    query = f"{country} {measure} DTI LTI macroprudential limit regulation"
+                    if query not in seen_queries:
+                        seen_queries.add(query)
+                        results = _google_search(query, search_config)
+                        if results:
+                            search_results_text += f"\n\n{country} {measure} External Sources:\n"
+                            for j, result in enumerate(results[:2], 1):
+                                search_results_text += f"{j}. {result.get('title', '')} - {result.get('link', '')}\n{result.get('snippet', '')}\n"
+                search_note = "\n\nIMPORTANT: Use external sources provided below to verify facts. Cite sources for any corrections."
+            except Exception as e:
+                logger.warning(f"External search failed: {e}")
+
+        prompt = f"""TASK: Perform final validation of the complete DTI/LTI table.
+RETURN FORMAT: JSON array with one object per row, same order.
+
+VALIDATION RULES:
+- Verify each row against ESRB data and external sources (if enabled).
+- Check for consistency across countries and measures.
+- confidence must be one of: "high", "medium", "low"
+  - high: All fields verified and consistent
+  - medium: Most fields verified but some uncertainty
+  - low: Significant issues or missing verification
+- Provide corrections if needed.
+
+FIELDS (all required):
+- row_index (0-based)
+- confidence ("high"/"medium"/"low")
+- is_valid (true/false)
+- corrections (array of strings describing corrections needed, empty if valid)
+- external_sources (array of source URLs if external search used)
+- notes (any additional notes)
+
+{search_note}
+{search_results_text}
+
+TABLE:
+{table_text}"""
+        
+        try:
+            llm = self._get_llm(temperature=0.0)
+            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+            parsed = None
+            try:
+                parsed = json.loads(res)
+            except Exception:
+                match = re.search(r"(\[[\s\S]*\])", res)
+                if match:
+                    try:
+                        parsed = json.loads(match.group(1))
+                    except Exception:
+                        parsed = None
+            if not isinstance(parsed, list):
+                return [{} for _ in table_rows]
+            if len(parsed) < len(table_rows):
+                parsed.extend([{}] * (len(table_rows) - len(parsed)))
+            return parsed[:len(table_rows)]
+        except Exception as e:
+            logger.error(f"Error in validate_dti_lti_table: {e}")
+            return [{} for _ in table_rows]
+    
+    def confirm_dti_lti_presence(self, items: list[dict]) -> list[dict]:
+        """
+        Lightweight confirmation: does the Description explicitly state a DTI or LTI limit?
+        Returns JSON list with:
+          - country_iso2
+          - type (DTI/LTI)
+          - confirmed ("yes"/"no")
+          - evidence_excerpt (exact quote)
+          - confidence ("high"/"medium"/"low")
+        """
+        if not items:
+            return []
+
+        input_text = "\n\n".join(
+            [
+                "ITEM {i}\nISO2: {iso2}\nCountry: {country}\nMeasure: {measure}\nDescription:\n{desc}".format(
+                    i=idx + 1,
+                    iso2=str(it.get("iso2", "")),
+                    country=str(it.get("country", "")),
+                    measure=str(it.get("measure_short", "")),
+                    desc=str(it.get("description", "")).strip()[:2000],
+                )
+                for idx, it in enumerate(items)
+            ]
+        )
+
+        prompt = f"""TASK: For each item, decide if the Description explicitly states a binding DTI/LTI limit (threshold or rule).
+RETURN FORMAT: JSON array with one object per item, same order.
+
+RULES:
+- confirmed must be "yes" if a DTI/LTI limit/rule is mentioned, even if the exact numeric value is not explicitly stated in the quote.
+- Look for: DTI/LTI limits, debt-to-income ratios, loan-to-income ratios, income multiples (e.g., "8-times income", "6 times", "4.5x"), or similar borrower-based restrictions.
+- IMPORTANT: If measure_short is "DTI" but description mentions "loan-to-income" or "mortgage", it's likely LTI (Loan-to-Income), not DTI (Debt-to-Income). Set type accordingly.
+- evidence_excerpt MUST be an exact quote from Description containing the limit/rule or DTI/LTI mention.
+- confidence:
+  - high: numeric limit/rule clearly quoted (e.g., "DTI ratio is set at 6", "LTI ... 4 times income", "8-times his/her yearly net disposable income")
+  - medium: DTI/LTI limit mentioned but exact numeric value not in quote, or limit described in general terms (e.g., "DTI limit", "loan-to-income restriction")
+  - low: unclear or no DTI/LTI mention
+
+IMPORTANT: Be inclusive - if a country has a DTI/LTI measure mentioned in the description, mark it as confirmed="yes" with at least "medium" confidence. Countries like SK, DK, LV should be included if they have DTI/LTI mentions.
+
+FIELDS:
+- country_iso2
+- type (DTI or LTI - determine from description, not just measure_short)
+- confirmed
+- evidence_excerpt
+- confidence
+
+INPUT:
+{input_text}"""
+
+        try:
+            llm = self._get_llm(temperature=0.0)
+            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+            parsed = None
+            try:
+                parsed = json.loads(res)
+            except Exception:
+                match = re.search(r"(\[[\s\S]*\])", res)
+                if match:
+                    try:
+                        parsed = json.loads(match.group(1))
+                    except Exception:
+                        parsed = None
+            if not isinstance(parsed, list):
+                return [{} for _ in items]
+            if len(parsed) < len(items):
+                parsed.extend([{}] * (len(items) - len(parsed)))
+            return parsed[: len(items)]
+        except Exception as e:
+            logger.error(f"Error in confirm_dti_lti_presence: {e}")
+            return [{} for _ in items]
+
     def classify_news_tags(self, text_list):
         if not text_list:
             return []
@@ -203,6 +653,35 @@ INPUT:
         except Exception as e:
             logger.error(f"Error in classify_news_tags: {e}")
             return [[] for _ in text_list]
+
+    def summarize_text(self, text: str, instruction: str = "") -> str:
+        """
+        Summarize a single text using LLM.
+        
+        Args:
+            text: Text to summarize
+            instruction: Optional instruction for the summarization task
+        
+        Returns:
+            Summarized text
+        """
+        if not text:
+            return ""
+        
+        prompt = f"""TASK: {instruction if instruction else "Summarize the following text concisely."}
+        
+TEXT:
+{text[:2000]}
+
+Return a concise summary."""
+        
+        try:
+            llm = self._get_llm(temperature=0.3)
+            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+            return self._clean_text(res, is_global=False)
+        except Exception as e:
+            logger.error(f"Error in summarize_text: {e}")
+            return ""
 
     def summarize_news_items(self, text_list):
         if not text_list:

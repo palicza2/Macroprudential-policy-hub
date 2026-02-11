@@ -16,7 +16,7 @@ Reduces the time required for quarterly macroprudential reporting from days to m
 
 - **Part I: CCyB Monitor:** Tracks Countercyclical Capital Buffer rates, calculating diffusion indices and analyzing the credit gap vs. rate decoupling.
 - **Part II: SyRB Monitor:** A dedicated section for the **Systemic Risk Buffer**, distinguishing between **General** and **Sectoral** measures (e.g., Residential/Commercial Real Estate).
-- **Part III: BBM Monitor:** Borrower-Based Measures adoption, cross-country active tools matrix, and recent decisions.
+- **Part III: BBM Monitor:** Borrower-Based Measures adoption, cross-country active tools matrix, DTI/LTI comparison table (with AI verification and expert corrections), and recent decisions.
 - **Part IV: Country Profiles:** Interactive country-specific pages with current status, historical evolution, recent changes, active measures, and peer comparison.
 - **Part V: Knowledge Graph Analysis:** AI-powered analysis of policy relationships and patterns, comparing graph-derived insights with table-based data for validation and pattern identification.
 
@@ -109,7 +109,7 @@ graph TD
 
     style A fill:#f9f,stroke:#333,stroke-width:2px
     style C fill:#f9f,stroke:#333,stroke-width:2px
-    style E fill:#bbf,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style E fill:#bbf,stroke:#333,stroke-width:2px
     style K fill:#fef3c7,stroke:#333,stroke-width:2px
     style L fill:#fef3c7,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
     style M fill:#f9f,stroke:#333,stroke-width:2px
@@ -228,6 +228,7 @@ The generated `index.html` includes:
     - _Adoption Count:_ Countries using at least one BBM.
     - _Active Measures Cross-Country Comparison:_ Pivot table of active tools.
     - _LTV Measures:_ Country list, limit ranges, FTB discounts, and exceptions.
+    - _DTI/LTI Measures:_ Comprehensive comparison table of Debt-to-Income and Loan-to-Income limits across EU/EEA countries, including standard limits, FTB/BTL limits, green limits, income basis, allowances, and regulation links. AI-verified with expert corrections.
     - _Latest Decisions:_ AI-cleaned BBM decisions.
 5.  **Country Profiles:**
     - _Current Status:_ Snapshot of active measures (CCyB, SyRB, O-SII, BBM) and total capital buffer.

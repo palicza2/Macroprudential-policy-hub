@@ -25,16 +25,40 @@ function activateTab(tabName, updateHash, clickedLink) {
     // Only activate the clicked link, not all links with the same data-tab
     // If clickedLink is provided, only activate that specific link
     // Otherwise, activate only the main tab link (not sub-navs)
+    var hasActiveSubNav = false;
     navLinks.forEach(function(link) {
         var isActive = false;
         if (clickedLink && link === clickedLink) {
             // This is the clicked link, activate it
             isActive = true;
+            // Check if this is a sub-nav
+            if (link.classList.contains('sub-nav')) {
+                hasActiveSubNav = true;
+            }
         } else if (!clickedLink) {
             // No specific link clicked, activate only main tab links (not sub-navs)
             isActive = link.dataset.tab === tabName && !link.classList.contains('sub-nav');
         }
         link.classList.toggle('active', isActive);
+    });
+    
+    // Handle collapsible sections for capital and borrower measures
+    // If no sub-nav is active, collapse the section
+    var sections = ['capital', 'borrower'];
+    sections.forEach(function(sectionName) {
+        var section = document.querySelector('.nav-section[data-section="' + sectionName + '"]');
+        var header = document.querySelector('.nav-section-header[data-section="' + sectionName + '"]');
+        if (section && header) {
+            if (tabName === sectionName && hasActiveSubNav) {
+                // Expand section if this tab is active and has active sub-nav
+                section.classList.remove('collapsed');
+                header.classList.remove('collapsed');
+            } else if (tabName !== sectionName || !hasActiveSubNav) {
+                // Collapse section if different tab or no active sub-nav
+                section.classList.add('collapsed');
+                header.classList.add('collapsed');
+            }
+        }
     });
     
     // Update URL hash for shareable links
@@ -91,8 +115,33 @@ function initTabs() {
     navLinks.forEach(function(link) {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            // Pass the clicked link to activateTab so only this link becomes active
-            activateTab(link.dataset.tab, true, link);
+            // Handle section header clicks (toggle collapse)
+            if (link.classList.contains('nav-section-header')) {
+                var sectionName = link.dataset.section;
+                var section = document.querySelector('.nav-section[data-section="' + sectionName + '"]');
+                if (section) {
+                    var isCollapsed = section.classList.contains('collapsed');
+                    if (isCollapsed) {
+                        section.classList.remove('collapsed');
+                        link.classList.remove('collapsed');
+                        // Activate the first sub-nav if section is expanded
+                        var firstSubNav = section.querySelector('.sub-nav');
+                        if (firstSubNav) {
+                            activateTab(link.dataset.tab, true, firstSubNav);
+                        } else {
+                            activateTab(link.dataset.tab, true, link);
+                        }
+                    } else {
+                        // Collapse section
+                        section.classList.add('collapsed');
+                        link.classList.add('collapsed');
+                        activateTab(link.dataset.tab, true, link);
+                    }
+                }
+            } else {
+                // Pass the clicked link to activateTab so only this link becomes active
+                activateTab(link.dataset.tab, true, link);
+            }
 
             // Optional in-page anchor jump (e.g., #ccyb-section under Capital)
             var href = link.getAttribute('href') || '';

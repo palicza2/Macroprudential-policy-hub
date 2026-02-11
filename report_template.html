@@ -30,9 +30,21 @@
             // Wait a bit for mermaid to initialize
             setTimeout(function() {
                 if (typeof mermaid !== 'undefined') {
-                    mermaid.init(undefined, '.mermaid');
+                    try {
+                        var mermaidElements = document.querySelectorAll('.mermaid');
+                        mermaidElements.forEach(function(element) {
+                            // Only render if not already processed
+                            if (!element.hasAttribute('data-processed')) {
+                                mermaid.run({
+                                    nodes: [element]
+                                });
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Mermaid rendering error:', error);
+                    }
                 }
-            }, 100);
+            }, 200);
         });
     </script>
 </head>
@@ -56,16 +68,24 @@
         <a href="#" class="nav-link" data-tab="news">
             <i data-lucide="newspaper"></i> Latest News
         </a>
-        <a href="#" class="nav-link" data-tab="capital">
+        <a href="#" class="nav-link nav-section-header" data-tab="capital" data-section="capital">
             <i data-lucide="shield-check"></i> Capital Measures
         </a>
-        <a href="#ccyb-section" class="nav-link sub-nav" data-tab="capital">CCyB</a>
-        <a href="#syrb-section" class="nav-link sub-nav" data-tab="capital">SyRB</a>
-        <a href="#osii-section" class="nav-link sub-nav" data-tab="capital">OSII/GSII</a>
-        <a href="#capital-stack-section" class="nav-link sub-nav" data-tab="capital">Capital stack</a>
-        <a href="#" class="nav-link" data-tab="borrower">
+        <div class="nav-section" data-section="capital">
+            <a href="#ccyb-section" class="nav-link sub-nav" data-tab="capital">CCyB</a>
+            <a href="#syrb-section" class="nav-link sub-nav" data-tab="capital">SyRB</a>
+            <a href="#osii-section" class="nav-link sub-nav" data-tab="capital">OSII/GSII</a>
+            <a href="#capital-stack-section" class="nav-link sub-nav" data-tab="capital">Capital stack</a>
+        </div>
+        <a href="#" class="nav-link nav-section-header" data-tab="borrower" data-section="borrower">
             <i data-lucide="users"></i> Borrower Measures
         </a>
+        <div class="nav-section" data-section="borrower">
+            <a href="#bbm-overview-section" class="nav-link sub-nav" data-tab="borrower">Overview</a>
+            <a href="#bbm-ltv-section" class="nav-link sub-nav" data-tab="borrower">LTV</a>
+            <a href="#bbm-dsti-section" class="nav-link sub-nav" data-tab="borrower">DSTI</a>
+            <a href="#bbm-dti-section" class="nav-link sub-nav" data-tab="borrower">DTI</a>
+        </div>
         <a href="#" class="nav-link" data-tab="country-profiles">
             <i data-lucide="map-pin"></i> Country Profiles
         </a>
@@ -403,7 +423,20 @@
             
             <div class="card">
                 <div class="card-title">DTI Measures (Debt-to-Income)</div>
-                <div class="empty-state">Content coming soon</div>
+                {% if table_files.get('dti_lti_compare') %}
+                    <iframe class="table-frame" src="{{ table_files['dti_lti_compare'] }}" loading="lazy"></iframe>
+                {% else %}
+                    <div class="empty-state">No verified DTI/LTI details available yet.</div>
+                {% endif %}
+                {% if analyses.get('bbm_dti_lti_eu_list') %}
+                    <div style="margin-top:20px; padding:12px; background:#f8fafc; border-left:3px solid #3b82f6; border-radius:4px;">
+                    <div style="font-weight:700; margin-bottom:6px;">AI check: EU countries with explicit DTI/LTI limits (high confidence)</div>
+                    {{ analyses['bbm_dti_lti_eu_list'] | safe }}
+                    </div>
+                {% endif %}
+                <div class="ai-box" style="margin-top:20px">
+                    <strong>AI-verified (strict):</strong> This table includes only EU countries where ESRB data indicates a DTI/LTI tool and the AI could verify every cell directly from the ESRB description (high confidence only).
+                </div>
             </div>
         </section>
 
@@ -547,42 +580,45 @@
                 <div class="mermaid-container">
                     <div class="mermaid">
 graph TD
-    subgraph Data_Ingestion["Data Ingestion and ETL"]
-        A[("ESRB Data Source<br/>Excel Files")] -->|Download| B[Python ETL Pipeline]
-        B -->|Clean Normalize Extract Banks| C[("Parquet Storage<br/>Optimized Data")]
+    subgraph DataIngestion["Data Ingestion and ETL"]
+        A[ESRB Data Source Excel Files] -->|Download| B[Python ETL Pipeline]
+        B -->|Clean Normalize Extract Banks| C[Parquet Storage Optimized Data]
     end
 
-    subgraph AI_Core["AI Analysis and Grounding"]
-        C -->|Retrieve Context| D{LangGraph<br/>Validator}
-        H -->|Chart Images| D
+    subgraph DataEnrichment["Data Enrichment"]
+        C -->|Country Data| K[Country Profile Generator]
+        K -->|Profiles| L[Knowledge Graph Builder]
+        L -->|Graph Data| M[Country Profiles and Graph Data]
+        L -->|Graph Context| N[RAG Retriever]
+    end
+
+    subgraph AICore["AI Analysis and Grounding"]
+        C -->|Retrieve Context| D[LangGraph Validator]
+        H[Plotly Charts] -->|Chart Images| D
         J[Google Search Optional] -->|External Evidence| D
-        D -->|Raw Data Images| E[Google Gemini 2.5<br/>Flash Lite]
+        M -->|Graph Context| D
+        N -->|Retrieved Context| E[Google Gemini 2.5 Flash Lite]
+        D -->|Raw Data Images| E
         E -->|Draft Analysis| D
         D -->|Verified Output| F[Final Analysis]
     end
 
-    subgraph Data_Enrichment["Data Enrichment"]
-        C -->|Country Data| K[Country Profile Generator]
-        K -->|Profiles| L[Knowledge Graph Builder]
-        L -->|Graph Data| M[("Country Profiles<br/>& Graph Data")]
-        M -->|Graph Context| D
-    end
-
     subgraph Presentation["Dashboard Layer"]
         F --> G[Jinja2 Template Engine]
-        C -->|Visual Data| H[Plotly Charts]
-        M -->|Country & Graph Data| G
-        G --> I[("HTML Dashboard<br/>index.html embedded plots")]
+        C -->|Visual Data| H
+        M -->|Country and Graph Data| G
+        G --> I[HTML Dashboard index.html embedded plots]
         H --> I
     end
 
     style A fill:#f9f,stroke:#333,stroke-width:2px
     style C fill:#f9f,stroke:#333,stroke-width:2px
-    style E fill:#bbf,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style E fill:#bbf,stroke:#333,stroke-width:2px
     style D fill:#fef3c7,stroke:#333,stroke-width:2px
     style K fill:#fef3c7,stroke:#333,stroke-width:2px
     style L fill:#fef3c7,stroke:#333,stroke-width:2px
     style M fill:#f9f,stroke:#333,stroke-width:2px
+    style N fill:#bbf,stroke:#333,stroke-width:2px
     style I fill:#bfb,stroke:#333,stroke-width:2px
                     </div>
                 </div>
