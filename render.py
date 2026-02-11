@@ -29,6 +29,15 @@ def df_to_html_table(df: pd.DataFrame, table_type: str = None) -> str:
             # Fallback to standard rendering
             pass
     
+    # Use specialized renderer for LTV tables
+    if table_type == "ltv" or ("Limit_Standard" in df.columns and "Exception_Quota" in df.columns and "Measure_Code" not in df.columns):
+        try:
+            from bbm.ltv_renderer import render_ltv_table_html
+            return render_ltv_table_html(df)
+        except ImportError:
+            # Fallback to standard rendering
+            pass
+    
     df_copy = df.copy()
     for col in ["DETAILS", "REASONS", "JUSTIFICATION", "FTB DETAILS", "OTHER EXCEPTIONS", "SUMMARY"]:
         if col in df_copy.columns:
@@ -56,6 +65,8 @@ def render_report(
     osii_countries: list = None,
     osii_table_html: str = "",
     osii_by_country: Dict = None,
+    supabase_url: str = "",
+    supabase_key: str = "",
 ) -> str:
     dirs = ensure_report_dirs(reports_dir)
     partials_dir = dirs["partials"]
@@ -111,6 +122,8 @@ def render_report(
         osii_countries=osii_countries or [],
         osii_table_html=osii_table_html,
         osii_by_country_json=osii_by_country_json,
+        supabase_url=supabase_url,
+        supabase_key=supabase_key,
     )
     return html
 

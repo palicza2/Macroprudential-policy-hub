@@ -1,4 +1,9 @@
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # --- Útvonalak ---
 BASE_DIR = Path(__file__).parent
@@ -91,4 +96,11 @@ NEWS_CONFIG = {
         "(site:ecb.europa.eu OR site:esrb.europa.eu OR site:mnb.hu OR "
         "site:bankofgreece.gr OR site:bundesbank.de OR site:bankofitaly.it)"
     ),
+}
+
+# --- Supabase Configuration (for Render Stage) ---
+SUPABASE_RENDER_CONFIG = {
+    "enabled": os.getenv("USE_SUPABASE_FOR_RENDER", "false").lower() == "true",
+    "url": os.getenv("SUPABASE_URL", ""),
+    "anon_key": os.getenv("SUPABASE_KEY", ""),  # Anon key for frontend
 }

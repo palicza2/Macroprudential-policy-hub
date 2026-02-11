@@ -6,6 +6,7 @@ Handles BBM data processing, LTV extraction, and DTI/LTI verification.
 import logging
 import pandas as pd
 from typing import Dict, Tuple, Any
+from pipeline.writers.supabase_writer import SupabaseWriter
 
 # Import from bbm.py (not from bbm package to avoid circular import)
 import sys
@@ -29,16 +30,18 @@ logger = logging.getLogger(__name__)
 class BBMStage:
     """Processes BBM data including LTV tables and DTI/LTI verification."""
     
-    def __init__(self, analyzer, search_config=None):
+    def __init__(self, analyzer, search_config=None, supabase_writer: SupabaseWriter = None):
         """
         Initialize BBM stage.
         
         Args:
             analyzer: LLMAnalyzer instance for AI processing
             search_config: Optional search configuration for external validation
+            supabase_writer: Optional Supabase writer for structured BBM data persistence
         """
         self.analyzer = analyzer
         self.search_config = search_config
+        self.supabase_writer = supabase_writer or SupabaseWriter()
     
     def process(self, bbm_full: pd.DataFrame) -> Dict[str, Any]:
         """
@@ -83,74 +86,39 @@ class BBMStage:
         active_bbm = bbm_full[bbm_full['active_status'] == 'Active'].copy()
         bbm_pivot_html, bbm_ref_date = build_bbm_matrix_html(bbm_full)
         
-        # A1) LTV Subsection Table
-        ltv_active = bbm_full[
-            (bbm_full['active_status'] == 'Active') &
-            (bbm_full['measure_type'].astype(str).str.contains('LTV', case=False, na=False))
-        ].copy()
-        
-        if not ltv_active.empty:
-            max_date = ltv_active['date'].max()
-            if pd.notna(max_date):
-                ltv_ref_date = max_date.strftime('%Y-%m-%d')
-            
-            descriptions = ltv_active['description'].fillna('').astype(str).tolist()
-            ltv_llm = self.analyzer.extract_ltv_fields(descriptions)
-            ltv_llm = ltv_llm if ltv_llm else [{} for _ in descriptions]
-            llm_df = pd.DataFrame(ltv_llm)
-            llm_df = llm_df.reindex(range(len(ltv_active))).fillna("")
-            
-            def normalize_limits(val):
-                if isinstance(val, list):
-                    cleaned = [str(v).strip() for v in val if str(v).strip()]
-                    return ", ".join(sorted(
-                        set(cleaned),
-                        key=lambda x: float(x.strip('%')) if x.strip('%').replace('.', '').isdigit() else x
-                    ))
-                if isinstance(val, str) and val.strip():
-                    return val.strip()
-                return ""
-            
-            limits_series = llm_df['limits'] if 'limits' in llm_df.columns else pd.Series([""] * len(ltv_active))
-            ftb_flag_series = llm_df['ftb_flag'] if 'ftb_flag' in llm_df.columns else pd.Series([""] * len(ltv_active))
-            ftb_details_series = llm_df['ftb_details'] if 'ftb_details' in llm_df.columns else pd.Series([""] * len(ltv_active))
-            other_series = llm_df['other_exceptions'] if 'other_exceptions' in llm_df.columns else pd.Series([""] * len(ltv_active))
-            
-            ltv_active['limits'] = limits_series.apply(normalize_limits)
-            ltv_active['ftb_flag'] = ftb_flag_series.replace("", "No")
-            ltv_active['ftb_details'] = ftb_details_series
-            ltv_active['other_details'] = other_series
-            
-            # Fallback to regex if LLM output is missing
-            for idx, row in ltv_active.iterrows():
-                if not row.get('limits'):
-                    limits_str, ftb_flag, ftb_details, other_details = extract_ltv_details_regex(
-                        row.get('description', '')
-                    )
-                    ltv_active.at[idx, 'limits'] = limits_str
-                    if row.get('ftb_flag') in ("", None):
-                        ltv_active.at[idx, 'ftb_flag'] = ftb_flag
-                    if not row.get('ftb_details'):
-                        ltv_active.at[idx, 'ftb_details'] = ftb_details
-                    if not row.get('other_details'):
-                        ltv_active.at[idx, 'other_details'] = other_details
-            
-            ltv_table = (
-                ltv_active.groupby('country', as_index=False)
-                .agg({
-                    'limits': lambda x: ", ".join(sorted(set(", ".join(x.fillna("").astype(str)).split(", ")))) if x.notna().any() else "N/A",
-                    'ftb_flag': lambda x: "Yes" if (x == "Yes").any() else "No",
-                    'ftb_details': lambda x: " ".join([v for v in x.fillna("").astype(str) if v]).strip(),
-                    'other_details': lambda x: " ".join([v for v in x.fillna("").astype(str) if v]).strip(),
-                })
+        # A1) LTV Subsection Table (using new structured builder)
+        try:
+            logger.info("   -> LTV verification (ESRB + AI)...")
+            from bbm.ltv_builder import build_ltv_comparison_df_structured
+            # Get search config for external validation if not provided
+            if self.search_config is None:
+                from config import SEARCH_CONFIG
+                self.search_config = SEARCH_CONFIG
+            ltv_table = build_ltv_comparison_df_structured(
+                bbm_full,
+                self.analyzer,
+                validate_with_ai=True,
+                final_validation_with_search=True,
+                search_config=self.search_config
             )
-            ltv_table = ltv_table.rename(columns={
-                'country': 'COUNTRY',
-                'limits': 'LTV LIMITS',
-                'ftb_flag': 'FTB DISCOUNT',
-                'ftb_details': 'FTB DETAILS',
-                'other_details': 'OTHER EXCEPTIONS'
-            })
+            
+            # Get reference date
+            ltv_active = bbm_full[
+                (bbm_full['active_status'] == 'Active') &
+                (bbm_full['measure_type'].astype(str).str.contains('LTV', case=False, na=False))
+            ].copy()
+            if not ltv_active.empty:
+                max_date = ltv_active['date'].max()
+                if pd.notna(max_date):
+                    ltv_ref_date = max_date.strftime('%Y-%m-%d')
+            
+            logger.info(f"   -> LTV DataFrame shape: {ltv_table.shape}")
+            logger.info(f"   -> LTV Countries: {sorted(ltv_table['Country'].unique().tolist()) if not ltv_table.empty and 'Country' in ltv_table.columns else []}")
+        except Exception as exc:
+            logger.warning(f"LTV comparison build failed: {exc}")
+            import traceback
+            logger.debug(traceback.format_exc())
+            ltv_table = pd.DataFrame()
         
         # B) Legutóbbi 10 BBM döntés
         bbm_decisions = bbm_full.sort_values('date', ascending=False).head(10).copy()
@@ -205,6 +173,16 @@ class BBMStage:
                     logger.warning(f"Failed to save DTI/LTI CSV: {exc}")
                     import traceback
                     logger.debug(traceback.format_exc())
+            
+            # Write structured BBM data to Supabase if enabled
+            if self.supabase_writer.is_enabled():
+                logger.info("Writing structured BBM data to Supabase...")
+                results = self.supabase_writer.write_bbm_structured_data(
+                    dti_lti_df=dti_lti_compare,
+                    ltv_df=ltv_table,
+                )
+                if results:
+                    logger.info(f"Supabase BBM write results: {results}")
         except Exception as exc:
             logger.warning(f"DTI/LTI comparison build failed: {exc}")
             dti_lti_compare = pd.DataFrame()

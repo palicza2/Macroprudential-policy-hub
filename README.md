@@ -2,13 +2,40 @@
 
 **An automated, AI-driven dashboard for tracking Macroprudential Policy (CCyB & SyRB) across the European Economic Area.**
 
-This repository hosts a sophisticated pipeline that retrieves raw policy data from the **European Systemic Risk Board (ESRB)**, processes it, and generates a professional, mobile-responsive HTML dashboard. It leverages **Google Gemini 2.5 Flash Lite** to provide executive summaries, strategic insights, and smart keyword extraction from complex legal texts.
+This repository hosts a sophisticated pipeline that retrieves raw policy data from the **European Systemic Risk Board (ESRB)**, processes it, and generates a professional, mobile-responsive HTML dashboard. It leverages **Google Gemini 2.5 Flash Lite** to provide executive summaries, strategic insights, and smart keyword extraction from complex legal texts. The system includes **Supabase integration** for optional dynamic data loading and real-time updates.
 
 ---
 
 ## 💼 Business Value
 
-Reduces the time required for quarterly macroprudential reporting from days to minutes by automating data retrieval, cleaning, and initial analysis.
+The Macro Policy Hub delivers significant operational and strategic value for financial institutions, central banks, and regulatory bodies:
+
+### ⏱️ Time Efficiency
+- **Quarterly Reporting:** Reduces macroprudential reporting time from **days to minutes** by automating data retrieval, cleaning, and initial analysis
+- **Real-Time Monitoring:** Enables continuous tracking of policy changes across 30+ EEA countries without manual data collection
+- **Instant Updates:** Supabase integration allows for on-demand data refresh, eliminating the need for full pipeline re-runs
+
+### 🎯 Accuracy & Consistency
+- **AI-Validated Data:** Automated validation using Google Gemini 2.5 Flash Lite ensures data accuracy and consistency across all measures
+- **Expert Corrections:** Built-in expert knowledge base for country-specific policy nuances (e.g., SK's age-decreasing DTI limits, IE's FTB vs. standard limits)
+- **Structured Extraction:** Regex + AI-powered extraction of LTV and DTI/LTI rules reduces human error in data interpretation
+
+### 💰 Cost Reduction
+- **Reduced Manual Labor:** Eliminates hours of manual data entry, Excel manipulation, and cross-referencing across multiple ESRB sources
+- **Scalable Solution:** Handles increasing data volumes (new countries, measures, historical data) without proportional cost increases
+- **Maintenance Efficiency:** Automated pipeline reduces ongoing maintenance compared to manual reporting processes
+
+### 📊 Strategic Insights
+- **Executive Summaries:** AI-generated strategic overviews enable quick decision-making for senior management
+- **Cross-Country Comparison:** Instant comparison of policy measures across EEA countries for benchmarking and best practices
+- **Trend Analysis:** Historical evolution tracking helps identify policy patterns and anticipate future changes
+- **Knowledge Graph Analysis:** AI-powered relationship mapping reveals policy clusters and regional similarities
+
+### 🔄 Operational Excellence
+- **Standardized Output:** Consistent reporting format across all countries and measures ensures comparability
+- **Multi-Pillar Monitoring:** Unified dashboard for CCyB, SyRB, BBM, and OSII/GSII measures in one place
+- **Mobile Accessibility:** Responsive design enables access from any device, supporting remote work and field operations
+- **Data Portability:** Excel exports and structured data formats (Parquet, Supabase) enable further analysis in specialized tools
 
 ## 🌟 Key Features
 
@@ -29,7 +56,14 @@ Reduces the time required for quarterly macroprudential reporting from days to m
 - **Grounded Validation:** LangGraph-based verification of AI text against data, chart context, knowledge graph relationships, and (optional) Google Search sources.
 - **Knowledge Graph Analysis:** AI analysis of policy relationships, comparing graph structure with table data to identify patterns, validate consistency, and highlight policy clusters.
 
-### 3. Modern, Mobile-First UI 📱
+### 3. Supabase Integration 🗄️
+
+- **Optional Dynamic Data Loading:** Frontend can fetch data from Supabase REST API for real-time updates.
+- **Structured Data Storage:** PostgreSQL-based storage for CCyB, SyRB, BBM, LTV, DTI/LTI rules, and country profiles.
+- **On-Demand Data Fetching:** Country profiles and BBM rules can be loaded dynamically from Supabase when enabled.
+- **Fallback Support:** Gracefully falls back to static embedded data if Supabase is unavailable.
+
+### 4. Modern, Mobile-First UI 📱
 
 - **Left Navigation Sidebar:** Persistent nav with Lucide icons for quick access to each module.
 - **News Feed Experience:** Card-based feed with tags, dates (Published/Reported + Retrieval time), source icons, and country pills.
@@ -40,26 +74,28 @@ Reduces the time required for quarterly macroprudential reporting from days to m
 - **Data Portability:** Integrated download links for processed trend data (Excel).
 - **Country Profiles:** Dynamic country-specific pages with comprehensive macroprudential policy overview.
 - **Knowledge Graph Analysis:** AI-driven insights from policy relationship graphs, used for enhanced analysis and validation.
+- **Dynamic Page Titles:** Page title updates based on active section for better browser navigation.
 - **Refactored Output:** `index.html` stays lightweight by embedding charts/tables from `reports/plots` and `reports/partials`.
 
-### 4. Robust ETL Pipeline ⚙️
+### 5. Robust ETL Pipeline ⚙️
 
 - **Lifecycle Tracking:** Advanced SyRB trend calculation that accurately handles activation and deactivation/revocation events.
 - **Dynamic Parsing:** Resilient to format changes in ESRB Excel files.
 - **Data Cleaning:** Normalizes country names (ISO2/ISO3), dates, and rates.
 
-### 5. ETL Flow (Detailed) 🧩
+### 6. ETL Flow (Detailed) 🧩
 
 - **Ingestion:** Downloads ESRB CCyB & SyRB Excel sources and refreshes local caches in `data/`.
 - **Schema Normalization:** Cleans headers, resolves multi-row headers, and standardizes column names.
 - **Country + Date Hygiene:** Harmonizes ISO codes, country labels, and date fields for consistent joins.
 - **Measure Parsing:** Extracts numeric rates, exposure types, statuses, and decision/effective dates.
-- **Derived Tables:** Builds “latest snapshot” tables, decision extracts, and trend datasets.
+- **Derived Tables:** Builds "latest snapshot" tables, decision extracts, and trend datasets.
 - **BBM Matrix:** Maps borrower-based measures to standard short labels and generates a pivot matrix.
 - **Structured BBM Extraction:** Extracts structured LTV and DTI/LTI rules using regex and AI, supporting multiple limits/ranges (e.g., "3.0x, 8.0x" for SK) with explanatory notes.
-- **Outputs:** Writes cleaned parquet datasets plus visualization-ready dataframes.
+- **Supabase Integration:** Optional data persistence to PostgreSQL (via Supabase) for structured storage, REST API access, and dynamic frontend data loading.
+- **Outputs:** Writes cleaned parquet datasets plus visualization-ready dataframes, optionally syncs to Supabase.
 
-### 6. LLM Flow (Detailed) 🤖
+### 7. LLM Flow (Detailed) 🤖
 
 - **Inputs:** Structured tables (CCyB/SyRB/BBM/News), knowledge graph relationships, and chart images where relevant.
 - **Chart Analyses:** Per-chart interpretations focused on last-12-month objectives and risks.
@@ -77,19 +113,19 @@ Reduces the time required for quarterly macroprudential reporting from days to m
 
 ```mermaid
 graph TD
-    subgraph Data_Ingestion["Data Ingestion and ETL"]
+    subgraph DataIngestion["Data Ingestion and ETL"]
         A[ESRB Data Source Excel Files] -->|Download| B[Python ETL Pipeline]
         B -->|Clean Normalize Extract Banks| C[Parquet Storage Optimized Data]
     end
 
-    subgraph Data_Enrichment["Data Enrichment"]
+    subgraph DataEnrichment["Data Enrichment"]
         C -->|Country Data| K[Country Profile Generator]
         K -->|Profiles| L[Knowledge Graph Builder]
         L -->|Graph Data| M[Country Profiles and Graph Data]
         L -->|Graph Context| N[RAG Retriever]
     end
 
-    subgraph BBM_Processing["BBM Processing"]
+    subgraph BBMProcessing["BBM Processing"]
         C -->|BBM Data| O[LTV Extractor]
         C -->|BBM Data| P[DTI/LTI Extractor]
         O -->|Extracted Rules| Q[LTV Validator]
@@ -98,7 +134,7 @@ graph TD
         R -->|Validated Rules| S
     end
 
-    subgraph AI_Core["AI Analysis and Grounding"]
+    subgraph AICore["AI Analysis and Grounding"]
         C -->|Retrieve Context| D[LangGraph Validator]
         H[Plotly Charts] -->|Chart Images| D
         J[Google Search Optional] -->|External Evidence| D
@@ -189,7 +225,7 @@ graph TD
 
     pip install -r requirements.txt
 
-_(Key libraries: `pandas`, `plotly`, `langchain-google-genai`, `jinja2`, `openpyxl`, `country_converter`)_
+_(Key libraries: `pandas`, `plotly`, `langchain-google-genai`, `jinja2`, `openpyxl`, `country_converter`, `supabase`)_
 
 ### 3. Configuration
 
@@ -200,6 +236,13 @@ Create a `.env` file in the root directory and add your API key(s):
     GOOGLE_CSE_ID=your_custom_search_engine_id
     SEARCH_ALLOWED_DOMAINS=ecb.europa.eu,esrb.europa.eu,bankofgreece.gr
     SEARCH_ENABLED=1
+    
+    # Optional: Supabase integration
+    SUPABASE_URL=https://your-project.supabase.co
+    SUPABASE_KEY=your_anon_key_here
+    SUPABASE_SERVICE_KEY=your_service_role_key_here
+    USE_SUPABASE_FOR_RENDER=false  # Set to true to use Supabase for render stage
+    ENABLE_SUPABASE=false  # Set to true to enable Supabase data writing
 
 ### 4. Run the Pipeline
 
@@ -212,7 +255,8 @@ To generate the static HTML report:
 - **Step 3:** Generates interactive Plotly charts and static PNGs.
 - **Step 4:** Sequential AI analysis: Chart Analysis -> Section Summaries -> Global Executive Summary.
 - **Step 5:** Optional grounded validation (data + charts + optional external sources).
-- **Step 6:** Renders the final `index.html`.
+- **Step 6:** Optional Supabase data writing (if `ENABLE_SUPABASE=true`).
+- **Step 7:** Renders the final `index.html` (optionally using Supabase data if `USE_SUPABASE_FOR_RENDER=true`).
 
 ### 5. Automated Build & Deployment
 

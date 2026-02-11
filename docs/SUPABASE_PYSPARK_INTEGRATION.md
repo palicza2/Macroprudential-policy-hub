@@ -84,22 +84,43 @@ CREATE TABLE bbm_measures (
 CREATE INDEX idx_bbm_country_type ON bbm_measures(country_iso2, measure_short);
 CREATE INDEX idx_bbm_status ON bbm_measures(status) WHERE status = 'Active';
 
--- DTI/LTI Rules (strukturált)
+-- LTV Rules (strukturált) ⭐ ÚJ
+CREATE TABLE ltv_rules (
+    id BIGSERIAL PRIMARY KEY,
+    country_iso2 CHAR(2) REFERENCES countries(iso2) ON DELETE CASCADE,
+    implementation_status VARCHAR(20) CHECK (implementation_status IN ('Active', 'Inactive', 'Announced')),
+    legal_form VARCHAR(20) CHECK (legal_form IN ('Binding', 'Recommendation')),
+    limit_standard TEXT, -- Can be single value (e.g., "80.0%") or list (e.g., "80.0%, 90.0%")
+    limit_ftb DECIMAL(5,2) CHECK (limit_ftb >= 0 AND limit_ftb <= 100),
+    limit_btl DECIMAL(5,2) CHECK (limit_btl >= 0 AND limit_btl <= 100),
+    exception_quota VARCHAR(100), -- e.g., "15% of volume"
+    notes TEXT, -- Explains what list values mean
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(country_iso2)
+);
+
+CREATE INDEX idx_ltv_country ON ltv_rules(country_iso2);
+CREATE INDEX idx_ltv_status ON ltv_rules(implementation_status) WHERE implementation_status = 'Active';
+
+-- DTI/LTI Rules (strukturált) - FRISSÍTVE
 CREATE TABLE dti_lti_rules (
     id BIGSERIAL PRIMARY KEY,
     country_iso2 CHAR(2) REFERENCES countries(iso2) ON DELETE CASCADE,
     measure_code VARCHAR(3) CHECK (measure_code IN ('DTI', 'LTI')),
     implementation_status VARCHAR(20) CHECK (implementation_status IN ('Active', 'Withdrawn', 'Announced')),
     legal_form VARCHAR(20) CHECK (legal_form IN ('Binding', 'Recommendation')),
-    limit_standard DECIMAL(4,2),
+    limit_standard TEXT, -- Can be single value (e.g., "4.5x") or list (e.g., "3.0x, 8.0x")
     limit_ftb DECIMAL(4,2),
     limit_btl DECIMAL(4,2),
+    limit_green DECIMAL(4,2), -- Green/sustainable mortgage limit (e.g., for LV)
     income_basis VARCHAR(10) CHECK (income_basis IN ('Gross', 'Net', 'Unknown')),
     allowance_share VARCHAR(10), -- "15%"
     regulation_url TEXT,
+    notes TEXT, -- Explains what list values mean (e.g., "Decreasing by age" for SK's 3-8x range)
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
-    UNIQUE(country_iso2, measure_code, limit_standard)
+    UNIQUE(country_iso2, measure_code)
 );
 
 CREATE INDEX idx_dti_lti_country ON dti_lti_rules(country_iso2);
@@ -195,12 +216,21 @@ def migrate_parquet_to_supabase():
     bbm_records = bbm_df.to_dict('records')
     supabase.table('bbm_measures').upsert(bbm_records).execute()
     
-    # 5. DTI/LTI Rules
+    # 5. LTV Rules (from structured LTV table)
+    # Note: LTV rules are generated during pipeline execution
+    # If you have a CSV or DataFrame, load it here
+    # ltv_df = pd.read_csv('data/ltv_rules.csv')  # If saved separately
+    # Or load from the pipeline-generated DataFrame
+    # ltv_records = ltv_df.to_dict('records')
+    # supabase.table('ltv_rules').upsert(ltv_records).execute()
+    
+    # 6. DTI/LTI Rules
     dti_lti_df = pd.read_csv('data/dti_lti_rules.csv')
+    # Ensure limit_standard is kept as string (can be list representation)
     dti_lti_records = dti_lti_df.to_dict('records')
     supabase.table('dti_lti_rules').upsert(dti_lti_records).execute()
     
-    # 6. OSII Banks
+    # 7. OSII Banks
     osii_df = pd.read_parquet('data/processed_osii.parquet')
     osii_records = osii_df.to_dict('records')
     supabase.table('osii_banks').upsert(osii_records).execute()
@@ -485,9 +515,11 @@ total_buffers.write.format("jdbc").option(...).save()
 ## 6. Következő Lépések (ha implementáljuk)
 
 1. Supabase projekt létrehozás
-2. Séma SQL script generálás
+2. Séma SQL script generálás (frissítve: LTV tábla, limit_standard TEXT, notes, limit_green)
 3. Migrációs script (parquet → Supabase)
 4. Dashboard integráció (Supabase client)
 5. PySpark demonstráció (opcionális)
 
-**Kérdés**: Szeretnéd, hogy készítsek egy migrációs scriptet Supabase-hez?
+**Részletes implementációs terv**: Lásd `docs/SUPABASE_MIGRATION_PLAN.md`
+
+**Kérdés**: Szeretnéd, hogy készítsek egy teljes migrációs scriptet Supabase-hez?

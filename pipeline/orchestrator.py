@@ -11,7 +11,7 @@ from typing import Dict, Any
 
 from config import (
     BASE_DIR, DATA_DIR, URLS, FIGURES_DIR, REPORTS_DIR,
-    LLM_CONFIG, SEARCH_CONFIG, NEWS_CONFIG
+    LLM_CONFIG, SEARCH_CONFIG, NEWS_CONFIG, SUPABASE_RENDER_CONFIG
 )
 from utils import ensure_dirs
 
@@ -32,9 +32,25 @@ class PipelineOrchestrator:
     
     def __init__(self):
         """Initialize orchestrator with all stages."""
-        self.data_stage = DataStage(DATA_DIR, URLS["ccyb"], URLS["syrb"], URLS.get("capital_measures"))
+        # Initialize Supabase writer (shared across stages)
+        from pipeline.writers.supabase_writer import SupabaseWriter
+        self.supabase_writer = SupabaseWriter()
+        
+        self.data_stage = DataStage(
+            DATA_DIR, 
+            URLS["ccyb"], 
+            URLS["syrb"], 
+            URLS.get("capital_measures"),
+            supabase_writer=self.supabase_writer
+        )
         self.visualization_stage = VisualizationStage(FIGURES_DIR)
-        self.render_stage = RenderStage(BASE_DIR, REPORTS_DIR, NEWS_CONFIG)
+        self.render_stage = RenderStage(
+            BASE_DIR, 
+            REPORTS_DIR, 
+            NEWS_CONFIG,
+            use_supabase=SUPABASE_RENDER_CONFIG["enabled"],
+            supabase_config=SUPABASE_RENDER_CONFIG
+        )
     
     def run(self, run_grounding: bool = False) -> None:
         """
@@ -59,7 +75,11 @@ class PipelineOrchestrator:
         ai_stage = AIStage(LLM_CONFIG, SEARCH_CONFIG, run_grounding)
         
         # Stage 3a: BBM Processing
-        bbm_stage = BBMStage(ai_stage.analyzer, search_config=SEARCH_CONFIG)
+        bbm_stage = BBMStage(
+            ai_stage.analyzer, 
+            search_config=SEARCH_CONFIG,
+            supabase_writer=self.supabase_writer
+        )
         bbm_full = data.get('bbm_df')
         bbm_data = bbm_stage.process(bbm_full)
         

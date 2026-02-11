@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="assets/styles.css">
+    <script src="assets/supabase-client.js"></script>
     <script src="assets/app.js" defer></script>
     <script>
         // Initialize Mermaid with proper settings
@@ -22,7 +23,19 @@
                 curve: 'basis'
             }
         });
-        // Embed countries data for country profiles
+        
+        // Supabase configuration
+        window.SUPABASE_URL = '{{ supabase_url|default("") }}';
+        window.SUPABASE_KEY = '{{ supabase_key|default("") }}';
+        
+        // Initialize Supabase client if credentials are available
+        if (window.SUPABASE_URL && window.SUPABASE_KEY) {
+            window.useSupabase = true;
+        } else {
+            window.useSupabase = false;
+        }
+        
+        // Embed countries data for country profiles (fallback)
         window.countriesData = {{ countries_data_json|safe }};
         
         // Re-render mermaid diagrams after page load to ensure they display
@@ -529,7 +542,14 @@
                 <div class="about-intro">
                     <p class="about-description">An automated, AI-driven dashboard for tracking Macroprudential Policy (CCyB, SyRB, BBM) across the European Economic Area.</p>
                     <div class="about-value-box">
-                        <strong>Business Value:</strong> Reduces quarterly macroprudential reporting time from days to minutes by automating data retrieval, cleaning, and initial analysis.
+                        <strong>Business Value:</strong>
+                        <ul style="margin: 12px 0 0 0; padding-left: 20px; list-style-type: disc;">
+                            <li><strong>Time Efficiency:</strong> Reduces quarterly macroprudential reporting time from <strong>days to minutes</strong> by automating data retrieval, cleaning, and initial analysis. Real-time monitoring across 30+ EEA countries eliminates manual data collection.</li>
+                            <li><strong>Accuracy & Consistency:</strong> AI-validated data ensures accuracy and consistency. Expert corrections handle country-specific policy nuances. Structured extraction (regex + AI) reduces human error in data interpretation.</li>
+                            <li><strong>Cost Reduction:</strong> Eliminates hours of manual data entry, Excel manipulation, and cross-referencing. Scalable solution handles increasing data volumes without proportional cost increases.</li>
+                            <li><strong>Strategic Insights:</strong> AI-generated executive summaries enable quick decision-making. Cross-country comparison and trend analysis help identify policy patterns and anticipate future changes.</li>
+                            <li><strong>Operational Excellence:</strong> Standardized output ensures comparability. Unified dashboard for all macroprudential measures. Mobile accessibility supports remote work. Data portability enables further analysis.</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -576,7 +596,7 @@
 
             <div class="card">
                 <div class="card-title">System Architecture</div>
-                <p class="about-arch-desc">Four-stage pipeline: <strong>Data Ingestion & ETL</strong> processes ESRB Excel files (CCyB, SyRB, BBM, GSII/O-SII) into Parquet storage with individual bank-level extraction; <strong>Data Enrichment</strong> generates country profiles and knowledge graph relationships (countries, measures, banks) for enhanced AI context; <strong>AI Analysis & Grounding</strong> uses <strong>LangGraph</strong> to orchestrate validation (extract claims → verify against data/charts/graph relationships → optional Google Search → refine with Gemini 2.5 Flash), including OSII/GSII bank-level analysis; <strong>Dashboard Layer</strong> renders HTML with embedded Plotly charts, interactive country/bank selectors, and AI-generated insights.</p>
+                <p class="about-arch-desc">Five-stage pipeline: <strong>Data Ingestion & ETL</strong> processes ESRB Excel files (CCyB, SyRB, BBM, GSII/O-SII) into Parquet storage with individual bank-level extraction and Supabase integration; <strong>Data Enrichment</strong> generates country profiles and knowledge graph relationships (countries, measures, banks) for enhanced AI context; <strong>BBM Processing</strong> extracts and validates structured LTV and DTI/LTI rules using regex and AI, supporting multiple limits/ranges; <strong>AI Analysis & Grounding</strong> uses <strong>LangGraph</strong> to orchestrate validation (extract claims → verify against data/charts/graph relationships → optional Google Search → refine with Gemini 2.5 Flash), including OSII/GSII bank-level analysis; <strong>Dashboard Layer</strong> renders HTML with embedded Plotly charts, interactive country/bank selectors, AI-generated insights, and optional Supabase-based dynamic data loading.</p>
                 <div class="mermaid-container">
                     <div class="mermaid">
 graph TD
@@ -592,12 +612,22 @@ graph TD
         L -->|Graph Context| N[RAG Retriever]
     end
 
+    subgraph BBMProcessing["BBM Processing"]
+        C -->|BBM Data| O[LTV Extractor]
+        C -->|BBM Data| P[DTI/LTI Extractor]
+        O -->|Extracted Rules| Q[LTV Validator]
+        P -->|Extracted Rules| R[DTI/LTI Validator]
+        Q -->|Validated Rules| S[BBM Tables]
+        R -->|Validated Rules| S
+    end
+
     subgraph AICore["AI Analysis and Grounding"]
         C -->|Retrieve Context| D[LangGraph Validator]
         H[Plotly Charts] -->|Chart Images| D
         J[Google Search Optional] -->|External Evidence| D
         M -->|Graph Context| D
         N -->|Retrieved Context| E[Google Gemini 2.5 Flash Lite]
+        S -->|BBM Rules| D
         D -->|Raw Data Images| E
         E -->|Draft Analysis| D
         D -->|Verified Output| F[Final Analysis]
@@ -607,6 +637,7 @@ graph TD
         F --> G[Jinja2 Template Engine]
         C -->|Visual Data| H
         M -->|Country and Graph Data| G
+        S -->|BBM Tables| G
         G --> I[HTML Dashboard index.html embedded plots]
         H --> I
     end
@@ -619,6 +650,11 @@ graph TD
     style L fill:#fef3c7,stroke:#333,stroke-width:2px
     style M fill:#f9f,stroke:#333,stroke-width:2px
     style N fill:#bbf,stroke:#333,stroke-width:2px
+    style O fill:#d4edda,stroke:#333,stroke-width:2px
+    style P fill:#d4edda,stroke:#333,stroke-width:2px
+    style Q fill:#d4edda,stroke:#333,stroke-width:2px
+    style R fill:#d4edda,stroke:#333,stroke-width:2px
+    style S fill:#f9f,stroke:#333,stroke-width:2px
     style I fill:#bfb,stroke:#333,stroke-width:2px
                     </div>
                 </div>

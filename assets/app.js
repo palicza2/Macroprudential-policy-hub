@@ -80,21 +80,42 @@ function activateTab(tabName, updateHash, clickedLink) {
         }
     }
     
+    // Update page title based on active tab
+    var titleMap = {
+        'overview': 'Overview - EU Macroprudential Dashboard',
+        'news': 'Latest News - EU Macroprudential Dashboard',
+        'capital': 'Capital Measures - EU Macroprudential Dashboard',
+        'borrower': 'Borrower Measures - EU Macroprudential Dashboard',
+        'country-profiles': 'Country Profiles - EU Macroprudential Dashboard',
+        'knowledge-graph': 'Knowledge Graph - EU Macroprudential Dashboard',
+        'about': 'About - EU Macroprudential Dashboard'
+    };
+    
+    var newTitle = titleMap[tabName] || 'EU Macroprudential Dashboard';
+    document.title = newTitle;
+    
     // Re-render Mermaid diagrams when About tab becomes active
     if (tabName === 'about' && typeof mermaid !== 'undefined') {
         setTimeout(function() {
             var mermaidElements = document.querySelectorAll('.mermaid');
             mermaidElements.forEach(function(element) {
-                if (element.getAttribute('data-processed') === 'true') {
-                    // Remove processed attribute to allow re-rendering
-                    element.removeAttribute('data-processed');
-                    // Clear the content and re-initialize
-                    var graphDefinition = element.textContent;
-                    element.textContent = graphDefinition;
-                }
+                // Remove any existing processed markers
+                element.removeAttribute('data-processed');
+                // Get the original text content
+                var graphDefinition = element.textContent.trim();
+                // Clear and reset
+                element.innerHTML = '';
+                element.textContent = graphDefinition;
             });
-            mermaid.init(undefined, '.mermaid');
-        }, 100);
+            // Re-initialize Mermaid
+            try {
+                mermaid.run({
+                    querySelector: '.mermaid'
+                });
+            } catch (error) {
+                console.error('Mermaid rendering error:', error);
+            }
+        }, 200);
     }
 }
 
@@ -328,10 +349,12 @@ function initCountryProfiles() {
     }
     
     // Handle country selection
-    selector.addEventListener('change', function(e) {
+    selector.addEventListener('change', async function(e) {
         var country = e.target.value;
-        if (country && countriesData[country]) {
-            loadCountryProfile(country, countriesData[country]);
+        if (country) {
+            // Try to load from Supabase first, fallback to static data
+            var profileData = countriesData[country] || null;
+            await loadCountryProfile(country, profileData);
             content.style.display = 'block';
             
             // Update URL hash with country parameter
@@ -354,7 +377,7 @@ function initCountryProfiles() {
     });
     
     // Check URL hash for country parameter
-    function checkHashForCountry() {
+    async function checkHashForCountry() {
         var hash = window.location.hash;
         var selectedCountry = null;
         
@@ -363,30 +386,30 @@ function initCountryProfiles() {
             var countryMatch = hash.match(/country=([^&]+)/);
             if (countryMatch) {
                 var countryFromHash = decodeURIComponent(countryMatch[1]);
-                if (countriesData[countryFromHash]) {
-                    selectedCountry = countryFromHash;
-                    
-                    // Ensure country-profiles tab is active
-                    var tabMatch = hash.match(/^#([^&]+)/);
-                    if (tabMatch && tabMatch[1] !== 'country-profiles') {
-                        var mainLink = Array.from(document.querySelectorAll('.nav-link[data-tab]')).find(function(link) {
-                            return link.dataset.tab === 'country-profiles' && !link.classList.contains('sub-nav');
-                        });
-                        activateTab('country-profiles', false, mainLink);
-                    }
+                // Accept country even if not in static countriesData (will load from Supabase)
+                selectedCountry = countryFromHash;
+                
+                // Ensure country-profiles tab is active
+                var tabMatch = hash.match(/^#([^&]+)/);
+                if (tabMatch && tabMatch[1] !== 'country-profiles') {
+                    var mainLink = Array.from(document.querySelectorAll('.nav-link[data-tab]')).find(function(link) {
+                        return link.dataset.tab === 'country-profiles' && !link.classList.contains('sub-nav');
+                    });
+                    activateTab('country-profiles', false, mainLink);
                 }
             }
         }
         
         // If no country from hash, use default
-        if (!selectedCountry && defaultCountry && countriesData[defaultCountry]) {
+        if (!selectedCountry && defaultCountry) {
             selectedCountry = defaultCountry;
         }
         
         // Load selected/default country
         if (selectedCountry) {
             selector.value = selectedCountry;
-            loadCountryProfile(selectedCountry, countriesData[selectedCountry]);
+            var profileData = countriesData[selectedCountry] || null;
+            await loadCountryProfile(selectedCountry, profileData);
             content.style.display = 'block';
         }
     }
@@ -398,8 +421,43 @@ function initCountryProfiles() {
     window.addEventListener('hashchange', checkHashForCountry);
 }
 
-function loadCountryProfile(country, profileData) {
-    if (!profileData) return;
+async function loadCountryProfile(country, profileData) {
+    // Try to load from Supabase if enabled and profileData is not provided
+    if (window.useSupabase && window.SupabaseClient && window.SupabaseClient.isEnabled()) {
+        if (!profileData || Object.keys(profileData).length === 0) {
+            try {
+                // Get ISO2 from profileData or countriesData
+                var iso2 = null;
+                if (profileData && profileData.iso2) {
+                    iso2 = profileData.iso2;
+                } else if (window.countriesData && window.countriesData[country] && window.countriesData[country].iso2) {
+                    iso2 = window.countriesData[country].iso2;
+                }
+                
+                if (iso2) {
+                    console.log('Loading country profile from Supabase for', country, '(', iso2, ')');
+                    var supabaseProfile = await window.SupabaseClient.fetchCountryProfile(iso2);
+                    if (supabaseProfile) {
+                        profileData = supabaseProfile;
+                        // Cache in window.countriesData for future use
+                        if (!window.countriesData) {
+                            window.countriesData = {};
+                        }
+                        window.countriesData[country] = profileData;
+                        console.log('Loaded country profile from Supabase');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading country profile from Supabase:', error);
+                // Fall through to use provided profileData or static data
+            }
+        }
+    }
+    
+    if (!profileData) {
+        console.warn('No profile data available for', country);
+        return;
+    }
     
     // Update current status
     renderCurrentStatus(profileData.current_status || {});
