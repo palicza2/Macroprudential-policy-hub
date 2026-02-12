@@ -28,35 +28,101 @@ def get_current_status(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str,
                 'status': 'Active' if latest.get('rate', 0) > 0 else 'Inactive',
             }
     
-    # SyRB
+    # SyRB - General és Sectoral (sSyRB) együtt
     syrb_df = data.get('syrb_df')
     if syrb_df is not None and not syrb_df.empty:
         country_syrb = syrb_df[syrb_df['country'] == country]
         if not country_syrb.empty:
-            # Legfrissebb aktív SyRB
+            # Aktív SyRB-k szűrése
             active = country_syrb[
                 (country_syrb.get('active_status', '') == 'Active') |
                 (country_syrb.get('status', '').astype(str).str.contains('Active', case=False, na=False))
             ]
             if not active.empty:
-                latest = active.sort_values('date').iloc[-1]
-                status['syrb'] = {
-                    'rate': float(latest.get('rate_numeric', 0)) if pd.notna(latest.get('rate_numeric')) else 0.0,
-                    'date': latest.get('date'),
-                    'type': latest.get('measure_type', 'General'),
-                    'status': 'Active',
-                }
+                # Szűrjük az ésszerű értékeket (0-10% között)
+                active = active.copy()
+                active['rate_numeric'] = pd.to_numeric(active.get('rate_numeric', 0), errors='coerce').fillna(0.0)
+                active = active[(active['rate_numeric'] > 0) & (active['rate_numeric'] <= 10.0)]
+                
+                if not active.empty:
+                    # General SyRB (legfrissebb)
+                    general = active[
+                        (active.get('syrb_type', '').astype(str).str.contains('General', case=False, na=False)) |
+                        (active.get('exposure_type', '').astype(str).str.contains('General', case=False, na=False))
+                    ]
+                    general_rate = 0.0
+                    general_date = None
+                    if not general.empty:
+                        latest_general = general.sort_values('date').iloc[-1]
+                        general_rate = float(latest_general.get('rate_numeric', 0))
+                        if general_rate > 10.0:
+                            general_rate = 0.0
+                        general_date = latest_general.get('date')
+                    
+                    # Sectoral SyRB-k (sSyRB) - lista
+                    sectoral = active[
+                        (active.get('syrb_type', '').astype(str).str.contains('Sectoral', case=False, na=False)) |
+                        (~active.get('exposure_type', '').astype(str).str.contains('General', case=False, na=False) &
+                         active.get('exposure_type', '').astype(str).str.len() > 0)
+                    ]
+                    ssyrb_list = []
+                    if not sectoral.empty:
+                        # Csoportosítás exposure_type szerint, legfrissebb dátum szerint
+                        for exposure_type, group in sectoral.sort_values('date').groupby('exposure_type'):
+                            latest_sectoral = group.iloc[-1]
+                            rate = float(latest_sectoral.get('rate_numeric', 0))
+                            if 0 < rate <= 10.0:
+                                ssyrb_list.append({
+                                    'exposure': exposure_type or 'Sectoral',
+                                    'rate': rate,
+                                    'date': latest_sectoral.get('date'),
+                                })
+                    
+                    status['syrb'] = {
+                        'rate': general_rate,
+                        'date': general_date,
+                        'type': 'General',
+                        'status': 'Active' if general_rate > 0 else 'Inactive',
+                        'ssyrb': ssyrb_list,  # Sectoral SyRB lista
+                    }
     
-    # O-SII
+    # O-SII - min-max intervallum számítása
     osii_df = data.get('osii_df')
     if osii_df is not None and not osii_df.empty:
         country_osii = osii_df[osii_df['country'] == country]
         if not country_osii.empty:
-            latest = country_osii.sort_values('date').iloc[-1] if 'date' in country_osii.columns else country_osii.iloc[-1]
-            status['osii'] = {
-                'rate': float(latest.get('rate_numeric', 0)) if pd.notna(latest.get('rate_numeric')) else 0.0,
-                'status': 'Active' if latest.get('rate_numeric', 0) > 0 else 'Inactive',
-            }
+            # Szűrjük az aktív O-SII-ket
+            active_osii = country_osii[
+                (country_osii.get('active_status', '') == 'Active') |
+                (country_osii.get('status', '').astype(str).str.contains('Active', case=False, na=False))
+            ]
+            if active_osii.empty:
+                active_osii = country_osii  # Ha nincs explicit status, akkor mindet nézzük
+            
+            # Számítsuk a min-max intervallumot
+            active_osii = active_osii.copy()
+            active_osii['rate_numeric'] = pd.to_numeric(active_osii.get('rate_numeric', 0), errors='coerce').fillna(0.0)
+            active_osii = active_osii[active_osii['rate_numeric'] > 0]
+            
+            if not active_osii.empty:
+                min_rate = float(active_osii['rate_numeric'].min())
+                max_rate = float(active_osii['rate_numeric'].max())
+                
+                status['osii'] = {
+                    'rate_min': min_rate,
+                    'rate_max': max_rate,
+                    'rate': max_rate,  # Backward compatibility - a max értéket használjuk
+                    'count': len(active_osii),
+                    'status': 'Active',
+                }
+            else:
+                status['osii'] = {
+                    'rate_min': 0.0,
+                    'rate_max': 0.0,
+                    'rate': 0.0,
+                    'count': 0,
+                    'status': 'Inactive',
+                }
     
     # BBM
     bbm_df = data.get('bbm_df')
@@ -216,7 +282,7 @@ def get_active_measures(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str
                     'credit_gap': float(latest.get('credit_gap', 0)) if pd.notna(latest.get('credit_gap')) else None,
                 }
     
-    # SyRB részletek - csak aktív eszközök
+    # SyRB részletek - General és Sectoral (sSyRB) együtt
     syrb_df = data.get('syrb_df')
     if syrb_df is not None and not syrb_df.empty:
         country_syrb = syrb_df[
@@ -225,14 +291,36 @@ def get_active_measures(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str
              (syrb_df.get('status', '').astype(str).str.contains('Active', case=False, na=False)))
         ]
         
-        for _, row in country_syrb.iterrows():
+        # General SyRB
+        general_syrb = country_syrb[
+            (country_syrb.get('syrb_type', '').astype(str).str.contains('General', case=False, na=False)) |
+            (country_syrb.get('exposure_type', '').astype(str).str.contains('General', case=False, na=False))
+        ]
+        for _, row in general_syrb.iterrows():
             rate = float(row.get('rate_numeric', 0)) if pd.notna(row.get('rate_numeric')) else 0.0
-            # Csak akkor adjuk hozzá, ha van rate (aktív)
-            if rate > 0:
+            if 0 < rate <= 10.0:  # Ésszerű érték
                 measures['syrb'].append({
                     'rate': rate,
-                    'type': row.get('measure_type', 'General'),
-                    'exposure': row.get('exposure_type', ''),
+                    'type': 'General',
+                    'exposure': 'General',
+                    'date': row.get('date'),
+                    'description': row.get('description', ''),
+                })
+        
+        # Sectoral SyRB (sSyRB)
+        sectoral_syrb = country_syrb[
+            (country_syrb.get('syrb_type', '').astype(str).str.contains('Sectoral', case=False, na=False)) |
+            (~country_syrb.get('exposure_type', '').astype(str).str.contains('General', case=False, na=False) &
+             country_syrb.get('exposure_type', '').astype(str).str.len() > 0)
+        ]
+        for _, row in sectoral_syrb.iterrows():
+            rate = float(row.get('rate_numeric', 0)) if pd.notna(row.get('rate_numeric')) else 0.0
+            if 0 < rate <= 10.0:  # Ésszerű érték
+                exposure = row.get('exposure_type', 'Sectoral')
+                measures['syrb'].append({
+                    'rate': rate,
+                    'type': 'Sectoral',
+                    'exposure': exposure,
                     'date': row.get('date'),
                     'description': row.get('description', ''),
                 })
@@ -246,32 +334,61 @@ def get_active_measures(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str
         ]
         
         for _, row in country_bbm.iterrows():
+            # Ellenőrizzük a status mezőt is - csak aktív eszközöket adjunk vissza
+            status = str(row.get('status', '')).strip()
+            # Ha a status tartalmazza a "not active", "inactive", "revoked", "deactivated" szavakat, akkor kihagyjuk
+            if status and any(inactive_term in status.lower() for inactive_term in ['not active', 'inactive', 'revoked', 'deactivated', 'expired']):
+                continue
+            
             measures['bbm'].append({
                 'type': row.get('measure_type', ''),
-                'status': row.get('status', ''),
+                'status': 'Active',  # Mivel már szűrtük, mindig Active
                 'date': row.get('date'),
                 'description': row.get('description', ''),
             })
     
-    # O-SII részletek - csak ha aktív
+    # O-SII részletek - min-max intervallum és bankok listája
     osii_df = data.get('osii_df')
     if osii_df is not None and not osii_df.empty:
         country_osii = osii_df[osii_df['country'] == country]
         if not country_osii.empty:
-            # Aktív O-SII-k összesítése
+            # Aktív O-SII-k szűrése
             active_osii = country_osii[
                 (country_osii.get('active_status', '') == 'Active') |
                 (country_osii.get('status', '').astype(str).str.contains('Active', case=False, na=False))
             ]
+            if active_osii.empty:
+                active_osii = country_osii  # Ha nincs explicit status, akkor mindet nézzük
+            
+            # Min-max intervallum számítása
+            active_osii = active_osii.copy()
+            active_osii['rate_numeric'] = pd.to_numeric(active_osii.get('rate_numeric', 0), errors='coerce').fillna(0.0)
+            active_osii = active_osii[active_osii['rate_numeric'] > 0]
+            
             if not active_osii.empty:
-                # Összesített rate számítása
-                total_rate = active_osii.get('rate_numeric', pd.Series()).sum() if 'rate_numeric' in active_osii.columns else 0.0
-                if total_rate > 0:
-                    measures['osii'] = {
-                        'rate': float(total_rate) if pd.notna(total_rate) else 0.0,
-                        'status': 'Active',
-                        'count': len(active_osii),
-                    }
+                min_rate = float(active_osii['rate_numeric'].min())
+                max_rate = float(active_osii['rate_numeric'].max())
+                
+                # Bankok listája
+                banks = []
+                for _, row in active_osii.iterrows():
+                    bank_name = row.get('bank_name', '')
+                    if bank_name:
+                        banks.append({
+                            'name': bank_name,
+                            'rate': float(row.get('rate_numeric', 0)),
+                            'buffer_type': row.get('buffer_type', 'O-SII'),
+                            'lei_code': row.get('lei_code', ''),
+                        })
+                
+                measures['osii'] = {
+                    'rate_min': min_rate,
+                    'rate_max': max_rate,
+                    'rate': max_rate,  # Backward compatibility
+                    'status': 'Active',
+                    'count': len(active_osii),
+                    'banks': banks,  # Bankok listája
+                }
     
     return measures
 

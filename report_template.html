@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EU Macroprudential Dashboard</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.5/dist/mermaid.min.js"></script>
     <script type="text/javascript" src="https://unpkg.com/vis-network@latest/standalone/umd/vis-network.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -13,16 +13,19 @@
     <script src="assets/supabase-client.js"></script>
     <script src="assets/app.js" defer></script>
     <script>
-        // Initialize Mermaid with proper settings
-        mermaid.initialize({ 
-            startOnLoad: true, 
-            theme: 'default',
-            flowchart: {
-                useMaxWidth: true,
-                htmlLabels: true,
-                curve: 'basis'
-            }
-        });
+        // Initialize Mermaid with proper settings for version 10.x
+        if (typeof mermaid !== 'undefined') {
+            mermaid.initialize({ 
+                startOnLoad: true,  // Enable auto-start
+                theme: 'default',
+                flowchart: {
+                    useMaxWidth: true,
+                    htmlLabels: true,
+                    curve: 'basis'
+                },
+                securityLevel: 'loose'  // Allow HTML in labels if needed
+            });
+        }
         
         // Supabase configuration
         window.SUPABASE_URL = '{{ supabase_url|default("") }}';
@@ -40,24 +43,50 @@
         
         // Re-render mermaid diagrams after page load to ensure they display
         document.addEventListener('DOMContentLoaded', function() {
-            // Wait a bit for mermaid to initialize
-            setTimeout(function() {
+            // Wait for mermaid to be fully loaded and then render
+            function renderMermaid() {
                 if (typeof mermaid !== 'undefined') {
                     try {
-                        var mermaidElements = document.querySelectorAll('.mermaid');
-                        mermaidElements.forEach(function(element) {
-                            // Only render if not already processed
-                            if (!element.hasAttribute('data-processed')) {
+                        // For Mermaid 10.x, use contentLoaded() method
+                        if (typeof mermaid.contentLoaded === 'function') {
+                            mermaid.contentLoaded();
+                        } else if (typeof mermaid.run === 'function') {
+                            // Fallback: use run() method
+                            var mermaidElements = document.querySelectorAll('.mermaid:not([data-processed])');
+                            if (mermaidElements.length > 0) {
                                 mermaid.run({
-                                    nodes: [element]
+                                    nodes: Array.from(mermaidElements)
+                                });
+                                mermaidElements.forEach(function(el) {
+                                    el.setAttribute('data-processed', 'true');
                                 });
                             }
-                        });
+                        } else {
+                            // Last resort: try to trigger rendering by re-initializing
+                            console.warn('Mermaid API not found, attempting re-initialization');
+                            mermaid.initialize({ 
+                                startOnLoad: true,
+                                theme: 'default'
+                            });
+                        }
                     } catch (error) {
                         console.error('Mermaid rendering error:', error);
+                        // Log the error details for debugging
+                        if (error.message) {
+                            console.error('Error message:', error.message);
+                        }
+                        if (error.stack) {
+                            console.error('Error stack:', error.stack);
+                        }
                     }
+                } else {
+                    // Retry if mermaid is not loaded yet
+                    setTimeout(renderMermaid, 200);
                 }
-            }, 200);
+            }
+            
+            // Try rendering after a short delay
+            setTimeout(renderMermaid, 500);
         });
     </script>
 </head>
@@ -620,6 +649,7 @@ graph TD
     subgraph DataIngestion[Data Ingestion and ETL]
         A[ESRB Data Source Excel Files] -->|Download| B[Python ETL Pipeline]
         B -->|Clean Normalize Extract Banks| C[Parquet Storage Optimized Data]
+        B -->|Write Structured Data| DB[(Supabase PostgreSQL Database)]
     end
 
     subgraph DataEnrichment[Data Enrichment]
@@ -627,6 +657,8 @@ graph TD
         K -->|Profiles| L[Knowledge Graph Builder]
         L -->|Graph Data| M[Country Profiles and Graph Data]
         L -->|Graph Context| N[RAG Retriever]
+        K -->|Write Profiles| DB
+        L -->|Write Graph Data| DB
     end
 
     subgraph BBMProcessing[BBM Processing]
@@ -636,6 +668,7 @@ graph TD
         P -->|Extracted Rules| R[DTI/LTI Validator]
         Q -->|Validated Rules| S[BBM Tables]
         R -->|Validated Rules| S
+        S -->|Write BBM Rules| DB
     end
 
     subgraph AICore[AI Analysis and Grounding]
@@ -655,12 +688,14 @@ graph TD
         C -->|Visual Data| H
         M -->|Country and Graph Data| G
         S -->|BBM Tables| G
+        DB -->|Optional Dynamic Data| G
         G --> I[HTML Dashboard index.html embedded plots]
         H --> I
     end
 
     style A fill:#f9f,stroke:#333,stroke-width:2px
     style C fill:#f9f,stroke:#333,stroke-width:2px
+    style DB fill:#3ecf8e,stroke:#333,stroke-width:3px
     style E fill:#bbf,stroke:#333,stroke-width:2px
     style D fill:#fef3c7,stroke:#333,stroke-width:2px
     style K fill:#fef3c7,stroke:#333,stroke-width:2px

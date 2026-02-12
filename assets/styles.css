@@ -1242,6 +1242,91 @@ h2::before {
     margin-bottom: 8px;
 }
 
+/* SyRB Details List (in top card) */
+.syrb-details-list {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.syrb-item-line {
+    font-size: 0.85rem;
+    color: var(--text-main);
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.syrb-item-line:last-child {
+    margin-bottom: 0;
+}
+
+/* SyRB Measures List (in details tab) */
+.syrb-measures-list {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.syrb-measure-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 0.9rem;
+}
+
+.syrb-measure-label {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.syrb-measure-value {
+    font-weight: 700;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* O-SII Banks List */
+.osii-banks-list {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.osii-bank-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+}
+
+.osii-bank-item:last-child {
+    border-bottom: none;
+}
+
+.osii-bank-name {
+    font-weight: 600;
+    color: var(--text-main);
+    flex: 1;
+}
+
+.osii-bank-rate {
+    font-weight: 700;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+    min-width: 60px;
+    text-align: right;
+}
+
+.osii-bank-type {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
 /* AI Inflection Points */
 .inflection-point {
     padding: 16px;

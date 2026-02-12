@@ -498,23 +498,53 @@ function renderCurrentStatus(status) {
     });
     grid.appendChild(ccybCard);
     
-    // SyRB Card
+    // SyRB Card - General + Sectoral (sSyRB)
+    var syrbRate = status.syrb?.rate || 0;
+    var ssyrbList = status.syrb?.ssyrb || [];
+    var syrbContent = '';
+    if (syrbRate > 0 || ssyrbList.length > 0) {
+        syrbContent = '<div class="syrb-details-list">';
+        if (syrbRate > 0) {
+            syrbContent += '<div class="syrb-item-line">SyRB: ' + syrbRate.toFixed(2) + '%</div>';
+        }
+        ssyrbList.forEach(function(ssyrb) {
+            var exposureLabel = ssyrb.exposure || 'Sectoral';
+            syrbContent += '<div class="syrb-item-line">' + exposureLabel + ' sSyRB: ' + ssyrb.rate.toFixed(2) + '%</div>';
+        });
+        syrbContent += '</div>';
+    }
+    
     var syrbCard = createKeyMeasureCard({
         icon: '🛡️',
         label: 'SyRB',
         description: 'Systemic Risk Buffer',
-        rate: status.syrb?.rate || 0,
-        status: status.syrb?.status || 'Inactive',
-        color: '#10b981'
+        rate: syrbRate,
+        status: (syrbRate > 0 || ssyrbList.length > 0) ? 'Active' : 'Inactive',
+        color: '#10b981',
+        customContent: syrbContent
     });
     grid.appendChild(syrbCard);
     
-    // O-SII Card
+    // O-SII Card - min-max intervallum
+    var osiiRateDisplay = '0%';
+    if (status.osii && status.osii.rate_min !== undefined && status.osii.rate_max !== undefined) {
+        if (status.osii.rate_max > 0) {
+            if (status.osii.rate_min === status.osii.rate_max) {
+                osiiRateDisplay = status.osii.rate_max.toFixed(2) + '%';
+            } else {
+                osiiRateDisplay = status.osii.rate_min.toFixed(2) + '-' + status.osii.rate_max.toFixed(2) + '%';
+            }
+        }
+    } else if (status.osii?.rate) {
+        osiiRateDisplay = status.osii.rate.toFixed(2) + '%';
+    }
+    
     var osiiCard = createKeyMeasureCard({
         icon: '🏛️',
         label: 'O-SII',
         description: 'Other Systemically Important Inst.',
-        rate: status.osii?.rate || 0,
+        rate: null,  // Nem használjuk a rate mezőt, mert saját display-tel rendelkezünk
+        rateDisplay: osiiRateDisplay,  // Egyedi rate display
         status: status.osii?.status || 'Inactive',
         color: '#ef4444'
     });
@@ -540,7 +570,19 @@ function createKeyMeasureCard(config) {
     card.style.borderLeftColor = config.color;
     
     var statusClass = config.status === 'Active' ? 'active' : 'inactive';
-    var rateDisplay = config.rate !== null ? config.rate.toFixed(2) + '%' : (config.bbmTypes && config.bbmTypes.length > 0 ? 'Yes' : 'No');
+    
+    // Rate display: ha van egyedi rateDisplay, azt használjuk, különben számoljuk
+    var rateDisplay;
+    if (config.rateDisplay !== undefined) {
+        rateDisplay = config.rateDisplay;
+    } else if (config.rate !== null && config.rate !== undefined) {
+        rateDisplay = config.rate.toFixed(2) + '%';
+    } else if (config.bbmTypes && config.bbmTypes.length > 0) {
+        // BBM esetén ne mutassunk "Yes"-t, csak a listát
+        rateDisplay = '';  // Üres, mert a lista alatt lesz
+    } else {
+        rateDisplay = '0%';
+    }
     
     var bbmContent = '';
     if (config.bbmTypes && config.bbmTypes.length > 0) {
@@ -551,6 +593,8 @@ function createKeyMeasureCard(config) {
                     '</div>';
     }
     
+    var customContent = config.customContent || '';
+    
     card.innerHTML = '<div class="key-measure-header">' +
                     '<span class="key-measure-icon">' + config.icon + '</span>' +
                     '<div class="key-measure-info">' +
@@ -559,10 +603,11 @@ function createKeyMeasureCard(config) {
                     '</div>' +
                     '</div>' +
                     '<div class="key-measure-body">' +
-                    '<div class="key-measure-rate">' + rateDisplay + '</div>' +
+                    (rateDisplay ? '<div class="key-measure-rate">' + rateDisplay + '</div>' : '') +
                     '<span class="key-measure-status-badge ' + statusClass + '">' + config.status + '</span>' +
                     '</div>' +
-                    bbmContent;
+                    bbmContent +
+                    customContent;
     
     return card;
 }
@@ -743,29 +788,49 @@ function renderActiveMeasuresTabbed(measures) {
 function renderBBMMeasures(bbmMeasures, container) {
     container.innerHTML = '';
     
-    if (!bbmMeasures || bbmMeasures.length === 0) {
+    // Szűrjük ki a nem aktív eszközöket
+    var activeBBM = bbmMeasures.filter(function(bbm) {
+        var status = (bbm.status || '').toString().toLowerCase();
+        // Kihagyjuk a "not active", "inactive", "revoked", stb. státuszú eszközöket
+        return !status || (!status.includes('not active') && 
+                          !status.includes('inactive') && 
+                          !status.includes('revoked') && 
+                          !status.includes('deactivated') &&
+                          !status.includes('expired'));
+    });
+    
+    if (!activeBBM || activeBBM.length === 0) {
         container.innerHTML = '<p style="color: #64748b; padding: 20px; text-align: center;">No active BBM measures available.</p>';
         return;
     }
     
+    // Csoportosítás típus szerint
+    var groupedByType = {};
+    activeBBM.forEach(function(bbm) {
+        var type = bbm.type || 'Other';
+        if (!groupedByType[type]) {
+            groupedByType[type] = [];
+        }
+        groupedByType[type].push(bbm);
+    });
+    
     // Map BBM types to icons and labels
     var bbmTypeMap = {
         'LTV': { icon: '🏠', label: 'LTV Limits (Loan-to-Value)' },
-        'DTI': { icon: '📊', label: 'DTI Ratio (Debt-Service-to-Income)' },
+        'DTI': { icon: '📊', label: 'DTI Ratio (Debt-to-Income)' },
         'LTI': { icon: '📊', label: 'LTI Ratio (Loan-to-Income)' },
         'DSTI': { icon: '📊', label: 'DSTI Ratio (Debt-Service-to-Income)' },
         'Maturity': { icon: '⏰', label: 'Maturity Limits (Loan Duration)' },
         'Other': { icon: '📋', label: 'Other BBM' }
     };
     
-    bbmMeasures.forEach(function(bbm, index) {
-        var type = bbm.type || 'Other';
+    // Minden típusra egy kártya, összevont leírásokkal
+    Object.keys(groupedByType).forEach(function(type) {
+        var typeMeasures = groupedByType[type];
         var typeInfo = bbmTypeMap[type] || bbmTypeMap['Other'];
-        var fullDesc = bbm.description || '';
-        var isLong = fullDesc.length > 150;
-        var displayDesc = isLong ? fullDesc.substring(0, 150) + '...' : fullDesc;
-        var descId = 'bbm-desc-' + index;
-        var status = bbm.status === 'Active' ? 'active' : (bbm.status === 'Warning' ? 'warning' : 'inactive');
+        
+        // Összevonjuk a leírásokat - kivonjuk a lényeges információkat
+        var summary = extractBBMSummary(typeMeasures);
         
         var card = document.createElement('div');
         card.className = 'bbm-measure-card';
@@ -774,18 +839,79 @@ function renderBBMMeasures(bbmMeasures, container) {
                         '<span class="bbm-measure-icon">' + typeInfo.icon + '</span>' +
                         '<span class="bbm-measure-name">' + typeInfo.label + '</span>' +
                         '</div>' +
-                        '<span class="bbm-measure-status-badge ' + status + '">' + (bbm.status || 'ACTIVE').toUpperCase() + '</span>' +
+                        '<span class="bbm-measure-status-badge active">ACTIVE</span>' +
                         '</div>' +
                         '<div class="bbm-measure-description">' +
-                        '<div class="bbm-desc-short" id="' + descId + '-short">' + displayDesc + '</div>' +
-                        (isLong ? '<div class="bbm-desc-full" id="' + descId + '-full" style="display:none;">' + fullDesc + '</div>' : '') +
-                        (isLong ? '<button class="bbm-expand-btn" data-target="' + descId + '">Show more</button>' : '') +
+                        '<div class="bbm-summary">' + summary + '</div>' +
+                        (typeMeasures.length > 1 ? '<div class="bbm-count">(' + typeMeasures.length + ' active measure' + (typeMeasures.length > 1 ? 's' : '') + ')</div>' : '') +
                         '</div>';
         container.appendChild(card);
     });
+}
+
+function extractBBMSummary(measures) {
+    if (!measures || measures.length === 0) return 'No details available.';
     
-    // Initialize expand buttons
-    initBBMExpandButtons();
+    // Ha csak egy measure van, használjuk annak leírását (rövidítve)
+    if (measures.length === 1) {
+        var desc = measures[0].description || '';
+        // Kivonjuk a lényeges részeket (számok, százalékok, kulcsszavak)
+        var summary = extractKeyInfo(desc);
+        return summary || (desc.length > 200 ? desc.substring(0, 200) + '...' : desc);
+    }
+    
+    // Több measure esetén összevonjuk
+    var keyPoints = [];
+    var allDescriptions = measures.map(function(m) { return m.description || ''; }).join(' ');
+    
+    // Kivonjuk a kulcsszavakat és számokat
+    var summary = extractKeyInfo(allDescriptions);
+    
+    // Ha van dátum információ, hozzáadjuk
+    var dates = measures.map(function(m) { return m.date; }).filter(Boolean);
+    if (dates.length > 0) {
+        var latestDate = dates.sort().reverse()[0];
+        summary += ' (Effective: ' + latestDate + ')';
+    }
+    
+    return summary || 'Multiple active ' + (measures[0].type || 'BBM') + ' measures in place.';
+}
+
+function extractKeyInfo(description) {
+    if (!description) return '';
+    
+    // Kivonjuk a számokat és százalékokat
+    var numbers = description.match(/\d+(?:\.\d+)?%?/g);
+    var keyNumbers = numbers ? numbers.slice(0, 3).join(', ') : '';
+    
+    // Kivonjuk a kulcsszavakat
+    var keywords = [];
+    var lowerDesc = description.toLowerCase();
+    
+    if (lowerDesc.includes('ltv') || lowerDesc.includes('loan-to-value')) keywords.push('LTV');
+    if (lowerDesc.includes('dti') || lowerDesc.includes('debt-to-income')) keywords.push('DTI');
+    if (lowerDesc.includes('lti') || lowerDesc.includes('loan-to-income')) keywords.push('LTI');
+    if (lowerDesc.includes('dsti') || lowerDesc.includes('debt-service')) keywords.push('DSTI');
+    if (lowerDesc.includes('maturity') || lowerDesc.includes('duration')) keywords.push('Maturity');
+    if (lowerDesc.includes('limit')) keywords.push('Limits');
+    if (lowerDesc.includes('ratio')) keywords.push('Ratios');
+    
+    // Összeállítjuk a summary-t
+    var summary = '';
+    if (keywords.length > 0) {
+        summary = keywords.join(', ') + ' measures';
+    }
+    if (keyNumbers) {
+        summary += (summary ? ': ' : '') + keyNumbers;
+    }
+    
+    // Ha nincs semmi, akkor az első mondatot vesszük
+    if (!summary) {
+        var firstSentence = description.split(/[.!?]/)[0];
+        summary = firstSentence.length > 150 ? firstSentence.substring(0, 150) + '...' : firstSentence;
+    }
+    
+    return summary || description.substring(0, 150) + '...';
 }
 
 function renderCapitalMeasures(measures, container) {
@@ -806,27 +932,66 @@ function renderCapitalMeasures(measures, container) {
         container.appendChild(ccybCard);
     }
     
-    // SyRB
+    // SyRB - General + Sectoral (sSyRB)
     if (measures.syrb && measures.syrb.length > 0) {
         hasCapital = true;
-        var totalRate = measures.syrb.reduce(function(sum, s) { return sum + (s.rate || 0); }, 0);
+        // Szeparáljuk a General és Sectoral SyRB-ket
+        var generalSyRB = measures.syrb.filter(function(s) { return s.type === 'General' || s.exposure === 'General'; });
+        var sectoralSyRB = measures.syrb.filter(function(s) { return s.type === 'Sectoral' || (s.exposure && s.exposure !== 'General'); });
+        
+        var generalRate = generalSyRB.length > 0 ? generalSyRB[0].rate : 0;
+        var totalRate = generalRate;
+        sectoralSyRB.forEach(function(s) { totalRate += (s.rate || 0); });
+        
+        // Részletek listája
+        var syrbDetails = '<div class="syrb-measures-list">';
+        if (generalRate > 0) {
+            syrbDetails += '<div class="syrb-measure-item"><span class="syrb-measure-label">SyRB:</span><span class="syrb-measure-value">' + generalRate.toFixed(2) + '%</span></div>';
+        }
+        sectoralSyRB.forEach(function(s) {
+            var exposureLabel = s.exposure || 'Sectoral';
+            syrbDetails += '<div class="syrb-measure-item"><span class="syrb-measure-label">' + exposureLabel + ' sSyRB:</span><span class="syrb-measure-value">' + (s.rate || 0).toFixed(2) + '%</span></div>';
+        });
+        syrbDetails += '</div>';
+        
         var syrbCard = createCapitalMeasureCard({
             icon: '🛡️',
             name: 'Systemic Risk Buffer (SyRB)',
             rate: totalRate,
-            count: measures.syrb.length
+            count: measures.syrb.length,
+            customContent: syrbDetails
         });
         container.appendChild(syrbCard);
     }
     
-    // O-SII
-    if (measures.osii && measures.osii.rate > 0) {
+    // O-SII - min-max intervallum + bankok listája
+    if (measures.osii && measures.osii.rate_max > 0) {
         hasCapital = true;
+        var osiiRateDisplay = measures.osii.rate_min === measures.osii.rate_max 
+            ? measures.osii.rate_max.toFixed(2) + '%'
+            : measures.osii.rate_min.toFixed(2) + '-' + measures.osii.rate_max.toFixed(2) + '%';
+        
+        // Bankok listája
+        var banksContent = '';
+        if (measures.osii.banks && measures.osii.banks.length > 0) {
+            banksContent = '<div class="osii-banks-list">';
+            measures.osii.banks.forEach(function(bank) {
+                banksContent += '<div class="osii-bank-item">' +
+                              '<span class="osii-bank-name">' + (bank.name || 'N/A') + '</span>' +
+                              '<span class="osii-bank-rate">' + (bank.rate || 0).toFixed(2) + '%</span>' +
+                              (bank.buffer_type ? '<span class="osii-bank-type">(' + bank.buffer_type + ')</span>' : '') +
+                              '</div>';
+            });
+            banksContent += '</div>';
+        }
+        
         var osiiCard = createCapitalMeasureCard({
             icon: '🏛️',
             name: 'Other Systemically Important Institutions (O-SII)',
-            rate: measures.osii.rate,
-            count: measures.osii.count
+            rate: measures.osii.rate_max,  // A max értéket használjuk a display-hez
+            rateDisplay: osiiRateDisplay,  // Egyedi rate display
+            count: measures.osii.count,
+            customContent: banksContent
         });
         container.appendChild(osiiCard);
     }
@@ -839,16 +1004,23 @@ function renderCapitalMeasures(measures, container) {
 function createCapitalMeasureCard(config) {
     var card = document.createElement('div');
     card.className = 'capital-measure-card';
+    
+    // Rate display: ha van egyedi rateDisplay, azt használjuk, különben a rate-t
+    var rateDisplay = config.rateDisplay || (config.rate ? config.rate.toFixed(2) + '%' : '0%');
+    
+    var customContent = config.customContent || '';
+    
     card.innerHTML = '<div class="capital-measure-header">' +
                     '<span class="capital-measure-icon">' + config.icon + '</span>' +
                     '<div class="capital-measure-info">' +
                     '<div class="capital-measure-name">' + config.name + '</div>' +
-                    '<div class="capital-measure-rate">' + config.rate.toFixed(2) + '%</div>' +
+                    '<div class="capital-measure-rate">' + rateDisplay + '</div>' +
                     '</div>' +
                     '</div>' +
                     (config.date ? '<div class="capital-measure-detail">Effective Date: ' + config.date + '</div>' : '') +
                     (config.creditGap !== null && config.creditGap !== undefined ? '<div class="capital-measure-detail">Credit Gap: ' + config.creditGap.toFixed(2) + '%</div>' : '') +
-                    (config.count ? '<div class="capital-measure-detail">Active Measures: ' + config.count + '</div>' : '');
+                    (config.count ? '<div class="capital-measure-detail">Active Measures: ' + config.count + '</div>' : '') +
+                    customContent;
     return card;
 }
 

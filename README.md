@@ -116,6 +116,7 @@ graph TD
     subgraph DataIngestion[Data Ingestion and ETL]
         A[ESRB Data Source Excel Files] -->|Download| B[Python ETL Pipeline]
         B -->|Clean Normalize Extract Banks| C[Parquet Storage Optimized Data]
+        B -->|Write Structured Data| DB[(Supabase PostgreSQL Database)]
     end
 
     subgraph DataEnrichment[Data Enrichment]
@@ -123,6 +124,8 @@ graph TD
         K -->|Profiles| L[Knowledge Graph Builder]
         L -->|Graph Data| M[Country Profiles and Graph Data]
         L -->|Graph Context| N[RAG Retriever]
+        K -->|Write Profiles| DB
+        L -->|Write Graph Data| DB
     end
 
     subgraph BBMProcessing[BBM Processing]
@@ -132,6 +135,7 @@ graph TD
         P -->|Extracted Rules| R[DTI/LTI Validator]
         Q -->|Validated Rules| S[BBM Tables]
         R -->|Validated Rules| S
+        S -->|Write BBM Rules| DB
     end
 
     subgraph AICore[AI Analysis and Grounding]
@@ -151,12 +155,14 @@ graph TD
         C -->|Visual Data| H
         M -->|Country and Graph Data| G
         S -->|BBM Tables| G
+        DB -->|Optional Dynamic Data| G
         G --> I[HTML Dashboard index.html embedded plots]
         H --> I
     end
 
     style A fill:#f9f,stroke:#333,stroke-width:2px
     style C fill:#f9f,stroke:#333,stroke-width:2px
+    style DB fill:#3ecf8e,stroke:#333,stroke-width:3px
     style E fill:#bbf,stroke:#333,stroke-width:2px
     style D fill:#fef3c7,stroke:#333,stroke-width:2px
     style K fill:#fef3c7,stroke:#333,stroke-width:2px
