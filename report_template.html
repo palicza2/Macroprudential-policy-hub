@@ -466,33 +466,50 @@
             </div>
             
             <div id="country-profile-content" style="display: none;">
-                <!-- Current Status -->
-                <div class="card">
-                    <div class="card-title">📊 Current Status</div>
-                    <div class="status-grid" id="current-status-grid">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
+                <!-- Key Measures Overview - 4 Top Cards -->
+                <div class="key-measures-grid" id="key-measures-grid">
+                    <!-- Will be populated by JavaScript -->
                 </div>
                 
                 <!-- Historical Evolution -->
                 <div class="card">
-                    <div class="card-title">📈 Historical Evolution</div>
+                    <div class="card-header-with-controls">
+                        <div class="card-title">Historical Evolution</div>
+                        <div class="chart-period-selector">
+                            <button class="period-btn active" data-period="1Y">1Y</button>
+                            <button class="period-btn" data-period="5Y">5Y</button>
+                            <button class="period-btn" data-period="max">Max</button>
+                        </div>
+                    </div>
                     <div id="country-evolution-chart"></div>
                 </div>
                 
-                <!-- Recent Changes -->
-                <div class="card">
-                    <div class="card-title">🔄 Recent Changes (Last 12 Months)</div>
-                    <div class="changes-list" id="recent-changes-list">
+                <!-- AI Key Inflection Points -->
+                <div class="card" id="ai-inflection-points-card" style="display: none;">
+                    <div class="card-title">AI Key Inflection Points</div>
+                    <div id="ai-inflection-points">
                         <!-- Will be populated by JavaScript -->
                     </div>
                 </div>
                 
-                <!-- Active Measures Details -->
+                <!-- Active Measures Details - Tabbed -->
                 <div class="card">
-                    <div class="card-title">📋 Active Measures Details</div>
-                    <div id="active-measures-details">
-                        <!-- Will be populated by JavaScript -->
+                    <div class="card-title">Active Measures Details</div>
+                    <div class="measures-tabs">
+                        <button class="measure-tab active" data-tab="borrower">Borrower-Based (BBM)</button>
+                        <button class="measure-tab" data-tab="capital">Capital-Based</button>
+                        <button class="measure-tab" data-tab="liquidity">Liquidity</button>
+                    </div>
+                    <div class="measures-tab-content">
+                        <div id="active-measures-borrower" class="tab-pane active">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                        <div id="active-measures-capital" class="tab-pane">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                        <div id="active-measures-liquidity" class="tab-pane">
+                            <p style="color: #64748b; padding: 20px; text-align: center;">Liquidity measures coming soon.</p>
+                        </div>
                     </div>
                 </div>
                 
@@ -600,19 +617,19 @@
                 <div class="mermaid-container">
                     <div class="mermaid">
 graph TD
-    subgraph DataIngestion["Data Ingestion and ETL"]
+    subgraph DataIngestion[Data Ingestion and ETL]
         A[ESRB Data Source Excel Files] -->|Download| B[Python ETL Pipeline]
         B -->|Clean Normalize Extract Banks| C[Parquet Storage Optimized Data]
     end
 
-    subgraph DataEnrichment["Data Enrichment"]
+    subgraph DataEnrichment[Data Enrichment]
         C -->|Country Data| K[Country Profile Generator]
         K -->|Profiles| L[Knowledge Graph Builder]
         L -->|Graph Data| M[Country Profiles and Graph Data]
         L -->|Graph Context| N[RAG Retriever]
     end
 
-    subgraph BBMProcessing["BBM Processing"]
+    subgraph BBMProcessing[BBM Processing]
         C -->|BBM Data| O[LTV Extractor]
         C -->|BBM Data| P[DTI/LTI Extractor]
         O -->|Extracted Rules| Q[LTV Validator]
@@ -621,7 +638,7 @@ graph TD
         R -->|Validated Rules| S
     end
 
-    subgraph AICore["AI Analysis and Grounding"]
+    subgraph AICore[AI Analysis and Grounding]
         C -->|Retrieve Context| D[LangGraph Validator]
         H[Plotly Charts] -->|Chart Images| D
         J[Google Search Optional] -->|External Evidence| D
@@ -633,7 +650,7 @@ graph TD
         D -->|Verified Output| F[Final Analysis]
     end
 
-    subgraph Presentation["Dashboard Layer"]
+    subgraph Presentation[Dashboard Layer]
         F --> G[Jinja2 Template Engine]
         C -->|Visual Data| H
         M -->|Country and Graph Data| G

@@ -468,8 +468,11 @@ async function loadCountryProfile(country, profileData) {
     // Update recent changes
     renderRecentChanges(profileData.recent_changes || []);
     
-    // Update active measures
-    renderActiveMeasures(profileData.active_measures || {});
+    // Update active measures (tab-based)
+    renderActiveMeasuresTabbed(profileData.active_measures || {});
+    
+    // Update AI inflection points
+    renderAIInflectionPoints(profileData.ai_inflection_points || []);
     
     // Update AI analysis
     renderAIAnalysis(profileData.ai_analysis || '');
@@ -479,85 +482,223 @@ async function loadCountryProfile(country, profileData) {
 }
 
 function renderCurrentStatus(status) {
-    var grid = document.getElementById('current-status-grid');
+    var grid = document.getElementById('key-measures-grid');
     if (!grid) return;
     
     grid.innerHTML = '';
     
-    var items = [
-        { key: 'ccyb', label: 'CCyB', value: status.ccyb?.rate, status: status.ccyb?.status },
-        { key: 'syrb', label: 'SyRB', value: status.syrb?.rate, status: status.syrb?.status },
-        { key: 'osii', label: 'O-SII', value: status.osii?.rate, status: status.osii?.status },
-        { key: 'total', label: 'Total Capital', value: status.total_capital?.total, status: status.total_capital ? 'Active' : null },
-    ];
-    
-    items.forEach(function(item) {
-        if (item.value === undefined && item.value !== 0) return;
-        
-        var div = document.createElement('div');
-        div.className = 'status-item';
-        div.innerHTML = '<span class="status-label">' + item.label + '</span>' +
-                       '<span class="status-value">' + (item.value !== null ? item.value.toFixed(2) + '%' : 'N/A') + '</span>' +
-                       (item.status ? '<span class="status-badge ' + (item.status === 'Active' ? 'active' : 'inactive') + '">' + item.status + '</span>' : '');
-        grid.appendChild(div);
+    // CCyB Card
+    var ccybCard = createKeyMeasureCard({
+        icon: '🏦',
+        label: 'CCyB',
+        description: 'Countercyclical Capital Buffer',
+        rate: status.ccyb?.rate || 0,
+        status: status.ccyb?.status || 'Inactive',
+        color: '#3b82f6'
     });
+    grid.appendChild(ccybCard);
     
-    // BBM
-    if (status.bbm && status.bbm.length > 0) {
-        var bbmDiv = document.createElement('div');
-        bbmDiv.className = 'status-item';
-        bbmDiv.innerHTML = '<span class="status-label">BBM</span>' +
-                          '<span class="status-value">Yes</span>' +
-                          '<span class="status-badge active">' + status.bbm.join(', ') + '</span>';
-        grid.appendChild(bbmDiv);
-    }
+    // SyRB Card
+    var syrbCard = createKeyMeasureCard({
+        icon: '🛡️',
+        label: 'SyRB',
+        description: 'Systemic Risk Buffer',
+        rate: status.syrb?.rate || 0,
+        status: status.syrb?.status || 'Inactive',
+        color: '#10b981'
+    });
+    grid.appendChild(syrbCard);
+    
+    // O-SII Card
+    var osiiCard = createKeyMeasureCard({
+        icon: '🏛️',
+        label: 'O-SII',
+        description: 'Other Systemically Important Inst.',
+        rate: status.osii?.rate || 0,
+        status: status.osii?.status || 'Inactive',
+        color: '#ef4444'
+    });
+    grid.appendChild(osiiCard);
+    
+    // BBM Card
+    var bbmActive = status.bbm && status.bbm.length > 0;
+    var bbmCard = createKeyMeasureCard({
+        icon: '📋',
+        label: 'BBM',
+        description: 'Borrower-Based Measures',
+        rate: null,
+        status: bbmActive ? 'Active' : 'Inactive',
+        color: '#8b5cf6',
+        bbmTypes: bbmActive ? status.bbm : []
+    });
+    grid.appendChild(bbmCard);
 }
+
+function createKeyMeasureCard(config) {
+    var card = document.createElement('div');
+    card.className = 'key-measure-card';
+    card.style.borderLeftColor = config.color;
+    
+    var statusClass = config.status === 'Active' ? 'active' : 'inactive';
+    var rateDisplay = config.rate !== null ? config.rate.toFixed(2) + '%' : (config.bbmTypes && config.bbmTypes.length > 0 ? 'Yes' : 'No');
+    
+    var bbmContent = '';
+    if (config.bbmTypes && config.bbmTypes.length > 0) {
+        bbmContent = '<div class="bbm-types-list">' +
+                    config.bbmTypes.map(function(type) {
+                        return '<span class="bbm-type-check">✔ ' + type + '</span>';
+                    }).join('') +
+                    '</div>';
+    }
+    
+    card.innerHTML = '<div class="key-measure-header">' +
+                    '<span class="key-measure-icon">' + config.icon + '</span>' +
+                    '<div class="key-measure-info">' +
+                    '<div class="key-measure-label">' + config.label + '</div>' +
+                    '<div class="key-measure-desc">' + config.description + '</div>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="key-measure-body">' +
+                    '<div class="key-measure-rate">' + rateDisplay + '</div>' +
+                    '<span class="key-measure-status-badge ' + statusClass + '">' + config.status + '</span>' +
+                    '</div>' +
+                    bbmContent;
+    
+    return card;
+}
+
+// Store evolution data globally for period filtering
+window.countryEvolutionData = null;
+window.currentCountry = null;
 
 function renderHistoricalEvolution(country, evolution) {
     var chartDiv = document.getElementById('country-evolution-chart');
     if (!chartDiv || !window.Plotly) return;
     
+    // Store data globally
+    window.countryEvolutionData = evolution;
+    window.currentCountry = country;
+    
+    // Initial render with 5Y period
+    updateChartPeriod('5Y');
+}
+
+function updateChartPeriod(period) {
+    var chartDiv = document.getElementById('country-evolution-chart');
+    if (!chartDiv || !window.Plotly || !window.countryEvolutionData) return;
+    
+    var evolution = window.countryEvolutionData;
+    var country = window.currentCountry;
     var traces = [];
+    var allDates = [];
     
+    // Collect all dates
     if (evolution.ccyb && evolution.ccyb.length > 0) {
-        var ccybData = evolution.ccyb;
-        traces.push({
-            x: ccybData.map(function(d) { return d.date; }),
-            y: ccybData.map(function(d) { return d.rate || 0; }),
-            name: 'CCyB',
-            type: 'scatter',
-            mode: 'lines+markers',
-            line: { color: '#3b82f6', width: 2 }
+        evolution.ccyb.forEach(function(d) {
+            if (d.date) allDates.push(new Date(d.date));
         });
     }
-    
     if (evolution.syrb && evolution.syrb.length > 0) {
-        var syrbData = evolution.syrb;
-        traces.push({
-            x: syrbData.map(function(d) { return d.date; }),
-            y: syrbData.map(function(d) { return d.rate_numeric || 0; }),
-            name: 'SyRB',
-            type: 'scatter',
-            mode: 'lines+markers',
-            line: { color: '#10b981', width: 2 }
+        evolution.syrb.forEach(function(d) {
+            if (d.date) allDates.push(new Date(d.date));
         });
     }
     
-    if (traces.length === 0) {
+    if (allDates.length === 0) {
         chartDiv.innerHTML = '<p style="color: #64748b; padding: 20px;">No historical data available.</p>';
         return;
     }
     
+    // Calculate date range based on period
+    var now = new Date();
+    var minDate = new Date(now);
+    
+    if (period === '1Y') {
+        minDate.setFullYear(now.getFullYear() - 1);
+    } else if (period === '5Y') {
+        minDate.setFullYear(now.getFullYear() - 5);
+    } else {
+        // Max - use earliest date
+        minDate = new Date(Math.min.apply(null, allDates));
+    }
+    
+    // Filter CCyB data
+    if (evolution.ccyb && evolution.ccyb.length > 0) {
+        var ccybData = evolution.ccyb.filter(function(d) {
+            if (!d.date) return false;
+            var date = new Date(d.date);
+            return date >= minDate;
+        });
+        
+        if (ccybData.length > 0) {
+            traces.push({
+                x: ccybData.map(function(d) { return d.date; }),
+                y: ccybData.map(function(d) { return d.rate || 0; }),
+                name: 'CCyB',
+                type: 'scatter',
+                mode: 'lines+markers',
+                line: { color: '#3b82f6', width: 2 }
+            });
+        }
+    }
+    
+    // Filter SyRB data
+    if (evolution.syrb && evolution.syrb.length > 0) {
+        var syrbData = evolution.syrb.filter(function(d) {
+            if (!d.date) return false;
+            var date = new Date(d.date);
+            return date >= minDate;
+        });
+        
+        if (syrbData.length > 0) {
+            traces.push({
+                x: syrbData.map(function(d) { return d.date; }),
+                y: syrbData.map(function(d) { return d.rate_numeric || 0; }),
+                name: 'SyRB',
+                type: 'scatter',
+                mode: 'lines+markers',
+                line: { color: '#10b981', width: 2 }
+            });
+        }
+    }
+    
+    if (traces.length === 0) {
+        chartDiv.innerHTML = '<p style="color: #64748b; padding: 20px;">No data available for selected period.</p>';
+        return;
+    }
+    
     var layout = {
-        title: country + ' - Macroprudential Measures Evolution',
+        title: 'Rate progression for CCyB vs SyRB (' + (period === 'max' ? 'All Time' : period) + ')',
         xaxis: { title: 'Date' },
         yaxis: { title: 'Rate (%)' },
         hovermode: 'x unified',
         height: 400,
-        margin: { t: 50, r: 20, b: 50, l: 60 }
+        margin: { t: 50, r: 20, b: 50, l: 60 },
+        legend: { x: 0, y: 1 }
     };
     
     Plotly.newPlot(chartDiv, traces, layout, { responsive: true, displayModeBar: false });
+    
+    // Update active period button
+    var periodButtons = document.querySelectorAll('.period-btn');
+    periodButtons.forEach(function(btn) {
+        if (btn.dataset.period === period) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+// Initialize period selector
+function initChartPeriodSelector() {
+    var periodButtons = document.querySelectorAll('.period-btn');
+    periodButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var period = this.dataset.period;
+            updateChartPeriod(period);
+        });
+    });
 }
 
 function renderRecentChanges(changes) {
@@ -582,49 +723,410 @@ function renderRecentChanges(changes) {
     });
 }
 
-function renderActiveMeasures(measures) {
-    var container = document.getElementById('active-measures-details');
-    if (!container) return;
+function renderActiveMeasuresTabbed(measures) {
+    // Borrower-Based tab
+    var borrowerContainer = document.getElementById('active-measures-borrower');
+    if (borrowerContainer) {
+        renderBBMMeasures(measures.bbm || [], borrowerContainer);
+    }
     
+    // Capital-Based tab
+    var capitalContainer = document.getElementById('active-measures-capital');
+    if (capitalContainer) {
+        renderCapitalMeasures(measures, capitalContainer);
+    }
+    
+    // Initialize tabs
+    initMeasuresTabs();
+}
+
+function renderBBMMeasures(bbmMeasures, container) {
     container.innerHTML = '';
     
-    if (measures.ccyb) {
-        var div = document.createElement('div');
-        div.className = 'measure-detail';
-        div.innerHTML = '<h4>CCyB</h4>' +
-                       '<div class="measure-detail-item"><strong>Rate:</strong> ' + (measures.ccyb.rate || 0).toFixed(2) + '%</div>' +
-                       (measures.ccyb.date ? '<div class="measure-detail-item"><strong>Effective Date:</strong> ' + measures.ccyb.date + '</div>' : '') +
-                       (measures.ccyb.credit_gap !== null && measures.ccyb.credit_gap !== undefined ? '<div class="measure-detail-item"><strong>Credit Gap:</strong> ' + measures.ccyb.credit_gap.toFixed(2) + '%</div>' : '');
-        container.appendChild(div);
+    if (!bbmMeasures || bbmMeasures.length === 0) {
+        container.innerHTML = '<p style="color: #64748b; padding: 20px; text-align: center;">No active BBM measures available.</p>';
+        return;
     }
     
+    // Map BBM types to icons and labels
+    var bbmTypeMap = {
+        'LTV': { icon: '🏠', label: 'LTV Limits (Loan-to-Value)' },
+        'DTI': { icon: '📊', label: 'DTI Ratio (Debt-Service-to-Income)' },
+        'LTI': { icon: '📊', label: 'LTI Ratio (Loan-to-Income)' },
+        'DSTI': { icon: '📊', label: 'DSTI Ratio (Debt-Service-to-Income)' },
+        'Maturity': { icon: '⏰', label: 'Maturity Limits (Loan Duration)' },
+        'Other': { icon: '📋', label: 'Other BBM' }
+    };
+    
+    bbmMeasures.forEach(function(bbm, index) {
+        var type = bbm.type || 'Other';
+        var typeInfo = bbmTypeMap[type] || bbmTypeMap['Other'];
+        var fullDesc = bbm.description || '';
+        var isLong = fullDesc.length > 150;
+        var displayDesc = isLong ? fullDesc.substring(0, 150) + '...' : fullDesc;
+        var descId = 'bbm-desc-' + index;
+        var status = bbm.status === 'Active' ? 'active' : (bbm.status === 'Warning' ? 'warning' : 'inactive');
+        
+        var card = document.createElement('div');
+        card.className = 'bbm-measure-card';
+        card.innerHTML = '<div class="bbm-measure-header">' +
+                        '<div class="bbm-measure-title">' +
+                        '<span class="bbm-measure-icon">' + typeInfo.icon + '</span>' +
+                        '<span class="bbm-measure-name">' + typeInfo.label + '</span>' +
+                        '</div>' +
+                        '<span class="bbm-measure-status-badge ' + status + '">' + (bbm.status || 'ACTIVE').toUpperCase() + '</span>' +
+                        '</div>' +
+                        '<div class="bbm-measure-description">' +
+                        '<div class="bbm-desc-short" id="' + descId + '-short">' + displayDesc + '</div>' +
+                        (isLong ? '<div class="bbm-desc-full" id="' + descId + '-full" style="display:none;">' + fullDesc + '</div>' : '') +
+                        (isLong ? '<button class="bbm-expand-btn" data-target="' + descId + '">Show more</button>' : '') +
+                        '</div>';
+        container.appendChild(card);
+    });
+    
+    // Initialize expand buttons
+    initBBMExpandButtons();
+}
+
+function renderCapitalMeasures(measures, container) {
+    container.innerHTML = '';
+    
+    var hasCapital = false;
+    
+    // CCyB
+    if (measures.ccyb && measures.ccyb.rate > 0) {
+        hasCapital = true;
+        var ccybCard = createCapitalMeasureCard({
+            icon: '🏦',
+            name: 'Countercyclical Capital Buffer (CCyB)',
+            rate: measures.ccyb.rate,
+            date: measures.ccyb.date,
+            creditGap: measures.ccyb.credit_gap
+        });
+        container.appendChild(ccybCard);
+    }
+    
+    // SyRB
     if (measures.syrb && measures.syrb.length > 0) {
-        measures.syrb.forEach(function(syrb) {
-            var div = document.createElement('div');
-            div.className = 'measure-detail';
-            div.innerHTML = '<h4>SyRB - ' + (syrb.type || 'General') + '</h4>' +
-                           '<div class="measure-detail-item"><strong>Rate:</strong> ' + (syrb.rate || 0).toFixed(2) + '%</div>' +
-                           (syrb.exposure ? '<div class="measure-detail-item"><strong>Exposure:</strong> ' + syrb.exposure + '</div>' : '') +
-                           (syrb.date ? '<div class="measure-detail-item"><strong>Date:</strong> ' + syrb.date + '</div>' : '');
-            container.appendChild(div);
+        hasCapital = true;
+        var totalRate = measures.syrb.reduce(function(sum, s) { return sum + (s.rate || 0); }, 0);
+        var syrbCard = createCapitalMeasureCard({
+            icon: '🛡️',
+            name: 'Systemic Risk Buffer (SyRB)',
+            rate: totalRate,
+            count: measures.syrb.length
         });
+        container.appendChild(syrbCard);
     }
     
+    // O-SII
+    if (measures.osii && measures.osii.rate > 0) {
+        hasCapital = true;
+        var osiiCard = createCapitalMeasureCard({
+            icon: '🏛️',
+            name: 'Other Systemically Important Institutions (O-SII)',
+            rate: measures.osii.rate,
+            count: measures.osii.count
+        });
+        container.appendChild(osiiCard);
+    }
+    
+    if (!hasCapital) {
+        container.innerHTML = '<p style="color: #64748b; padding: 20px; text-align: center;">No active capital-based measures available.</p>';
+    }
+}
+
+function createCapitalMeasureCard(config) {
+    var card = document.createElement('div');
+    card.className = 'capital-measure-card';
+    card.innerHTML = '<div class="capital-measure-header">' +
+                    '<span class="capital-measure-icon">' + config.icon + '</span>' +
+                    '<div class="capital-measure-info">' +
+                    '<div class="capital-measure-name">' + config.name + '</div>' +
+                    '<div class="capital-measure-rate">' + config.rate.toFixed(2) + '%</div>' +
+                    '</div>' +
+                    '</div>' +
+                    (config.date ? '<div class="capital-measure-detail">Effective Date: ' + config.date + '</div>' : '') +
+                    (config.creditGap !== null && config.creditGap !== undefined ? '<div class="capital-measure-detail">Credit Gap: ' + config.creditGap.toFixed(2) + '%</div>' : '') +
+                    (config.count ? '<div class="capital-measure-detail">Active Measures: ' + config.count + '</div>' : '');
+    return card;
+}
+
+function initMeasuresTabs() {
+    var tabs = document.querySelectorAll('.measure-tab');
+    var panes = document.querySelectorAll('.tab-pane');
+    
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            var targetTab = this.dataset.tab;
+            
+            // Update active tab
+            tabs.forEach(function(t) { t.classList.remove('active'); });
+            this.classList.add('active');
+            
+            // Update active pane
+            panes.forEach(function(pane) {
+                pane.classList.remove('active');
+                if (pane.id === 'active-measures-' + targetTab) {
+                    pane.classList.add('active');
+                }
+            });
+        });
+    });
+}
+
+function renderAIInflectionPoints(points) {
+    var container = document.getElementById('ai-inflection-points');
+    var card = document.getElementById('ai-inflection-points-card');
+    
+    if (!container || !card) return;
+    
+    if (!points || points.length === 0) {
+        card.style.display = 'none';
+        return;
+    }
+    
+    card.style.display = 'block';
+    container.innerHTML = '';
+    
+    points.forEach(function(point) {
+        var pointDiv = document.createElement('div');
+        pointDiv.className = 'inflection-point';
+        pointDiv.innerHTML = '<div class="inflection-point-header">' +
+                            '<span class="inflection-point-date">' + point.date + '</span>' +
+                            '<span class="inflection-point-title">' + point.title + '</span>' +
+                            '</div>' +
+                            '<div class="inflection-point-description">' + point.description + '</div>';
+        container.appendChild(pointDiv);
+    });
+}
+
+function renderActiveMeasures(measures) {
+    // Legacy function - redirect to tabbed version
+    renderActiveMeasuresTabbed(measures);
+    
+    // CCyB Section - csak 1 card, ha aktív
+    if (measures.ccyb && measures.ccyb.rate > 0) {
+        hasMeasures = true;
+        var ccybCard = document.createElement('div');
+        ccybCard.className = 'measure-card measure-ccyb';
+        ccybCard.innerHTML = '<div class="measure-header">' +
+                          '<div class="measure-title">' +
+                          '<span class="measure-icon">🏦</span>' +
+                          '<span class="measure-name">Countercyclical Capital Buffer (CCyB)</span>' +
+                          '</div>' +
+                          '<div class="measure-rate">' + (measures.ccyb.rate || 0).toFixed(2) + '%</div>' +
+                          '</div>' +
+                          '<div class="measure-body">' +
+                          '<div class="measure-row"><span class="measure-label">Effective Date:</span><span class="measure-value">' + (measures.ccyb.date || 'N/A') + '</span></div>' +
+                          (measures.ccyb.credit_gap !== null && measures.ccyb.credit_gap !== undefined ? 
+                           '<div class="measure-row"><span class="measure-label">Credit Gap:</span><span class="measure-value">' + measures.ccyb.credit_gap.toFixed(2) + '%</span></div>' : '') +
+                          (measures.ccyb.justification ? '<div class="measure-row"><span class="measure-label">Justification:</span><span class="measure-value">' + measures.ccyb.justification + '</span></div>' : '') +
+                          '</div>';
+        container.appendChild(ccybCard);
+    }
+    
+    // SyRB Section - 1 card az összes aktív SyRB-vel
+    if (measures.syrb && measures.syrb.length > 0) {
+        hasMeasures = true;
+        var syrbCard = document.createElement('div');
+        syrbCard.className = 'measure-card measure-syrb';
+        
+        // Számítsuk ki az összesített rate-et
+        var totalRate = measures.syrb.reduce(function(sum, syrb) {
+            return sum + (syrb.rate || 0);
+        }, 0);
+        
+        var syrbId = 'syrb-details';
+        var header = document.createElement('div');
+        header.className = 'measure-header measure-header-collapsible';
+        header.setAttribute('data-target', syrbId);
+        header.innerHTML = '<div class="measure-title">' +
+                          '<span class="measure-icon">🛡️</span>' +
+                          '<span class="measure-name">Systemic Risk Buffer (SyRB)</span>' +
+                          '<span class="measure-count">(' + measures.syrb.length + ' active measure' + (measures.syrb.length > 1 ? 's' : '') + ')</span>' +
+                          '</div>' +
+                          '<div class="measure-actions">' +
+                          '<div class="measure-rate">' + totalRate.toFixed(2) + '%</div>' +
+                          '<span class="collapse-icon">▼</span>' +
+                          '</div>';
+        syrbCard.appendChild(header);
+        
+        var body = document.createElement('div');
+        body.className = 'measure-body measure-body-collapsible';
+        body.id = syrbId;
+        
+        var itemsContainer = document.createElement('div');
+        itemsContainer.className = 'syrb-items';
+        
+        measures.syrb.forEach(function(syrb, index) {
+            var itemDiv = document.createElement('div');
+            itemDiv.className = 'syrb-item';
+            itemDiv.innerHTML = '<div class="syrb-item-header">' +
+                              '<span class="syrb-item-number">#' + (index + 1) + '</span>' +
+                              '<span class="syrb-item-type">' + (syrb.type || 'General') + '</span>' +
+                              '<span class="syrb-item-rate">' + (syrb.rate || 0).toFixed(2) + '%</span>' +
+                              '</div>' +
+                              '<div class="syrb-item-details">' +
+                              (syrb.exposure ? '<div class="measure-row"><span class="measure-label">Exposure Type:</span><span class="measure-value">' + syrb.exposure + '</span></div>' : '') +
+                              (syrb.date ? '<div class="measure-row"><span class="measure-label">Effective Date:</span><span class="measure-value">' + syrb.date + '</span></div>' : '') +
+                              (syrb.description ? '<div class="measure-row"><span class="measure-label">Description:</span><span class="measure-value">' + syrb.description + '</span></div>' : '') +
+                              '</div>';
+            itemsContainer.appendChild(itemDiv);
+        });
+        
+        body.appendChild(itemsContainer);
+        syrbCard.appendChild(body);
+        container.appendChild(syrbCard);
+    }
+    
+    // BBM Section - 1 card az összes aktív BBM-mel
     if (measures.bbm && measures.bbm.length > 0) {
-        measures.bbm.forEach(function(bbm) {
-            var div = document.createElement('div');
-            div.className = 'measure-detail';
-            div.innerHTML = '<h4>BBM - ' + (bbm.type || 'BBM') + '</h4>' +
-                           (bbm.status ? '<div class="measure-detail-item"><strong>Status:</strong> ' + bbm.status + '</div>' : '') +
-                           (bbm.date ? '<div class="measure-detail-item"><strong>Date:</strong> ' + bbm.date + '</div>' : '') +
-                           (bbm.description ? '<div class="measure-detail-item"><strong>Description:</strong> ' + bbm.description + '</div>' : '');
-            container.appendChild(div);
+        hasMeasures = true;
+        var bbmCard = document.createElement('div');
+        bbmCard.className = 'measure-card measure-bbm';
+        var bbmId = 'bbm-details';
+        
+        var header = document.createElement('div');
+        header.className = 'measure-header measure-header-collapsible';
+        header.setAttribute('data-target', bbmId);
+        header.innerHTML = '<div class="measure-title">' +
+                          '<span class="measure-icon">📋</span>' +
+                          '<span class="measure-name">Borrower-Based Measures (BBM)</span>' +
+                          '<span class="measure-count">(' + measures.bbm.length + ' active measure' + (measures.bbm.length > 1 ? 's' : '') + ')</span>' +
+                          '</div>' +
+                          '<div class="measure-actions">' +
+                          '<span class="measure-status-badge active">Active</span>' +
+                          '<span class="collapse-icon">▼</span>' +
+                          '</div>';
+        bbmCard.appendChild(header);
+        
+        var body = document.createElement('div');
+        body.className = 'measure-body measure-body-collapsible';
+        body.id = bbmId;
+        
+        var itemsContainer = document.createElement('div');
+        itemsContainer.className = 'bbm-items';
+        
+        measures.bbm.forEach(function(bbm, itemIndex) {
+            var itemDiv = document.createElement('div');
+            itemDiv.className = 'bbm-item';
+            var fullDesc = bbm.description || '';
+            var isLong = fullDesc.length > 200;
+            var displayDesc = isLong ? fullDesc.substring(0, 200) + '...' : fullDesc;
+            var descId = bbmId + '-desc-' + itemIndex;
+            
+            var itemHeader = document.createElement('div');
+            itemHeader.className = 'bbm-item-header';
+            itemHeader.innerHTML = '<span class="bbm-item-number">#' + (itemIndex + 1) + '</span>' +
+                                  '<span class="bbm-item-type">' + (bbm.type || 'BBM') + '</span>' +
+                                  (bbm.date ? '<span class="bbm-item-date">' + bbm.date + '</span>' : '');
+            itemDiv.appendChild(itemHeader);
+            
+            var itemDesc = document.createElement('div');
+            itemDesc.className = 'bbm-item-description';
+            
+            var shortDescDiv = document.createElement('div');
+            shortDescDiv.className = 'bbm-desc-short';
+            shortDescDiv.id = descId + '-short';
+            shortDescDiv.textContent = displayDesc;
+            itemDesc.appendChild(shortDescDiv);
+            
+            if (isLong) {
+                var fullDescDiv = document.createElement('div');
+                fullDescDiv.className = 'bbm-desc-full';
+                fullDescDiv.id = descId + '-full';
+                fullDescDiv.style.display = 'none';
+                fullDescDiv.textContent = fullDesc;
+                itemDesc.appendChild(fullDescDiv);
+                
+                var expandBtn = document.createElement('button');
+                expandBtn.className = 'bbm-expand-btn';
+                expandBtn.setAttribute('data-target', descId);
+                expandBtn.textContent = 'Show more';
+                itemDesc.appendChild(expandBtn);
+            }
+            
+            itemDiv.appendChild(itemDesc);
+            itemsContainer.appendChild(itemDiv);
         });
+        
+        body.appendChild(itemsContainer);
+        bbmCard.appendChild(body);
+        container.appendChild(bbmCard);
     }
     
-    if (container.innerHTML === '') {
-        container.innerHTML = '<p style="color: #64748b; padding: 20px;">No active measures details available.</p>';
+    // O-SII Section - csak 1 card, ha aktív
+    if (measures.osii && measures.osii.rate > 0) {
+        hasMeasures = true;
+        var osiiCard = document.createElement('div');
+        osiiCard.className = 'measure-card measure-osii';
+        osiiCard.innerHTML = '<div class="measure-header">' +
+                            '<div class="measure-title">' +
+                            '<span class="measure-icon">🏛️</span>' +
+                            '<span class="measure-name">Other Systemically Important Institutions (O-SII)</span>' +
+                            (measures.osii.count ? '<span class="measure-count">(' + measures.osii.count + ' institution' + (measures.osii.count > 1 ? 's' : '') + ')</span>' : '') +
+                            '</div>' +
+                            '<div class="measure-rate">' + (measures.osii.rate || 0).toFixed(2) + '%</div>' +
+                            '</div>' +
+                            '<div class="measure-body">' +
+                            '<div class="measure-row"><span class="measure-label">Status:</span><span class="measure-value">' + (measures.osii.status || 'Active') + '</span></div>' +
+                            '</div>';
+        container.appendChild(osiiCard);
     }
+    
+    if (!hasMeasures) {
+        container.innerHTML = '<p style="color: #64748b; padding: 20px; text-align: center;">No active measures details available.</p>';
+    } else {
+        // Initialize collapsible functionality
+        initMeasureCollapsibles();
+        initBBMExpandButtons();
+    }
+}
+
+function initMeasureCollapsibles() {
+    var collapsibleHeaders = document.querySelectorAll('.measure-header-collapsible');
+    collapsibleHeaders.forEach(function(header) {
+        header.addEventListener('click', function() {
+            var targetId = this.dataset.target;
+            var body = document.getElementById(targetId);
+            var icon = this.querySelector('.collapse-icon');
+            
+            if (body) {
+                if (body.style.display === 'none') {
+                    body.style.display = 'block';
+                    icon.textContent = '▼';
+                    icon.style.transform = 'rotate(0deg)';
+                } else {
+                    body.style.display = 'none';
+                    icon.textContent = '▶';
+                    icon.style.transform = 'rotate(-90deg)';
+                }
+            }
+        });
+    });
+}
+
+function initBBMExpandButtons() {
+    var expandButtons = document.querySelectorAll('.bbm-expand-btn');
+    expandButtons.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var targetId = this.dataset.target;
+            var shortDesc = document.getElementById(targetId + '-short');
+            var fullDesc = document.getElementById(targetId + '-full');
+            
+            if (fullDesc && fullDesc.style.display === 'none') {
+                fullDesc.style.display = 'block';
+                shortDesc.style.display = 'none';
+                this.textContent = 'Show less';
+            } else if (fullDesc) {
+                fullDesc.style.display = 'none';
+                shortDesc.style.display = 'block';
+                this.textContent = 'Show more';
+            }
+        });
+    });
 }
 
 function renderAIAnalysis(analysis) {
@@ -1044,5 +1546,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initNewsFilters();
     initCountryProfiles();
     initOSII();
+    initChartPeriodSelector();
     // Knowledge graph visualization removed - data is used for AI analysis only
 });

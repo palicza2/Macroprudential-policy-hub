@@ -1,0 +1,8 @@
+{
+  "prompt": "Summarize the most important macroprudential news from the last 12 months. Focus on objectives and risks cited. Write ONE paragraph of 4-5 sentences.",
+  "response": "Over the past 12 months, macroprudential authorities have increasingly focused on managing risks stemming from a rapidly changing interest rate environment and persistent inflation. A key objective has been to bolster financial system resilience against potential shocks, particularly those related to tighter monetary policy and its impact on asset valuations and credit quality. Concerns have been raised about the build-up of leverage in certain sectors, the interconnectedness of financial institutions, and the potential for liquidity strains. Consequently, regulators have emphasized strengthening capital and liquidity buffers, enhancing stress testing frameworks, and closely monitoring non-bank financial institutions to mitigate systemic risks.",
+  "data": "No numeric data available.",
+  "img_key": "",
+  "model": "gemini-2.5-flash-lite",
+  "temperature": 0.2
+}

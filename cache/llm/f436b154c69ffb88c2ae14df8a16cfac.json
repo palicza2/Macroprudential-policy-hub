@@ -1,0 +1,8 @@
+{
+  "prompt": "Describe SyRB trends over the last 12 months. Emphasize objectives and risks (especially sectoral exposures) rather than tool mechanics. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences.",
+  "response": "Over the last 12 months, the trend in active SyRB measures has shown a notable increase in both general and sectoral interventions, suggesting a proactive approach to managing economic stability. The objective behind these measures likely involves mitigating systemic risks and fostering resilience across the financial landscape. While general measures aim for broad economic health, the rising number of sectoral measures indicates a targeted effort to address specific vulnerabilities within particular industries, potentially stemming from supply chain disruptions, inflationary pressures, or shifts in consumer demand. The primary risk associated with this trend is the potential for over-intervention, which could stifle innovation or create unintended consequences in the targeted sectors. Furthermore, a sustained increase in both types of measures might signal underlying fragilities in the economy that are proving difficult to resolve.",
+  "data": "",
+  "img_key": "syrb_counts_trend",
+  "model": "gemini-2.5-flash-lite",
+  "temperature": 0.2
+}

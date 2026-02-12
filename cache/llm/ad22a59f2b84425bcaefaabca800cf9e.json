@@ -1,0 +1,8 @@
+{
+  "prompt": "Analyze SyRB sectoral composition with focus on the last 12 months. Highlight country targets and risk pockets; avoid mechanism descriptions. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences.",
+  "response": "Denmark exhibits the highest SyRB exposure, primarily driven by Real Estate (CRE & RRE), indicating a significant concentration in this sector. Norway and Portugal follow with substantial exposure, with Norway leaning towards General and Portugal towards Residential Real Estate (RRE). Sweden, France, and Iceland show moderate exposure, with a mix of General and Other categories, suggesting diversified risk profiles. Lithuania and Malta have lower but notable exposure, predominantly in Real Estate (CRE & RRE) and General respectively. Countries like Germany, Austria, and Italy display minimal exposure across all categories, presenting lower risk pockets. The Czech Republic and Slovenia have the lowest overall exposure, with Slovenia showing a slight presence in Residential Real Estate (RRE).",
+  "data": "",
+  "img_key": "syrb_sector",
+  "model": "gemini-2.5-flash-lite",
+  "temperature": 0.2
+}

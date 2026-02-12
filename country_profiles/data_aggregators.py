@@ -192,7 +192,7 @@ def get_recent_changes(country: str, data: Dict[str, pd.DataFrame], months: int 
 
 
 def get_active_measures(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
-    """Aktív intézkedések részletei."""
+    """Aktív, hatályos intézkedések részletei - csak aktív eszközöket ad vissza."""
     measures = {
         'ccyb': None,
         'syrb': [],
@@ -200,20 +200,23 @@ def get_active_measures(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str
         'osii': None,
     }
     
-    # CCyB részletek
+    # CCyB részletek - csak ha aktív (rate > 0)
     ccyb_df = data.get('ccyb_df')
     if ccyb_df is not None and not ccyb_df.empty:
         country_ccyb = ccyb_df[ccyb_df['country'] == country].sort_values('date')
         if not country_ccyb.empty:
             latest = country_ccyb.iloc[-1]
-            measures['ccyb'] = {
-                'rate': float(latest.get('rate', 0)) if pd.notna(latest.get('rate')) else 0.0,
-                'date': latest.get('date'),
-                'justification': latest.get('justification', ''),
-                'credit_gap': float(latest.get('credit_gap', 0)) if pd.notna(latest.get('credit_gap')) else None,
-            }
+            rate = float(latest.get('rate', 0)) if pd.notna(latest.get('rate')) else 0.0
+            # Csak akkor adjuk vissza, ha aktív (rate > 0)
+            if rate > 0:
+                measures['ccyb'] = {
+                    'rate': rate,
+                    'date': latest.get('date'),
+                    'justification': latest.get('justification', ''),
+                    'credit_gap': float(latest.get('credit_gap', 0)) if pd.notna(latest.get('credit_gap')) else None,
+                }
     
-    # SyRB részletek
+    # SyRB részletek - csak aktív eszközök
     syrb_df = data.get('syrb_df')
     if syrb_df is not None and not syrb_df.empty:
         country_syrb = syrb_df[
@@ -223,15 +226,18 @@ def get_active_measures(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str
         ]
         
         for _, row in country_syrb.iterrows():
-            measures['syrb'].append({
-                'rate': float(row.get('rate_numeric', 0)) if pd.notna(row.get('rate_numeric')) else 0.0,
-                'type': row.get('measure_type', 'General'),
-                'exposure': row.get('exposure_type', ''),
-                'date': row.get('date'),
-                'description': row.get('description', ''),
-            })
+            rate = float(row.get('rate_numeric', 0)) if pd.notna(row.get('rate_numeric')) else 0.0
+            # Csak akkor adjuk hozzá, ha van rate (aktív)
+            if rate > 0:
+                measures['syrb'].append({
+                    'rate': rate,
+                    'type': row.get('measure_type', 'General'),
+                    'exposure': row.get('exposure_type', ''),
+                    'date': row.get('date'),
+                    'description': row.get('description', ''),
+                })
     
-    # BBM részletek
+    # BBM részletek - csak aktív eszközök
     bbm_df = data.get('bbm_df')
     if bbm_df is not None and not bbm_df.empty:
         country_bbm = bbm_df[
@@ -246,6 +252,26 @@ def get_active_measures(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str
                 'date': row.get('date'),
                 'description': row.get('description', ''),
             })
+    
+    # O-SII részletek - csak ha aktív
+    osii_df = data.get('osii_df')
+    if osii_df is not None and not osii_df.empty:
+        country_osii = osii_df[osii_df['country'] == country]
+        if not country_osii.empty:
+            # Aktív O-SII-k összesítése
+            active_osii = country_osii[
+                (country_osii.get('active_status', '') == 'Active') |
+                (country_osii.get('status', '').astype(str).str.contains('Active', case=False, na=False))
+            ]
+            if not active_osii.empty:
+                # Összesített rate számítása
+                total_rate = active_osii.get('rate_numeric', pd.Series()).sum() if 'rate_numeric' in active_osii.columns else 0.0
+                if total_rate > 0:
+                    measures['osii'] = {
+                        'rate': float(total_rate) if pd.notna(total_rate) else 0.0,
+                        'status': 'Active',
+                        'count': len(active_osii),
+                    }
     
     return measures
 

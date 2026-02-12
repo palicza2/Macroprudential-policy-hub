@@ -951,6 +951,332 @@ h2::before {
 }
 
 /* Country Profiles Styles */
+/* Key Measures Grid - 4 Top Cards */
+.key-measures-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.key-measure-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    border-left: 4px solid #3b82f6;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.key-measure-card:hover {
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+    transform: translateY(-2px);
+}
+
+.key-measure-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.key-measure-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.key-measure-info {
+    flex: 1;
+}
+
+.key-measure-label {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 4px;
+}
+
+.key-measure-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.key-measure-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.key-measure-rate {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.key-measure-status-badge {
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.key-measure-status-badge.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.key-measure-status-badge.inactive {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.bbm-types-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.bbm-type-check {
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-main);
+}
+
+/* Chart Period Selector */
+.card-header-with-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.chart-period-selector {
+    display: flex;
+    gap: 8px;
+}
+
+.period-btn {
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.period-btn:hover {
+    background: #f8fafc;
+    border-color: var(--secondary);
+}
+
+.period-btn.active {
+    background: var(--secondary);
+    color: white;
+    border-color: var(--secondary);
+}
+
+/* Measures Tabs */
+.measures-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border);
+}
+
+.measure-tab {
+    padding: 12px 20px;
+    border: none;
+    background: none;
+    border-bottom: 3px solid transparent;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: -2px;
+}
+
+.measure-tab:hover {
+    color: var(--text-main);
+    background: #f8fafc;
+}
+
+.measure-tab.active {
+    color: var(--secondary);
+    border-bottom-color: var(--secondary);
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+/* BBM Measure Cards */
+.bbm-measure-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    transition: box-shadow 0.2s ease;
+}
+
+.bbm-measure-card:hover {
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+}
+
+.bbm-measure-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.bbm-measure-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bbm-measure-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.bbm-measure-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.bbm-measure-status-badge {
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.bbm-measure-status-badge.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.bbm-measure-status-badge.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.bbm-measure-status-badge.inactive {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.bbm-measure-description {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-main);
+}
+
+/* Capital Measure Cards */
+.capital-measure-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.capital-measure-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.capital-measure-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.capital-measure-info {
+    flex: 1;
+}
+
+.capital-measure-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+.capital-measure-rate {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.capital-measure-detail {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+/* AI Inflection Points */
+.inflection-point {
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 3px solid var(--secondary);
+    margin-bottom: 12px;
+}
+
+.inflection-point-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.inflection-point-date {
+    font-weight: 700;
+    color: var(--secondary);
+    font-size: 0.9rem;
+}
+
+.inflection-point-title {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.95rem;
+}
+
+.inflection-point-description {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+/* Legacy styles for backward compatibility */
 .status-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -1036,6 +1362,7 @@ h2::before {
     color: #1e293b;
 }
 
+/* Legacy measure-detail styles (kept for backward compatibility) */
 .measure-detail {
     margin-bottom: 20px;
     padding: 16px;
@@ -1060,6 +1387,315 @@ h2::before {
     color: #64748b;
     min-width: 120px;
     display: inline-block;
+}
+
+/* New structured measure card styles */
+.measure-card {
+    margin-bottom: 16px;
+    background: var(--bg-card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.measure-card:hover {
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+    transform: translateY(-1px);
+}
+
+.measure-card.measure-ccyb {
+    border-left: 4px solid #3b82f6;
+}
+
+.measure-card.measure-syrb {
+    border-left: 4px solid #10b981;
+}
+
+.measure-card.measure-bbm {
+    border-left: 4px solid #8b5cf6;
+}
+
+.measure-card.measure-osii {
+    border-left: 4px solid #ef4444;
+}
+
+.measure-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid var(--border);
+}
+
+.measure-header-collapsible {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.measure-header-collapsible:hover {
+    background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+
+.measure-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.measure-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.measure-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-main);
+}
+
+.measure-count {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-left: 8px;
+}
+
+.measure-rate {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+    margin-left: 16px;
+}
+
+.measure-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: 16px;
+}
+
+.measure-status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.measure-status-badge.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.measure-status-badge.inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.collapse-icon {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+
+.measure-body {
+    padding: 16px 20px;
+}
+
+.measure-body-collapsible {
+    display: block;
+}
+
+.measure-row {
+    display: flex;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.measure-row:last-child {
+    border-bottom: none;
+}
+
+.measure-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    min-width: 140px;
+    flex-shrink: 0;
+}
+
+.measure-value {
+    font-size: 0.9rem;
+    color: var(--text-main);
+    flex: 1;
+}
+
+/* BBM specific styles */
+.bbm-items {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.bbm-item {
+    padding: 14px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 3px solid #8b5cf6;
+}
+
+.bbm-item-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.bbm-item-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: #8b5cf6;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.bbm-item-type {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.9rem;
+}
+
+.bbm-item-date {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-left: auto;
+}
+
+/* SyRB specific styles */
+.syrb-items {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.syrb-item {
+    padding: 14px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 3px solid #10b981;
+}
+
+.syrb-item-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.syrb-item-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: #10b981;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.syrb-item-type {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    flex: 1;
+}
+
+.syrb-item-rate {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.syrb-item-details {
+    margin-top: 8px;
+}
+
+.bbm-item-description {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-main);
+}
+
+.bbm-desc-short,
+.bbm-desc-full {
+    margin-bottom: 8px;
+}
+
+.bbm-expand-btn {
+    background: none;
+    border: none;
+    color: #8b5cf6;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 0;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.bbm-expand-btn:hover {
+    color: #7c3aed;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .measure-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .measure-rate {
+        margin-left: 0;
+        align-self: flex-end;
+    }
+    
+    .measure-actions {
+        margin-left: 0;
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .measure-row {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .measure-label {
+        min-width: auto;
+    }
 }
 
 .comparison-item {

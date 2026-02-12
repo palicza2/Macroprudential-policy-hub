@@ -113,19 +113,19 @@ The Macro Policy Hub delivers significant operational and strategic value for fi
 
 ```mermaid
 graph TD
-    subgraph DataIngestion["Data Ingestion and ETL"]
+    subgraph DataIngestion[Data Ingestion and ETL]
         A[ESRB Data Source Excel Files] -->|Download| B[Python ETL Pipeline]
         B -->|Clean Normalize Extract Banks| C[Parquet Storage Optimized Data]
     end
 
-    subgraph DataEnrichment["Data Enrichment"]
+    subgraph DataEnrichment[Data Enrichment]
         C -->|Country Data| K[Country Profile Generator]
         K -->|Profiles| L[Knowledge Graph Builder]
         L -->|Graph Data| M[Country Profiles and Graph Data]
         L -->|Graph Context| N[RAG Retriever]
     end
 
-    subgraph BBMProcessing["BBM Processing"]
+    subgraph BBMProcessing[BBM Processing]
         C -->|BBM Data| O[LTV Extractor]
         C -->|BBM Data| P[DTI/LTI Extractor]
         O -->|Extracted Rules| Q[LTV Validator]
@@ -134,7 +134,7 @@ graph TD
         R -->|Validated Rules| S
     end
 
-    subgraph AICore["AI Analysis and Grounding"]
+    subgraph AICore[AI Analysis and Grounding]
         C -->|Retrieve Context| D[LangGraph Validator]
         H[Plotly Charts] -->|Chart Images| D
         J[Google Search Optional] -->|External Evidence| D
@@ -146,7 +146,7 @@ graph TD
         D -->|Verified Output| F[Final Analysis]
     end
 
-    subgraph Presentation["Dashboard Layer"]
+    subgraph Presentation[Dashboard Layer]
         F --> G[Jinja2 Template Engine]
         C -->|Visual Data| H
         M -->|Country and Graph Data| G

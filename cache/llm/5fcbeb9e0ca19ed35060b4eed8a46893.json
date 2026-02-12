@@ -1,0 +1,8 @@
+{
+  "prompt": "Analyze adoption trends of borrower-based measures over the last 12 months. Emphasize what risks countries are targeting; avoid describing tool mechanics. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences.",
+  "response": "The adoption of borrower-based measures (BBMs) has seen a steady increase over the past 12 months, indicating a growing global focus on mitigating systemic financial risks. Countries are increasingly implementing these measures to address concerns related to excessive credit growth, particularly in the housing market, and to curb the build-up of household debt. The primary risks targeted by these policies include the potential for asset bubbles, increased vulnerability of households to economic downturns, and the subsequent impact on financial stability. This trend suggests a proactive approach by policymakers to prevent the recurrence of financial crises by managing credit cycles and ensuring the resilience of the financial system.",
+  "data": "",
+  "img_key": "bbm_diffusion",
+  "model": "gemini-2.5-flash-lite",
+  "temperature": 0.2
+}
