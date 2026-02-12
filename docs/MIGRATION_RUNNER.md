@@ -2,7 +2,55 @@
 
 ## Automatikus Migration Futtatás
 
-A `scripts/run_migrations.py` script automatikusan futtatja a Supabase migration fájlokat.
+Két módszer áll rendelkezésre a migration-ök futtatásához:
+
+### 1. Supabase CLI (Ajánlott) 🚀
+
+A `scripts/run_migrations_cli.py` script a Supabase CLI-t használja (`npx supabase`).
+
+### 2. Direct PostgreSQL Connection
+
+A `scripts/run_migrations.py` script közvetlenül PostgreSQL kapcsolaton keresztül futtatja a migration-öket.
+
+## 1. Supabase CLI Módszer (Ajánlott)
+
+### Előfeltételek
+
+1. **Node.js és npm telepítve** (már megvan ✅)
+
+2. **Supabase projekt linkelése:**
+   ```bash
+   npx supabase link --project-ref [PROJECT_REF]
+   ```
+   
+   A `PROJECT_REF` megtalálható a Supabase Dashboard URL-jében:
+   - `https://[PROJECT_REF].supabase.co`
+   
+   Vagy használd a scriptet:
+   ```bash
+   python scripts/run_migrations_cli.py --link --project-ref [PROJECT_REF]
+   ```
+
+### Futtatás
+
+```bash
+# Migration-ök futtatása
+python scripts/run_migrations_cli.py
+
+# Vagy közvetlenül a CLI-vel
+npx supabase db push
+```
+
+### Előnyök
+
+- ✅ Hivatalos Supabase módszer
+- ✅ Automatikus migration tracking
+- ✅ Könnyű használat
+- ✅ Nincs szükség database password-re
+
+---
+
+## 2. Direct PostgreSQL Connection Módszer
 
 ### Előfeltételek
 
@@ -34,6 +82,12 @@ A `scripts/run_migrations.py` script automatikusan futtatja a Supabase migration
 ```bash
 python scripts/run_migrations.py
 ```
+
+### Előnyök
+
+- ✅ Nincs szükség Supabase CLI-ra
+- ✅ Közvetlen PostgreSQL kapcsolat
+- ✅ Teljes kontroll a migration folyamat felett
 
 A script:
 1. Összekapcsolódik a Supabase PostgreSQL adatbázissal
