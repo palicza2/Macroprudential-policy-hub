@@ -10,18 +10,39 @@ from typing import Dict, Any, Optional, List
 from pathlib import Path
 
 from supabase import create_client, Client
-from supabase_migration.config import SupabaseConfig
-from supabase_migration.transformers import (
-    transform_ccyb_data,
-    transform_syrb_data,
-    transform_bbm_data,
-    transform_osii_data,
-    transform_dti_lti_data,
-    transform_ltv_data,
-    transform_countries,
-    transform_snapshots,
-    transform_trends,
-)
+# Import from archived supabase_migration (still in use)
+# TODO: Refactor to remove dependency on archived module
+import sys
+from pathlib import Path
+_base_dir = Path(__file__).parent.parent.parent
+_archive_dir = _base_dir / "archive"
+if _archive_dir.exists():
+    sys.path.insert(0, str(_archive_dir))
+try:
+    from supabase_migration.config import SupabaseConfig
+    from supabase_migration.transformers import (
+        transform_ccyb_data,
+        transform_syrb_data,
+        transform_bbm_data,
+        transform_osii_data,
+        transform_dti_lti_data,
+        transform_ltv_data,
+        transform_countries,
+        transform_snapshots,
+        transform_trends,
+    )
+except ImportError:
+    logger.warning("supabase_migration module not found in archive. Some features may not work.")
+    SupabaseConfig = None
+    transform_ccyb_data = None
+    transform_syrb_data = None
+    transform_bbm_data = None
+    transform_osii_data = None
+    transform_dti_lti_data = None
+    transform_ltv_data = None
+    transform_countries = None
+    transform_snapshots = None
+    transform_trends = None
 
 logger = logging.getLogger(__name__)
 

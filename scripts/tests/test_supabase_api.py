@@ -13,6 +13,13 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from supabase import create_client, Client
+# Import from archived supabase_migration
+import sys
+from pathlib import Path
+_base_dir = Path(__file__).parent.parent.parent
+_archive_dir = _base_dir / "archive"
+if _archive_dir.exists():
+    sys.path.insert(0, str(_archive_dir))
 from supabase_migration.config import SupabaseConfig
 
 

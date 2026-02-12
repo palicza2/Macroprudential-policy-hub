@@ -13,6 +13,13 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# Import from archived supabase_migration
+import sys
+from pathlib import Path
+_base_dir = Path(__file__).parent.parent
+_archive_dir = _base_dir / "archive"
+if _archive_dir.exists():
+    sys.path.insert(0, str(_archive_dir))
 from supabase_migration import SupabaseMigrator
 
 # Setup logging
