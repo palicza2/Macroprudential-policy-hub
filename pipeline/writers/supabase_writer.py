@@ -114,7 +114,13 @@ class SupabaseWriter:
         try:
             # 1. Countries (if not already in DB, or update if needed)
             logger.info("Writing countries to Supabase...")
-            countries_records = transform_countries()
+            # transform_countries needs all dataframes to extract unique countries
+            countries_records = transform_countries(
+                ccyb_df or pd.DataFrame(),
+                syrb_df or pd.DataFrame(),
+                bbm_df or pd.DataFrame(),
+                osii_df or pd.DataFrame()
+            )
             if countries_records:
                 # Remove duplicates
                 countries_df = pd.DataFrame(countries_records)
