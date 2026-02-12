@@ -23,6 +23,15 @@ from .ltv_model import (
     dataframe_to_rules as ltv_dataframe_to_rules,
 )
 
+# Import BBM matrix builder
+from .matrix_builder import build_bbm_matrix_html, RENAME_MAP
+
+# Import DTI/LTI builders
+from .dti_lti import build_dti_lti_items, build_dti_lti_eu_list_html, EU_ISO2
+
+# Import legacy LTV extractor (for backward compatibility)
+from .ltv_legacy import extract_ltv_details_regex
+
 __all__ = [
     'DTILTIRule',
     'MeasureCode',
@@ -36,4 +45,10 @@ __all__ = [
     'create_ltv_schema',
     'ltv_rules_to_dataframe',
     'ltv_dataframe_to_rules',
+    'build_bbm_matrix_html',
+    'RENAME_MAP',
+    'build_dti_lti_items',
+    'build_dti_lti_eu_list_html',
+    'EU_ISO2',
+    'extract_ltv_details_regex',
 ]

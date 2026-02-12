@@ -7,13 +7,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from llm_analysis import LLMAnalyzer
 from config import LLM_CONFIG
 
-# Import from bbm.py directly
-import importlib.util
-bbm_py = Path(__file__).parent.parent / "bbm.py"
-spec = importlib.util.spec_from_file_location("bbm_module", bbm_py)
-bbm_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(bbm_module)
-build_dti_lti_items = bbm_module.build_dti_lti_items
+# Import from bbm package
+from bbm import build_dti_lti_items
 
 from bbm.dti_lti_builder import build_dti_lti_comparison_df_structured
 

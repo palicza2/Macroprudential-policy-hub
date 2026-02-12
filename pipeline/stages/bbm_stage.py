@@ -8,21 +8,25 @@ import pandas as pd
 from typing import Dict, Tuple, Any
 from pipeline.writers.supabase_writer import SupabaseWriter
 
-# Import from bbm.py (not from bbm package to avoid circular import)
-import sys
-from pathlib import Path
-_bbm_py = Path(__file__).parent.parent.parent / "bbm.py"
-if _bbm_py.exists():
-    import importlib.util
-    _spec = importlib.util.spec_from_file_location("_bbm_py_module", _bbm_py)
-    _bbm_py_module = importlib.util.module_from_spec(_spec)
-    _spec.loader.exec_module(_bbm_py_module)
-    build_bbm_matrix_html = _bbm_py_module.build_bbm_matrix_html
-    extract_ltv_details_regex = _bbm_py_module.extract_ltv_details_regex
-    build_dti_lti_comparison_df = _bbm_py_module.build_dti_lti_comparison_df
-    build_dti_lti_eu_list_html = _bbm_py_module.build_dti_lti_eu_list_html
-else:
-    raise ImportError("bbm.py not found")
+# Import from bbm package
+from bbm import (
+    build_bbm_matrix_html,
+    extract_ltv_details_regex,
+    build_dti_lti_eu_list_html,
+)
+from bbm.dti_lti_builder import build_dti_lti_comparison_df_structured
+
+# Wrapper for backward compatibility
+def build_dti_lti_comparison_df(bbm_full: pd.DataFrame, analyzer, search_config=None) -> pd.DataFrame:
+    """Wrapper for build_dti_lti_comparison_df_structured (backward compatibility)."""
+    from config import SEARCH_CONFIG
+    return build_dti_lti_comparison_df_structured(
+        bbm_full,
+        analyzer,
+        validate_with_ai=True,
+        final_validation_with_search=False,
+        search_config=search_config or SEARCH_CONFIG
+    )
 
 logger = logging.getLogger(__name__)
 

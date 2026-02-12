@@ -13,20 +13,8 @@ from .dti_lti_model import DTILTIRule, MeasureCode, rules_to_dataframe, create_d
 from .dti_lti_extractor import extract_dti_lti_rule_from_item
 from .dti_lti_validator import validate_rules_with_ai, validate_complete_table_with_ai
 
-# Import build_dti_lti_items from parent module (avoid circular import)
-import importlib.util
-from pathlib import Path
-
-_parent_dir = Path(__file__).parent.parent
-_bbm_py = _parent_dir / "bbm.py"
-if _bbm_py.exists():
-    _spec = importlib.util.spec_from_file_location("_bbm_module", _bbm_py)
-    _bbm_module = importlib.util.module_from_spec(_spec)
-    _spec.loader.exec_module(_bbm_module)
-    build_dti_lti_items = _bbm_module.build_dti_lti_items
-else:
-    def build_dti_lti_items(bbm_full):
-        return []
+# Import build_dti_lti_items from dti_lti subpackage
+from .dti_lti.items_builder import build_dti_lti_items
 
 logger = logging.getLogger(__name__)
 

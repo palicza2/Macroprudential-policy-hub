@@ -4,13 +4,8 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Import from bbm.py directly
-import importlib.util
-bbm_py = Path(__file__).parent.parent / "bbm.py"
-spec = importlib.util.spec_from_file_location("bbm_module", bbm_py)
-bbm_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(bbm_module)
-build_dti_lti_items = bbm_module.build_dti_lti_items
+# Import from bbm package
+from bbm import build_dti_lti_items
 
 # Read BBM data
 bbm = pd.read_parquet('data/processed_bbm.parquet')

@@ -4,9 +4,14 @@ Run Supabase migrations automatically.
 This script reads SQL migration files from the migrations/ directory
 and executes them against the Supabase PostgreSQL database.
 
+Supports two methods:
+1. Supabase CLI (recommended) - uses npx supabase
+2. Direct PostgreSQL connection - uses psycopg2
+
 Requirements:
-- SUPABASE_SERVICE_ROLE_KEY or SUPABASE_DB_URL in .env file
-- psycopg2 or psycopg2-binary package installed
+- For CLI method: npm/node installed
+- For direct method: SUPABASE_SERVICE_ROLE_KEY or SUPABASE_DB_URL in .env file
+- For direct method: psycopg2 or psycopg2-binary package installed
 """
 
 import os
