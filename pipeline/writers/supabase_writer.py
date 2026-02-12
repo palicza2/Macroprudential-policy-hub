@@ -116,10 +116,10 @@ class SupabaseWriter:
             logger.info("Writing countries to Supabase...")
             # transform_countries needs all dataframes to extract unique countries
             countries_records = transform_countries(
-                ccyb_df or pd.DataFrame(),
-                syrb_df or pd.DataFrame(),
-                bbm_df or pd.DataFrame(),
-                osii_df or pd.DataFrame()
+                ccyb_df if ccyb_df is not None and not ccyb_df.empty else pd.DataFrame(),
+                syrb_df if syrb_df is not None and not syrb_df.empty else pd.DataFrame(),
+                bbm_df if bbm_df is not None and not bbm_df.empty else pd.DataFrame(),
+                osii_df if osii_df is not None and not osii_df.empty else pd.DataFrame()
             )
             if countries_records:
                 # Remove duplicates
