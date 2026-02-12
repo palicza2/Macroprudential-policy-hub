@@ -13,9 +13,14 @@ from prompts import SYSTEM_CONTEXT_LAST_12M
 from llm_tasks import build_chart_tasks, build_section_tasks, build_global_task, build_osii_analysis_task
 from llm_runner import run_tasks, run_task
 from knowledge_graph import KnowledgeGraphRAG
+from llm.cache import LLMCache
+from utils.json_parser import safe_json_loads_list, safe_json_loads_dict
 
 load_dotenv()
 logger = logging.getLogger(__name__)
+
+# Initialize cache instance
+_cache = LLMCache()
 
 def get_base64(path):
     if not path or not path.exists(): return None
@@ -83,9 +88,22 @@ class LLMAnalyzer:
         if not text_list: return []
         input_text = "\n".join([f"{i+1}. {str(text)[:300]}" for i, text in enumerate(text_list)])
         prompt = f"TASK: Extract the specific SyRB rate or interval. OUTPUT FORMAT: Numbered list. ONLY the rate. INPUT:\n{input_text}"
+        
+        # Check cache
+        model_name = self.config.get("model_name", "")
+        cached_response = _cache.get(prompt=prompt, model=model_name, temperature=0.0)
+        if cached_response:
+            res = cached_response
+        else:
+            try:
+                llm = self._get_llm(temperature=0.0)
+                res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+                # Cache the response
+                _cache.set(prompt=prompt, response=res, model=model_name, temperature=0.0)
+            except:
+                return ["Error"]*len(text_list)
+        
         try:
-            llm = self._get_llm(temperature=0.0)
-            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
             lines = [line.strip() for line in res.split('\n') if line.strip()]
             results = [re.sub(r'^\d+\.?\s*', '', l) for l in lines]
             if len(results) < len(text_list): results.extend(["N/A"]*(len(text_list)-len(results)))
@@ -108,9 +126,23 @@ class LLMAnalyzer:
         FORMAT: Return a numbered list matching the input count. Each line should ONLY contain keywords separated by commas.
         INPUT:
         {input_text}"""
+        
+        # Check cache
+        model_name = self.config.get("model_name", "")
+        cached_response = _cache.get(prompt=prompt, model=model_name, temperature=0.0)
+        if cached_response:
+            res = cached_response
+        else:
+            try:
+                llm = self._get_llm(temperature=0.0)
+                res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+                # Cache the response
+                _cache.set(prompt=prompt, response=res, model=model_name, temperature=0.0)
+            except Exception as e:
+                logger.error(f"Error in extract_keywords: {e}")
+                return [""] * len(text_list)
+        
         try:
-            llm = self._get_llm(temperature=0.0)
-            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
             # Tisztább sorokra bontás
             lines = [l.strip() for l in res.split('\n') if l.strip() and (l.strip()[0].isdigit() or ',' in l)]
             results = [re.sub(r'^\d+[\.\)]\s*', '', l) for l in lines]
@@ -137,23 +169,24 @@ Each object must contain:
 Do NOT invent values. Use empty list/strings if not stated.
 INPUT:
 {input_text}"""
-        try:
-            llm = self._get_llm(temperature=0.0)
-            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
-            parsed = None
+        
+        # Check cache
+        model_name = self.config.get("model_name", "")
+        cached_response = _cache.get(prompt=prompt, model=model_name, temperature=0.0)
+        if cached_response:
+            res = cached_response
+        else:
             try:
-                parsed = json.loads(res)
-            except Exception:
-                match = re.search(r"(\[[\s\S]*\])", res)
-                if match:
-                    try:
-                        parsed = json.loads(match.group(1))
-                    except Exception:
-                        parsed = None
-            if parsed is None:
+                llm = self._get_llm(temperature=0.0)
+                res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+                # Cache the response
+                _cache.set(prompt=prompt, response=res, model=model_name, temperature=0.0)
+            except Exception as e:
+                logger.error(f"Error in extract_ltv_fields: {e}")
                 return [{} for _ in text_list]
-            if not isinstance(parsed, list):
-                return [{} for _ in text_list]
+        
+        try:
+            parsed = safe_json_loads_list(res, default=[{} for _ in text_list])
             if len(parsed) < len(text_list):
                 parsed.extend([{}] * (len(text_list) - len(parsed)))
             return parsed[:len(text_list)]
@@ -237,18 +270,7 @@ INPUT:
         try:
             llm = self._get_llm(temperature=0.0)
             res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
-            parsed = None
-            try:
-                parsed = json.loads(res)
-            except Exception:
-                match = re.search(r"(\[[\s\S]*\])", res)
-                if match:
-                    try:
-                        parsed = json.loads(match.group(1))
-                    except Exception:
-                        parsed = None
-            if not isinstance(parsed, list):
-                return [{} for _ in items]
+            parsed = safe_json_loads_list(res, default=[{} for _ in items])
             if len(parsed) < len(items):
                 parsed.extend([{}] * (len(items) - len(parsed)))
             return parsed[: len(items)]
@@ -313,18 +335,7 @@ INPUT:
         try:
             llm = self._get_llm(temperature=0.0)
             res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
-            parsed = None
-            try:
-                parsed = json.loads(res)
-            except Exception:
-                match = re.search(r"(\[[\s\S]*\])", res)
-                if match:
-                    try:
-                        parsed = json.loads(match.group(1))
-                    except Exception:
-                        parsed = None
-            if not isinstance(parsed, list):
-                return [{} for _ in items]
+            parsed = safe_json_loads_list(res, default=[{} for _ in items])
             if len(parsed) < len(items):
                 parsed.extend([{}] * (len(items) - len(parsed)))
             return parsed[: len(items)]
@@ -425,18 +436,7 @@ INPUT:
         try:
             llm = self._get_llm(temperature=0.0)
             res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
-            parsed = None
-            try:
-                parsed = json.loads(res)
-            except Exception:
-                match = re.search(r"(\[[\s\S]*\])", res)
-                if match:
-                    try:
-                        parsed = json.loads(match.group(1))
-                    except Exception:
-                        parsed = None
-            if not isinstance(parsed, list):
-                return [{} for _ in rules]
+            parsed = safe_json_loads_list(res, default=[{} for _ in rules])
             if len(parsed) < len(rules):
                 parsed.extend([{}] * (len(rules) - len(parsed)))
             return parsed[:len(rules)]
@@ -520,18 +520,7 @@ TABLE:
         try:
             llm = self._get_llm(temperature=0.0)
             res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
-            parsed = None
-            try:
-                parsed = json.loads(res)
-            except Exception:
-                match = re.search(r"(\[[\s\S]*\])", res)
-                if match:
-                    try:
-                        parsed = json.loads(match.group(1))
-                    except Exception:
-                        parsed = None
-            if not isinstance(parsed, list):
-                return [{} for _ in table_rows]
+            parsed = safe_json_loads_list(res, default=[{} for _ in table_rows])
             if len(parsed) < len(table_rows):
                 parsed.extend([{}] * (len(table_rows) - len(parsed)))
             return parsed[:len(table_rows)]
@@ -593,18 +582,7 @@ INPUT:
         try:
             llm = self._get_llm(temperature=0.0)
             res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
-            parsed = None
-            try:
-                parsed = json.loads(res)
-            except Exception:
-                match = re.search(r"(\[[\s\S]*\])", res)
-                if match:
-                    try:
-                        parsed = json.loads(match.group(1))
-                    except Exception:
-                        parsed = None
-            if not isinstance(parsed, list):
-                return [{} for _ in items]
+            parsed = safe_json_loads_list(res, default=[{} for _ in items])
             if len(parsed) < len(items):
                 parsed.extend([{}] * (len(items) - len(parsed)))
             return parsed[: len(items)]
@@ -627,21 +605,24 @@ RETURN: JSON array, each entry is an array of tag strings for the matching item.
 RULES: Only use allowed tags. Use [] if no tags are applicable.
 INPUT:
 {input_text}"""
-        try:
-            llm = self._get_llm(temperature=0.0)
-            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
-            parsed = None
+        
+        # Check cache
+        model_name = self.config.get("model_name", "")
+        cached_response = _cache.get(prompt=prompt, model=model_name, temperature=0.0)
+        if cached_response:
+            res = cached_response
+        else:
             try:
-                parsed = json.loads(res)
-            except Exception:
-                match = re.search(r"(\[[\s\S]*\])", res)
-                if match:
-                    try:
-                        parsed = json.loads(match.group(1))
-                    except Exception:
-                        parsed = None
-            if not isinstance(parsed, list):
+                llm = self._get_llm(temperature=0.0)
+                res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+                # Cache the response
+                _cache.set(prompt=prompt, response=res, model=model_name, temperature=0.0)
+            except Exception as e:
+                logger.error(f"Error in classify_news_tags: {e}")
                 return [[] for _ in text_list]
+        
+        try:
+            parsed = safe_json_loads_list(res, default=[[] for _ in text_list])
             if len(parsed) < len(text_list):
                 parsed.extend([[]] * (len(text_list) - len(parsed)))
             normalized = []
@@ -677,9 +658,17 @@ TEXT:
 
 Return a concise summary."""
         
+        # Check cache
+        model_name = self.config.get("model_name", "")
+        cached_response = _cache.get(prompt=prompt, model=model_name, temperature=0.3)
+        if cached_response:
+            return self._clean_text(cached_response, is_global=False)
+        
         try:
             llm = self._get_llm(temperature=0.3)
             res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+            # Cache the response
+            _cache.set(prompt=prompt, response=res, model=model_name, temperature=0.3)
             return self._clean_text(res, is_global=False)
         except Exception as e:
             logger.error(f"Error in summarize_text: {e}")
@@ -694,21 +683,24 @@ RULES: Keep it factual and short (max ~60 words). Do not add new facts.
 RETURN: JSON array of strings, in the same order as input.
 INPUT:
 """ + input_text
-        try:
-            llm = self._get_llm(temperature=0.2)
-            res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
-            parsed = None
+        
+        # Check cache
+        model_name = self.config.get("model_name", "")
+        cached_response = _cache.get(prompt=prompt, model=model_name, temperature=0.2)
+        if cached_response:
+            res = cached_response
+        else:
             try:
-                parsed = json.loads(res)
-            except Exception:
-                match = re.search(r"(\[[\s\S]*\])", res)
-                if match:
-                    try:
-                        parsed = json.loads(match.group(1))
-                    except Exception:
-                        parsed = None
-            if not isinstance(parsed, list):
-                return ["" for _ in text_list]
+                llm = self._get_llm(temperature=0.2)
+                res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+                # Cache the response
+                _cache.set(prompt=prompt, response=res, model=model_name, temperature=0.2)
+            except Exception as e:
+                logger.error(f"Error in summarize_news_items: {e}")
+                return [""] * len(text_list)
+        
+        try:
+            parsed = safe_json_loads_list(res, default=["" for _ in text_list])
             if len(parsed) < len(text_list):
                 parsed.extend([""] * (len(text_list) - len(parsed)))
             cleaned = [str(s).strip() if isinstance(s, str) else "" for s in parsed[:len(text_list)]]
@@ -900,8 +892,8 @@ Description: {description[:2000]}"""
         try:
             llm = self._get_llm(temperature=0.0)
             res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
-            parsed = json.loads(res)
-            return parsed if isinstance(parsed, dict) else None
+            parsed = safe_json_loads_dict(res)
+            return parsed if parsed else None
         except Exception as e:
             logger.warning(f"Error in extract_ltv_rule_ai: {e}")
             return None
@@ -992,18 +984,7 @@ INPUT:
         try:
             llm = self._get_llm(temperature=0.0)
             res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
-            parsed = None
-            try:
-                parsed = json.loads(res)
-            except Exception:
-                match = re.search(r"(\[[\s\S]*\])", res)
-                if match:
-                    try:
-                        parsed = json.loads(match.group(1))
-                    except Exception:
-                        parsed = None
-            if not isinstance(parsed, list):
-                return [{} for _ in rules]
+            parsed = safe_json_loads_list(res, default=[{} for _ in rules])
             if len(parsed) < len(rules):
                 parsed.extend([{}] * (len(rules) - len(parsed)))
             return parsed[:len(rules)]
@@ -1090,18 +1071,7 @@ INPUT:
         try:
             llm = self._get_llm(temperature=0.0)
             res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
-            parsed = None
-            try:
-                parsed = json.loads(res)
-            except Exception:
-                match = re.search(r"(\[[\s\S]*\])", res)
-                if match:
-                    try:
-                        parsed = json.loads(match.group(1))
-                    except Exception:
-                        parsed = None
-            if not isinstance(parsed, list):
-                return [{} for _ in table_rows]
+            parsed = safe_json_loads_list(res, default=[{} for _ in table_rows])
             if len(parsed) < len(table_rows):
                 parsed.extend([{}] * (len(table_rows) - len(parsed)))
             return parsed[:len(table_rows)]

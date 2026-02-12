@@ -158,8 +158,14 @@ class SupabaseWriter:
             if latest_osii_df is not None and not latest_osii_df.empty:
                 snapshots['osii'] = latest_osii_df
             
+            # Note: Snapshot tables are now Materialized Views (mv_latest_*_snapshot)
+            # They are automatically refreshed when source data (ccyb_decisions, syrb_measures, osii_banks) changes.
+            # We no longer write directly to snapshot tables - they are computed views.
+            # Keeping this code for backward compatibility, but it will fail if old tables don't exist.
+            # TODO: Remove snapshot writing after migration to Materialized Views is complete.
             if snapshots:
                 logger.info("Writing snapshots to Supabase...")
+                logger.warning("Note: Snapshot tables are now Materialized Views. This write may fail if old tables are dropped.")
                 snapshot_records = transform_snapshots(snapshots)
                 for table_name, records in snapshot_records.items():
                     if records:
@@ -173,17 +179,22 @@ class SupabaseWriter:
                             df = df.drop_duplicates(subset=['country_iso2'])
                         records_clean = df.to_dict('records')
                         
+                        # Old table names (will be removed after migration)
                         table_map = {
                             'ccyb': 'latest_ccyb_snapshot',
                             'syrb': 'latest_syrb_snapshot',
                             'osii': 'latest_osii_snapshot'
                         }
-                        response = self.client.table(table_map[table_name]).upsert(
-                            records_clean,
-                            on_conflict="country_iso2"
-                        ).execute()
-                        results[f'{table_name}_snapshot'] = len(response.data) if response.data else len(records_clean)
-                        logger.info(f"  -> {results[f'{table_name}_snapshot']} {table_name} snapshots written")
+                        try:
+                            response = self.client.table(table_map[table_name]).upsert(
+                                records_clean,
+                                on_conflict="country_iso2"
+                            ).execute()
+                            results[f'{table_name}_snapshot'] = len(response.data) if response.data else len(records_clean)
+                            logger.info(f"  -> {results[f'{table_name}_snapshot']} {table_name} snapshots written")
+                        except Exception as e:
+                            logger.warning(f"  -> Failed to write {table_name} snapshots (table may be dropped): {e}")
+                            # Don't fail - Materialized Views will be refreshed automatically
             
             # 7. Trends
             trends = {}
@@ -194,8 +205,13 @@ class SupabaseWriter:
             if bbm_trend_df is not None and not bbm_trend_df.empty:
                 trends['bbm'] = bbm_trend_df
             
+            # Note: Trend tables are now Materialized Views (mv_*_trend)
+            # They are automatically refreshed when source data changes.
+            # We no longer write directly to trend tables - they are computed views.
+            # TODO: Remove trend writing after migration to Materialized Views is complete.
             if trends:
                 logger.info("Writing trends to Supabase...")
+                logger.warning("Note: Trend tables are now Materialized Views. This write may fail if old tables are dropped.")
                 trend_records = transform_trends(trends)
                 for table_name, records in trend_records.items():
                     if records:
@@ -204,17 +220,22 @@ class SupabaseWriter:
                         df = df.drop_duplicates(subset=['date'])
                         records_clean = df.to_dict('records')
                         
+                        # Old table names (will be removed after migration)
                         table_map = {
                             'ccyb': 'ccyb_diffusion_trend',
                             'syrb': 'syrb_trend',
                             'bbm': 'bbm_diffusion_trend'
                         }
-                        response = self.client.table(table_map[table_name]).upsert(
-                            records_clean,
-                            on_conflict="date"
-                        ).execute()
-                        results[f'{table_name}_trend'] = len(response.data) if response.data else len(records_clean)
-                        logger.info(f"  -> {results[f'{table_name}_trend']} {table_name} trend records written")
+                        try:
+                            response = self.client.table(table_map[table_name]).upsert(
+                                records_clean,
+                                on_conflict="date"
+                            ).execute()
+                            results[f'{table_name}_trend'] = len(response.data) if response.data else len(records_clean)
+                            logger.info(f"  -> {results[f'{table_name}_trend']} {table_name} trend records written")
+                        except Exception as e:
+                            logger.warning(f"  -> Failed to write {table_name} trends (table may be dropped): {e}")
+                            # Don't fail - Materialized Views will be refreshed automatically
             
         except Exception as e:
             logger.error(f"Error writing ETL data to Supabase: {e}", exc_info=True)

@@ -74,10 +74,10 @@ class RenderStage:
             countries_resp = self.supabase_client.table("countries").select("*").execute()
             countries = {row["iso2"]: row for row in countries_resp.data}
             
-            # Fetch latest snapshots
-            ccyb_snapshots_resp = self.supabase_client.table("latest_ccyb_snapshot").select("*").execute()
-            syrb_snapshots_resp = self.supabase_client.table("latest_syrb_snapshot").select("*").execute()
-            osii_snapshots_resp = self.supabase_client.table("latest_osii_snapshot").select("*").execute()
+            # Fetch latest snapshots (using Materialized Views)
+            ccyb_snapshots_resp = self.supabase_client.table("mv_latest_ccyb_snapshot").select("*").execute()
+            syrb_snapshots_resp = self.supabase_client.table("mv_latest_syrb_snapshot").select("*").execute()
+            osii_snapshots_resp = self.supabase_client.table("mv_latest_osii_snapshot").select("*").execute()
             
             ccyb_snapshots = {row["country_iso2"]: row for row in ccyb_snapshots_resp.data}
             syrb_snapshots = {row["country_iso2"]: row for row in syrb_snapshots_resp.data}
@@ -133,18 +133,18 @@ class RenderStage:
                 current_status = {
                     "ccyb": {
                         "rate": float(ccyb_snap.get("rate", 0)) if ccyb_snap.get("rate") else 0.0,
-                        "date": ccyb_snap.get("snapshot_date", ""),
+                        "date": ccyb_snap.get("effective_date", ""),  # Materialized View uses effective_date
                         "status": "Active" if ccyb_snap.get("rate", 0) > 0 else "Inactive",
                     } if ccyb_snap else None,
                     "syrb": {
-                        "rate": float(syrb_snap.get("rate", 0)) if syrb_snap.get("rate") else 0.0,
-                        "date": syrb_snap.get("snapshot_date", ""),
-                        "type": syrb_snap.get("measure_type", "General"),
-                        "status": "Active" if syrb_snap.get("rate", 0) > 0 else "Inactive",
+                        "rate": float(syrb_snap.get("total_rate", 0)) if syrb_snap.get("total_rate") else 0.0,  # Materialized View uses total_rate
+                        "date": "",  # Materialized View doesn't have date, use empty or fetch from measures
+                        "type": "General" if syrb_snap.get("general_rate", 0) > 0 else ("Sectoral" if syrb_snap.get("sectoral_rate", 0) > 0 else "General"),
+                        "status": "Active" if syrb_snap.get("total_rate", 0) > 0 else "Inactive",
                     } if syrb_snap else None,
                     "osii": {
-                        "rate": float(osii_snap.get("rate", 0)) if osii_snap.get("rate") else 0.0,
-                        "status": "Active" if osii_snap.get("rate", 0) > 0 else "Inactive",
+                        "rate": float(osii_snap.get("total_rate", 0)) if osii_snap.get("total_rate") else 0.0,  # Materialized View uses total_rate
+                        "status": "Active" if osii_snap.get("total_rate", 0) > 0 else "Inactive",
                     } if osii_snap else None,
                     "bbm": bbm_types,
                     "total_capital": None,  # Would need capital_overall calculation

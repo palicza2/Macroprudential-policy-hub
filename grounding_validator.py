@@ -59,20 +59,8 @@ def _get_llm(config: Dict[str, Any], temperature: float = 0.2):
     )
 
 
-def _safe_json_loads(text: str) -> Optional[Any]:
-    try:
-        return json.loads(text)
-    except Exception:
-        pass
-    if not text:
-        return None
-    match = re.search(r"(\[[\s\S]*\]|\{[\s\S]*\})", text)
-    if match:
-        try:
-            return json.loads(match.group(1))
-        except Exception:
-            return None
-    return None
+# Use centralized JSON parser
+from utils.json_parser import safe_json_loads as _safe_json_loads
 
 
 def _invoke_json(llm, prompt: str, retry_suffix: str = "", default: Optional[Any] = None) -> Any:

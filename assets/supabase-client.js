@@ -137,7 +137,7 @@ async function fetchLatestCCyBSnapshot(countryIso2 = null) {
         options.filter = { country_iso2: countryIso2 };
     }
     
-    return await fetchFromSupabase('latest_ccyb_snapshot', options);
+    return await fetchFromSupabase('mv_latest_ccyb_snapshot', options);
 }
 
 /**
@@ -186,7 +186,7 @@ async function fetchCCyBTrend(limit = 30) {
         limit: limit,
     };
     
-    return await fetchFromSupabase('ccyb_diffusion_trend', options);
+    return await fetchFromSupabase('mv_ccyb_diffusion_trend', options);
 }
 
 /**
@@ -205,12 +205,12 @@ async function fetchCountryProfile(countryIso2) {
             return null;
         }
         
-        // Fetch all data in parallel
+        // Fetch all data in parallel (using Materialized Views for snapshots)
         const [country, ccybSnapshot, syrbSnapshot, osiiSnapshot, ccybDecisions, syrbMeasures, bbmMeasures] = await Promise.all([
             fetchFromSupabase('countries', { filter: { iso2: countryIso2 }, limit: 1 }),
-            fetchFromSupabase('latest_ccyb_snapshot', { filter: { country_iso2: countryIso2 }, limit: 1 }),
-            fetchFromSupabase('latest_syrb_snapshot', { filter: { country_iso2: countryIso2 }, limit: 1 }),
-            fetchFromSupabase('latest_osii_snapshot', { filter: { country_iso2: countryIso2 }, limit: 1 }),
+            fetchFromSupabase('mv_latest_ccyb_snapshot', { filter: { country_iso2: countryIso2 }, limit: 1 }),
+            fetchFromSupabase('mv_latest_syrb_snapshot', { filter: { country_iso2: countryIso2 }, limit: 1 }),
+            fetchFromSupabase('mv_latest_osii_snapshot', { filter: { country_iso2: countryIso2 }, limit: 1 }),
             fetchFromSupabase('ccyb_decisions', { filter: { country_iso2: countryIso2 }, order: 'effective_date.asc' }),
             fetchFromSupabase('syrb_measures', { filter: { country_iso2: countryIso2 }, order: 'effective_date.asc' }),
             fetchFromSupabase('bbm_measures', { filter: { country_iso2: countryIso2 }, order: 'effective_date.asc' }),
@@ -242,22 +242,22 @@ async function fetchCountryProfile(countryIso2) {
             });
         }
         
-        // Current status
+        // Current status (Materialized Views use different column names)
         const currentStatus = {
             ccyb: ccyb_snap ? {
                 rate: parseFloat(ccyb_snap.rate) || 0.0,
-                date: ccyb_snap.snapshot_date || '',
+                date: ccyb_snap.effective_date || '',  // Materialized View uses effective_date
                 status: (parseFloat(ccyb_snap.rate) || 0) > 0 ? 'Active' : 'Inactive',
             } : null,
             syrb: syrb_snap ? {
-                rate: parseFloat(syrb_snap.rate) || 0.0,
-                date: syrb_snap.snapshot_date || '',
-                type: syrb_snap.measure_type || 'General',
-                status: (parseFloat(syrb_snap.rate) || 0) > 0 ? 'Active' : 'Inactive',
+                rate: parseFloat(syrb_snap.total_rate) || 0.0,  // Materialized View uses total_rate
+                date: '',  // Materialized View doesn't have date field
+                type: (parseFloat(syrb_snap.general_rate) || 0) > 0 ? 'General' : ((parseFloat(syrb_snap.sectoral_rate) || 0) > 0 ? 'Sectoral' : 'General'),
+                status: (parseFloat(syrb_snap.total_rate) || 0) > 0 ? 'Active' : 'Inactive',
             } : null,
             osii: osii_snap ? {
-                rate: parseFloat(osii_snap.rate) || 0.0,
-                status: (parseFloat(osii_snap.rate) || 0) > 0 ? 'Active' : 'Inactive',
+                rate: parseFloat(osii_snap.total_rate) || 0.0,  // Materialized View uses total_rate
+                status: (parseFloat(osii_snap.total_rate) || 0) > 0 ? 'Active' : 'Inactive',
             } : null,
             bbm: bbmTypes,
             total_capital: null,
