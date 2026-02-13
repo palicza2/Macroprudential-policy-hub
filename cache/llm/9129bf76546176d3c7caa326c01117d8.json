@@ -1,0 +1,8 @@
+{
+  "prompt": "Describe SyRB trends over the last 12 months. Emphasize objectives and risks (especially sectoral exposures) rather than tool mechanics. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences.",
+  "response": "The past 12 months have witnessed a marked escalation in active Systemic Risk Buffer (SyRB) measures, signaling a heightened supervisory focus on both broad-based and targeted financial stability risks. General SyRB measures, designed to bolster overall financial system resilience against macro-financial shocks, surged from approximately 9 to 11 active measures, indicating widespread concerns. Concurrently, sectoral SyRB measures, aimed at mitigating concentrated risks within specific segments, steadily climbed from around 5 to 7 active measures. This dual upward trend underscores a supervisory strategy that not only seeks to enhance system-wide capital buffers but also to proactively address burgeoning vulnerabilities in particular sectors. The increasing number of sectoral exposures highlights concerns over potential overheating, excessive leverage, or asset bubbles in specific markets, such as real estate or certain lending portfolios, which could pose systemic threats if left unchecked. This granular approach reflects a recognition that systemic risk can originate from concentrated pockets of vulnerability, necessitating targeted interventions. Overall, the rising count of both measure types suggests a complex and evolving risk landscape where policymakers are strengthening defenses across the board.",
+  "data": "",
+  "img_key": "syrb_counts_trend",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.2
+}

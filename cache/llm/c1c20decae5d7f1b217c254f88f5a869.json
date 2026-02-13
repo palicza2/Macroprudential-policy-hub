@@ -1,0 +1,8 @@
+{
+  "prompt": "TASK: Provide a comprehensive 3-4 paragraph analysis of Sweden's macroprudential policy profile, focusing on current policy stance, recent trends, policy objectives, and comparison with regional context.\n        \nTEXT:\nCountry: Sweden\n\nCurrent Status:\n- CCyB: 2.0%\n- SyRB: 3.0%\n- O-SII: 0.01%\n\nRecent Changes (Last 12 Months):\n\n\nReturn a concise summary.",
+  "response": "Sweden's macroprudential policy profile currently reflects a robust and proactive stance aimed at safeguarding financial stability. The Countercyclical Capital Buffer (CCyB) is set at 2.0%, indicating that authorities perceive ongoing cyclical risks within the financial system and are building resilience during what they consider a period requiring capital accumulation. Complementing this is a substantial Systemic Risk Buffer (SyRB) of 3.0%, which targets long-term, non-cyclical structural vulnerabilities within the financial sector, suggesting a deep-seated concern for the resilience of the banking system against broader systemic shocks. In contrast, the Other Systemically Important Institutions (O-SII) buffer is set at a remarkably low 0.01%. This minimal O-SII buffer might",
+  "data": "",
+  "img_key": "",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.3
+}

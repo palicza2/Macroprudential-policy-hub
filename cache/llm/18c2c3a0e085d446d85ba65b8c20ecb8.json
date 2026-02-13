@@ -1,0 +1,8 @@
+{
+  "prompt": "TASK: Provide a comprehensive 3-4 paragraph analysis of Ireland's macroprudential policy profile, focusing on current policy stance, recent trends, policy objectives, and comparison with regional context.\n        \nTEXT:\nCountry: Ireland\n\nCurrent Status:\n- CCyB: 1.5%\n- O-SII: 0.015%\n\nRecent Changes (Last 12 Months):\n\n\nReturn a concise summary.",
+  "response": "Ireland's current macroprudential policy profile is characterized by a moderate Counter Cyclical Capital Buffer (CCyB) set at 1.5% and an Other Systemically Important Institutions (O-SII) buffer at 0.015%. The CCyB is a key tool designed to ensure banks build up capital buffers during periods of excessive credit growth, which can then be released",
+  "data": "",
+  "img_key": "",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.3
+}

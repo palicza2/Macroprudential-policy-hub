@@ -1,0 +1,8 @@
+{
+  "prompt": "Summarize the most important macroprudential news from the last 12 months. Focus on objectives and risks cited. Write ONE paragraph of 4-5 sentences.",
+  "response": "Over the past 12 months, macroprudential authorities globally have primarily focused on bolstering financial system resilience amidst a landscape of elevated interest rates and persistent inflation. Key risks cited include significant vulnerabilities in real estate markets, particularly commercial real estate, alongside increased credit risk for highly leveraged households and corporates. A major objective has been to mitigate systemic risks emanating from the non-bank financial intermediation (NBFI) sector, addressing concerns around liquidity mismatches and interconnectedness. Furthermore, ensuring operational resilience against cyber threats and navigating geopolitical uncertainties have remained critical objectives to safeguard financial stability and prevent potential spillovers across the financial system.",
+  "data": "No numeric data available.",
+  "img_key": "",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.2
+}

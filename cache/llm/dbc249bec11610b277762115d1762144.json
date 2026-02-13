@@ -1,0 +1,8 @@
+{
+  "prompt": "Analyze SyRB sectoral composition with focus on the last 12 months. Highlight country targets and risk pockets; avoid mechanism descriptions. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences.",
+  "response": "SyRB's sectoral composition over the last twelve months reveals a significant concentration in real estate, particularly within specific European markets. Denmark stands out as the primary country target, absorbing a substantial 7% of exposure, exclusively within the Real Estate (CRE & RRE) sector, representing a major risk pocket. Portugal also presents a notable risk pocket with 4% concentrated solely in Residential Real Estate (RRE), while Lithuania, Liechtenstein, and Germany show smaller but still relevant real estate exposures. Conversely, Norway leads in general exposure at 4.5%, followed by Bulgaria and Sweden at 3% each, indicating broader, less sector-specific allocations in these regions. A distinct risk pocket emerges from France's 3% allocation categorized as \"Other,\" which, without further detail, could imply less transparent or more volatile assets. The overall landscape suggests a pronounced vulnerability to real estate market fluctuations, especially given the high single-sector concentrations in Denmark and Portugal, alongside the potential opacity of the \"Other\" category.",
+  "data": "",
+  "img_key": "syrb_sector",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.2
+}

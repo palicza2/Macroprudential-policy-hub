@@ -1,0 +1,8 @@
+{
+  "prompt": "Analyze adoption trends of borrower-based measures over the last 12 months. Emphasize what risks countries are targeting; avoid describing tool mechanics. Start with a strong topic sentence. Write ONE paragraph of 6-7 sentences.",
+  "response": "The global adoption of borrower-based measures (BBMs) continues its upward trajectory, albeit at a decelerated pace in the most recent period, reflecting persistent concerns over financial stability. Over the last 12 months depicted, the number of countries employing at least one active BBM increased modestly from 26 to 27, indicating a sustained, though less rapid, expansion of these macroprudential tools. This continued uptake underscores a global commitment to mitigating risks associated with household over-indebtedness and potential asset bubbles, particularly in real estate markets. Countries are primarily targeting vulnerabilities stemming from excessive credit growth and the build-up of systemic risk within their financial systems. The implementation of BBMs aims to enhance the resilience of borrowers and lenders against adverse economic shocks, such as rising interest rates or economic downturns. Ultimately, these measures are adopted to safeguard overall financial stability and prevent the accumulation of imbalances that could trigger future crises.",
+  "data": "",
+  "img_key": "bbm_diffusion",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.2
+}

@@ -1,0 +1,8 @@
+{
+  "prompt": "TASK: Provide a comprehensive 3-4 paragraph analysis of Austria's macroprudential policy profile, focusing on current policy stance, recent trends, policy objectives, and comparison with regional context.\n        \nTEXT:\nCountry: Austria\n\nCurrent Status:\n- CCyB: 0.0%\n- SyRB: 2.0%\n- O-SII: 0.0175%\n\nRecent Changes (Last 12 Months):\n- 2025-07-01: BBM Loan maturity - Is currently applicable\n- 2025-07-01: BBM Loan-to-value (LTV) - Is currently applicable\n- 2025-07-01: BBM Debt-service-to-income (DSTI) - Is currently applicable\n\n\nReturn a concise summary.",
+  "response": "Austria's macroprudential policy profile reveals a multi-faceted approach aimed at safeguarding financial stability, characterized by a combination of capital buffers and targeted borrower-based measures. Currently, the Countercyclical Capital Buffer (CCyB) stands at 0.0%, indicating that Austrian authorities do not perceive an elevated level of cyclical systemic risk, such as excessive credit growth, that would necessitate",
+  "data": "",
+  "img_key": "",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.3
+}

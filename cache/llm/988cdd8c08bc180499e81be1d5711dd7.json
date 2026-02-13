@@ -1,0 +1,8 @@
+{
+  "prompt": "TASK: Provide a comprehensive 3-4 paragraph analysis of Liechtenstein's macroprudential policy profile, focusing on current policy stance, recent trends, policy objectives, and comparison with regional context.\n        \nTEXT:\nCountry: Liechtenstein\n\nCurrent Status:\n- CCyB: 0.0%\n- SyRB: 2.5%\n- O-SII: 0.02%\n\nRecent Changes (Last 12 Months):\n\n\nReturn a concise summary.",
+  "response": "Liechtenstein's current macroprudential policy profile reflects a nuanced approach, prioritizing structural resilience while indicating a contained assessment of immediate cyclical risks. The **Countercyclical Capital Buffer (CCyB) is set at 0.0%**, suggesting that authorities do not currently perceive a significant build-up of systemic risk stemming from excessive credit growth or overheating in the financial system. This indicates a",
+  "data": "",
+  "img_key": "",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.3
+}

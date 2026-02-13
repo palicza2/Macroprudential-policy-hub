@@ -1,0 +1,8 @@
+{
+  "prompt": "TASK: Provide a comprehensive 3-4 paragraph analysis of Slovenia's macroprudential policy profile, focusing on current policy stance, recent trends, policy objectives, and comparison with regional context.\n        \nTEXT:\nCountry: Slovenia\n\nCurrent Status:\n- CCyB: 1.0%\n- SyRB: 0.0%\n- O-SII: 0.0125%\n\nRecent Changes (Last 12 Months):\n\n\nReturn a concise summary.",
+  "response": "Slovenia's current macroprudential policy profile reflects a measured approach to safeguarding financial stability. The Countercyclical Capital Buffer (CCyB) is set at 1.0%, indicating a moderate effort to build capital resilience within the banking sector. This level suggests a recognition of cyclical risks and a desire to enhance the banking system's capacity to absorb potential losses during future economic downturn",
+  "data": "",
+  "img_key": "",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.3
+}

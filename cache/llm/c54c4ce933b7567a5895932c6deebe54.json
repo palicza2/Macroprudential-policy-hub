@@ -1,0 +1,8 @@
+{
+  "prompt": "TASK: Provide a comprehensive 3-4 paragraph analysis of Iceland's macroprudential policy profile, focusing on current policy stance, recent trends, policy objectives, and comparison with regional context.\n        \nTEXT:\nCountry: Iceland\n\nCurrent Status:\n- CCyB: 2.5%\n- SyRB: 3.0%\n- O-SII: 0.03%\n\nRecent Changes (Last 12 Months):\n\n\nReturn a concise summary.",
+  "response": "Iceland maintains a robust and highly precautionary macroprudential policy profile, characterized by significant capital buffers designed to enhance financial stability. The current Countercyclical Capital Buffer (CCyB) stands at 2.5%, signaling a proactive stance by the Icelandic authorities to lean against the wind during periods of perceived elevated cyclical risk, such as strong credit growth or asset price inflation. This aims to build resilience within the banking sector, ensuring it can absorb potential losses during a future downturn. This is further complemented by a substantial Systemic Risk Buffer (SyRB) of 3.0%, which targets long-term, structural vulnerabilities inherent in the financial system, irrespective of the current economic cycle. Collectively, these buffers underscore a comprehensive strategy to fortify the financial system against both cyclical upturns and inherent structural weaknesses.\n\nInterestingly, while the broad-based buffers are high, the Other Systemically Important Institutions (O-",
+  "data": "",
+  "img_key": "",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.3
+}

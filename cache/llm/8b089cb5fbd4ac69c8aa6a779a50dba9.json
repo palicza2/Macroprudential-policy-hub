@@ -1,0 +1,8 @@
+{
+  "prompt": "TASK: Provide a comprehensive 3-4 paragraph analysis of Finland's macroprudential policy profile, focusing on current policy stance, recent trends, policy objectives, and comparison with regional context.\n        \nTEXT:\nCountry: Finland\n\nCurrent Status:\n- CCyB: 0.0%\n- SyRB: 1.0%\n- O-SII: 0.025%\n\nRecent Changes (Last 12 Months):\n- 2026-07-01: SyRB Activated: 1.00%\n\n\nReturn a concise summary.",
+  "response": "Finland's macroprudential policy profile currently reflects a nuanced approach, prioritizing structural resilience over immediate cyclical concerns. The Countercyclical Capital Buffer (CCyB) is set at 0.0%, indicating that Finnish authorities do not currently perceive an elevated risk of excessive credit growth or an overheating economy that would necessitate a build-up of capital buffers to mitigate cyclical systemic risks. This",
+  "data": "",
+  "img_key": "",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.3
+}

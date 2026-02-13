@@ -1,0 +1,8 @@
+{
+  "prompt": "TASK: Provide a comprehensive 3-4 paragraph analysis of Czech Republic's macroprudential policy profile, focusing on current policy stance, recent trends, policy objectives, and comparison with regional context.\n        \nTEXT:\nCountry: Czech Republic\n\nCurrent Status:\n- CCyB: 1.25%\n- SyRB: 1.0%\n- O-SII: 0.025%\n\nRecent Changes (Last 12 Months):\n\n\nReturn a concise summary.",
+  "response": "The Czech Republic maintains an active and multi-faceted macroprudential policy profile, reflecting a proactive approach by the Czech National Bank (CNB) to safeguard financial stability. The current Countercyclical Capital Buffer (CCyB) is set at 1.25%, indicating the CNB's assessment of existing cyclical risks within the financial system and its commitment to building capital buffers during periods of benign conditions. This aims to enhance the banking sector's resilience to",
+  "data": "",
+  "img_key": "",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.3
+}

@@ -1,0 +1,8 @@
+{
+  "prompt": "TASK: Provide a comprehensive 3-4 paragraph analysis of Cyprus's macroprudential policy profile, focusing on current policy stance, recent trends, policy objectives, and comparison with regional context.\n        \nTEXT:\nCountry: Cyprus\n\nCurrent Status:\n- CCyB: 1.5%\n- O-SII: 0.019375%\n\nRecent Changes (Last 12 Months):\n\n\nReturn a concise summary.",
+  "response": "Cyprus's current macroprudential policy profile is characterized by a Countercyclical Capital Buffer (CCyB) set at 1.5% and an Other Systemically Important Institutions (O-SII) buffer at a notably low 0.019375%. The 1.5% CCyB indicates a moderate stance, suggesting a proactive effort to",
+  "data": "",
+  "img_key": "",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.3
+}

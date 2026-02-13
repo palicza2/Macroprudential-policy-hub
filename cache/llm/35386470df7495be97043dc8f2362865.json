@@ -1,0 +1,8 @@
+{
+  "prompt": "TASK: Provide a comprehensive 3-4 paragraph analysis of Poland's macroprudential policy profile, focusing on current policy stance, recent trends, policy objectives, and comparison with regional context.\n        \nTEXT:\nCountry: Poland\n\nCurrent Status:\n- CCyB: 2.0%\n- SyRB: 3.0%\n- O-SII: 0.02%\n\nRecent Changes (Last 12 Months):\n- 2026-09-30: CCyB 1.00% → 2.00%\n\n\nReturn a concise summary.",
+  "response": "Poland's macroprudential policy profile reflects a proactive and robust approach to safeguarding financial stability, characterized by a significant Countercyclical Capital Buffer (CCyB) and a substantial Systemic Risk Buffer (SyRB). The current CCyB stands at 2.0%, indicating the authorities' assessment that cyclical risks warrant a strong capital buffer within the banking system. A notable recent trend, announced",
+  "data": "",
+  "img_key": "",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.3
+}
