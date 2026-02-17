@@ -667,13 +667,14 @@ function updateChartPeriod(period) {
         minDate = new Date(Math.min.apply(null, allDates));
     }
     
-    // Filter CCyB data
+    // Filter CCyB data — step (no interpolation): rate remains unchanged until the next known change
     if (evolution.ccyb && evolution.ccyb.length > 0) {
         var ccybData = evolution.ccyb.filter(function(d) {
             if (!d.date) return false;
             var date = new Date(d.date);
             return date >= minDate;
         });
+        ccybData = ccybData.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
         
         if (ccybData.length > 0) {
             traces.push({
@@ -682,18 +683,19 @@ function updateChartPeriod(period) {
                 name: 'CCyB',
                 type: 'scatter',
                 mode: 'lines+markers',
-                line: { color: '#3b82f6', width: 2 }
+                line: { color: '#3b82f6', width: 2, shape: 'hv' }
             });
         }
     }
     
-    // Filter SyRB data
+    // Filter SyRB data — step (no interpolation): rate remains unchanged until the next known change
     if (evolution.syrb && evolution.syrb.length > 0) {
         var syrbData = evolution.syrb.filter(function(d) {
             if (!d.date) return false;
             var date = new Date(d.date);
             return date >= minDate;
         });
+        syrbData = syrbData.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
         
         if (syrbData.length > 0) {
             traces.push({
@@ -702,7 +704,7 @@ function updateChartPeriod(period) {
                 name: 'SyRB',
                 type: 'scatter',
                 mode: 'lines+markers',
-                line: { color: '#10b981', width: 2 }
+                line: { color: '#10b981', width: 2, shape: 'hv' }
             });
         }
     }

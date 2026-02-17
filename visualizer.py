@@ -3,6 +3,7 @@ import plotly.graph_objects as go
 import pandas as pd
 from pathlib import Path
 from utils import SuppressOutput
+from utils.dataframe import ccyb_change_only_points
 
 class Visualizer:
     def __init__(self, figures_dir: Path):
@@ -34,49 +35,49 @@ class Visualizer:
         else:
             plot_figs['ccyb_diffusion'] = None
 
-        # 2. CCyB Time Series
+        # 2. CCyB Time Series — decision/change points only; between changes buffer stays unchanged (step)
         df_hist = data.get('ccyb_df')
         if df_hist is not None and not df_hist.empty:
-            # Ensure we have the right columns and data types
             if 'country' not in df_hist.columns and 'iso2' in df_hist.columns:
-                # If we only have iso2, we might need to convert it or use it as country identifier
                 df_hist = df_hist.copy()
-            
-            # Sort by country and date to ensure proper time series
-            df_hist = df_hist.sort_values(['country', 'date']).copy()
-            
-            # For each country, ensure we have a proper time series (not cumulative)
-            # The rate should be the actual rate at that date, not cumulative
-            df_plot = df_hist.copy()
-            
-            # Filter out invalid rates (should be between 0 and ~5% typically)
-            df_plot = df_plot[
-                (df_plot['rate'] >= 0) & 
-                (df_plot['rate'] <= 5.0)  # Reasonable upper bound for CCyB
-            ].copy()
-            
-            # Use step plot to show actual rate changes (not interpolated line)
+                if 'country' not in df_hist.columns:
+                    df_hist["country"] = df_hist["iso2"].astype(str)
+            rate_num = pd.to_numeric(df_hist['rate'], errors='coerce').fillna(-1)
+            df_hist = df_hist[(rate_num >= 0) & (rate_num <= 5.0)].copy()
+            df_plot = ccyb_change_only_points(df_hist)
+            if df_plot.empty:
+                df_plot = df_hist.sort_values(['country', 'date']).copy()
+            else:
+                df_plot = df_plot.sort_values(['country', 'date']).copy()
             fig = go.Figure()
-            
-            # Group by country and create step traces
-            for country in df_plot['country'].unique():
-                country_data = df_plot[df_plot['country'] == country].sort_values('date')
-                if not country_data.empty:
-                    fig.add_trace(go.Scatter(
-                        x=country_data['date'],
-                        y=country_data['rate'],
-                        mode='lines+markers',
-                        name=country,
-                        line=dict(shape='hv'),  # Step function (horizontal then vertical)
-                        hovertemplate=f'<b>{country}</b><br>Date: %{{x}}<br>Rate: %{{y:.2f}}%<extra></extra>'
-                    ))
-            
+            country_col = 'country' if 'country' in df_plot.columns else 'iso2'
+            for country in df_plot[country_col].unique():
+                country_data = df_plot[df_plot[country_col] == country].sort_values('date')
+                if country_data.empty:
+                    continue
+                dates = country_data['date'].tolist()
+                rates = country_data['rate'].tolist()
+                x_vals, y_vals = [], []
+                for i in range(len(dates)):
+                    x_vals.append(dates[i])
+                    y_vals.append(rates[i])
+                    if i < len(dates) - 1:
+                        x_vals.append(dates[i + 1])
+                        y_vals.append(rates[i])
+                fig.add_trace(go.Scatter(
+                    x=x_vals,
+                    y=y_vals,
+                    mode='lines+markers',
+                    name=str(country),
+                    line=dict(shape='hv'),
+                    hovertemplate=f'<b>{country}</b><br>Date: %{{x}}<br>Rate: %{{y:.2f}}%<extra></extra>'
+                ))
             fig.update_layout(
                 title='Historical CCyB Rates',
                 template='plotly_white',
                 xaxis_title="Date",
                 yaxis_title="Rate (%)",
-                yaxis=dict(range=[0, 3.0]),  # Set reasonable y-axis range (0-3%)
+                yaxis=dict(range=[0, 3.0]),
                 legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
                 margin=dict(b=100),
                 hovermode='closest'
@@ -206,11 +207,13 @@ class Visualizer:
                 # Return as-is if can't convert (shouldn't happen if ETL is correct)
                 return value_str
             
-            # Normalize ISO2 column to ensure only codes are used
+            # Normalize ISO2 column to ensure only two-letter country codes
             df_plot["ISO2"] = df_plot["ISO2"].apply(normalize_to_iso2)
+            # Keep only rows with valid two-letter ISO2 for the x-axis
+            df_plot = df_plot[df_plot["ISO2"].astype(str).str.len() == 2].copy()
             
-            # plotly needs wide->stacked traces
-            x = df_plot["ISO2"].astype(str).tolist()
+            # plotly needs wide->stacked traces; x-axis = two-letter country codes only
+            x = df_plot["ISO2"].astype(str).str.upper().tolist()
             components = ["CCoB", "CCyB", "GSII/O-SII", "SyRB", "sSyRB"]
             fig = go.Figure()
             colors = {
@@ -234,7 +237,7 @@ class Visualizer:
                 barmode="stack",
                 title="Overall Capital Buffer Requirement by Country",
                 template="plotly_white",
-                xaxis_title="Country",
+                xaxis_title="Country (ISO2)",
                 yaxis_title="Buffer rate (%)",
                 legend=dict(orientation="h", y=-0.25),
                 margin=dict(b=110),

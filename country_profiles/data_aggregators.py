@@ -5,6 +5,8 @@ import pandas as pd
 from typing import Dict, List, Any
 from datetime import datetime, timedelta
 
+from utils.dataframe import ccyb_change_only_points
+
 
 def get_current_status(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
     """Aktuális állapot snapshot."""
@@ -158,15 +160,20 @@ def get_historical_evolution(country: str, data: Dict[str, pd.DataFrame]) -> Dic
     """Időbeli változások."""
     evolution = {}
     
-    # CCyB trend
+    # CCyB trend — only decision/change points; between changes buffer is unchanged (step)
     ccyb_df = data.get('ccyb_df')
     if ccyb_df is not None and not ccyb_df.empty:
-        country_ccyb = ccyb_df[ccyb_df['country'] == country].sort_values('date')
+        change_only = ccyb_change_only_points(ccyb_df)
+        country_col = 'country' if 'country' in change_only.columns else 'iso2' if not change_only.empty else 'country'
+        if not change_only.empty:
+            country_ccyb = change_only[change_only[country_col] == country].sort_values('date')
+        else:
+            country_ccyb = ccyb_df[ccyb_df['country'] == country].sort_values('date') if 'country' in ccyb_df.columns else pd.DataFrame()
         if not country_ccyb.empty:
             cols = ['date', 'rate']
             if 'credit_gap' in country_ccyb.columns:
                 cols.append('credit_gap')
-            evolution['ccyb'] = country_ccyb[cols].copy()
+            evolution['ccyb'] = country_ccyb[[c for c in cols if c in country_ccyb.columns]].copy()
     
     # SyRB trend
     syrb_df = data.get('syrb_df')

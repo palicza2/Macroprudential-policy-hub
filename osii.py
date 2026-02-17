@@ -213,3 +213,92 @@ def get_osii_countries(osii_df: Optional[pd.DataFrame]) -> List[str]:
     
     countries = osii_df['country'].dropna().unique().tolist()
     return sorted([str(c) for c in countries if str(c).strip()])
+
+
+def build_all_sii_institutions_table_html(osii_df: Optional[pd.DataFrame]) -> str:
+    """
+    Build HTML table showing all SII institutions across all countries with their rates.
+    This provides a comprehensive view of all systemically important institutions.
+    """
+    if osii_df is None or osii_df.empty:
+        return "<div class='empty-state'>No SII institution data available.</div>"
+    
+    # Filter to only active institutions with bank names
+    df = osii_df.copy()
+    if 'status' in df.columns:
+        df = df[df['status'] == 'Active'].copy()
+    
+    if 'bank_name' not in df.columns or df.empty:
+        return "<div class='empty-state'>No individual bank data available.</div>"
+    
+    # Sort by country, then by bank name
+    df_sorted = df.sort_values(['country', 'bank_name']).copy()
+    
+    # Build HTML table
+    html = """
+    <div class="osii-table-wrapper" style="max-height: 600px; overflow-y: auto;">
+    <table class="osii-table">
+        <thead>
+            <tr>
+                <th>Country</th>
+                <th>Bank Name</th>
+                <th>LEI Code</th>
+                <th>Type</th>
+                <th>G-SII Rate</th>
+                <th>O-SII Rate</th>
+                <th>Total Rate</th>
+            </tr>
+        </thead>
+        <tbody>
+    """
+    
+    for _, row in df_sorted.iterrows():
+        gsii_rate = float(row.get('gsii_rate', 0)) if pd.notna(row.get('gsii_rate')) else 0.0
+        osii_rate = float(row.get('osii_rate', 0)) if pd.notna(row.get('osii_rate')) else 0.0
+        total_rate = float(row.get('rate_numeric', 0)) if pd.notna(row.get('rate_numeric')) else max(gsii_rate, osii_rate)
+        
+        # Cap rates at 5% for display (data validation)
+        if total_rate > 5.0:
+            total_rate = 5.0
+        if gsii_rate > 5.0:
+            gsii_rate = 5.0
+        if osii_rate > 5.0:
+            osii_rate = 5.0
+        
+        gsii_display = f"{gsii_rate:.2f}%" if gsii_rate > 0 else "-"
+        osii_display = f"{osii_rate:.2f}%" if osii_rate > 0 else "-"
+        total_display = f"{total_rate:.2f}%" if total_rate > 0 else "-"
+        
+        # Truncate long bank names
+        bank_name = str(row['bank_name'])
+        if len(bank_name) > 50:
+            bank_name = bank_name[:47] + "..."
+        
+        # Format LEI code
+        lei_code = str(row.get('lei_code', '') or '-')
+        if len(lei_code) > 12 and lei_code != '-':
+            lei_code = lei_code[:4] + "..." + lei_code[-4:]
+        
+        buffer_type = row.get('buffer_type', 'N/A')
+        country = row.get('country', 'N/A')
+        iso2 = row.get('iso2', '')
+        
+        html += f"""
+            <tr class="status-active">
+                <td class="country-cell"><strong>{country}</strong> ({iso2})</td>
+                <td class="bank-name">{bank_name}</td>
+                <td class="lei-code">{lei_code}</td>
+                <td class="buffer-type">{buffer_type}</td>
+                <td class="rate-cell">{gsii_display}</td>
+                <td class="rate-cell">{osii_display}</td>
+                <td class="rate-cell"><strong>{total_display}</strong></td>
+            </tr>
+        """
+    
+    html += """
+        </tbody>
+    </table>
+    </div>
+    """
+    
+    return html

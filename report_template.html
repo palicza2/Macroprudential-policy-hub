@@ -346,7 +346,12 @@
                 {{ analyses.get('osii_analysis', 'OSII/GSII analysis will be available after data processing.') }}
             </div>
             
-            <div class="card-title">OSII/GSII Buffer Rates by Country</div>
+            <div class="card-title">All SII Institutions and Rates</div>
+            <div style="margin-bottom:20px;">
+                {{ all_sii_table_html | safe }}
+            </div>
+            
+            <div class="card-title" style="margin-top:30px;">OSII/GSII Buffer Rates by Country</div>
             <div class="controls-row">
                 <label for="osii-country-selector" style="margin-right:10px; font-weight:600;">Select Country:</label>
                 <select id="osii-country-selector" class="chart-input" style="min-width:200px;">
@@ -646,50 +651,50 @@
                 <div class="mermaid-container">
                     <div class="mermaid">
 graph TD
-    subgraph DataIngestion[Data Ingestion and ETL]
-        A[ESRB Data Source Excel Files] -->|Download| B[Python ETL Pipeline]
-        B -->|Clean Normalize Extract Banks| C[Parquet Storage Optimized Data]
-        B -->|Write Structured Data| DB[(Supabase PostgreSQL Database)]
+    subgraph DataIngestion["Data Ingestion and ETL"]
+        A["ESRB Data Source Excel Files"] -->|Download| B["Python ETL Pipeline"]
+        B -->|"Clean, Normalize, Extract Banks"| C["Parquet Storage"]
+        B -->|"Write Structured Data"| DB[("Supabase PostgreSQL DB")]
     end
 
-    subgraph DataEnrichment[Data Enrichment]
-        C -->|Country Data| K[Country Profile Generator]
-        K -->|Profiles| L[Knowledge Graph Builder]
-        L -->|Graph Data| M[Country Profiles and Graph Data]
-        L -->|Graph Context| N[RAG Retriever]
-        K -->|Write Profiles| DB
-        L -->|Write Graph Data| DB
+    subgraph DataEnrichment["Data Enrichment"]
+        C -->|"Country Data"| K["Country Profile Generator"]
+        K -->|"Profiles"| L["Knowledge Graph Builder"]
+        L -->|"Graph Data"| M["Country Profiles and Graph Data"]
+        L -->|"Graph Context"| N["RAG Retriever"]
+        K -->|"Write Profiles"| DB
+        L -->|"Write Graph Data"| DB
     end
 
-    subgraph BBMProcessing[BBM Processing]
-        C -->|BBM Data| O[LTV Extractor]
-        C -->|BBM Data| P[DTI/LTI Extractor]
-        O -->|Extracted Rules| Q[LTV Validator]
-        P -->|Extracted Rules| R[DTI/LTI Validator]
-        Q -->|Validated Rules| S[BBM Tables]
-        R -->|Validated Rules| S
-        S -->|Write BBM Rules| DB
+    subgraph BBMProcessing["BBM Processing"]
+        C -->|"BBM Data"| O["LTV Extractor"]
+        C -->|"BBM Data"| P["DTI/LTI Extractor"]
+        O -->|"Extracted Rules"| Q["LTV Validator"]
+        P -->|"Extracted Rules"| R["DTI/LTI Validator"]
+        Q -->|"Validated Rules"| S["BBM Tables"]
+        R -->|"Validated Rules"| S
+        S -->|"Write BBM Rules"| DB
     end
 
-    subgraph AICore[AI Analysis and Grounding]
-        C -->|Retrieve Context| D[LangGraph Validator]
-        H[Plotly Charts] -->|Chart Images| D
-        J[Google Search Optional] -->|External Evidence| D
-        M -->|Graph Context| D
-        N -->|Retrieved Context| E[Google Gemini 2.5 Flash Lite]
-        S -->|BBM Rules| D
-        D -->|Raw Data Images| E
-        E -->|Draft Analysis| D
-        D -->|Verified Output| F[Final Analysis]
+    subgraph AICore["AI Analysis and Grounding"]
+        C -->|"Retrieve Context"| D["LangGraph Validator"]
+        H["Plotly Charts"] -->|"Chart Images"| D
+        J["Google Search"] -->|"External Evidence"| D
+        M -->|"Graph Context"| D
+        N -->|"Retrieved Context"| E["Google Gemini 2.5 Flash"]
+        S -->|"BBM Rules"| D
+        D -->|"Raw Data and Images"| E
+        E -->|"Draft Analysis"| D
+        D -->|"Verified Output"| F["Final Analysis"]
     end
 
-    subgraph Presentation[Dashboard Layer]
-        F --> G[Jinja2 Template Engine]
-        C -->|Visual Data| H
-        M -->|Country and Graph Data| G
-        S -->|BBM Tables| G
-        DB -->|Optional Dynamic Data| G
-        G --> I[HTML Dashboard index.html embedded plots]
+    subgraph Presentation["Dashboard Layer"]
+        F --> G["Jinja2 Template Engine"]
+        C -->|"Visual Data"| H
+        M -->|"Country and Graph Data"| G
+        S -->|"BBM Tables"| G
+        DB -->|"Optional Dynamic Data"| G
+        G --> I["HTML Dashboard"]
         H --> I
     end
 

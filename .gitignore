@@ -21,3 +21,6 @@ data/validation_report.json
 # data/*.xlsx
 # data/*.parquet
 .env
+
+# LLM / analysis cache
+cache/

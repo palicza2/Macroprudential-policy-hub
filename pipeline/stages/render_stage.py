@@ -8,11 +8,11 @@ import os
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from render import render_report, df_to_html_table
 from news import fetch_news, build_news_feed_html
-from osii import prepare_osii_by_country, build_osii_table_html, get_osii_countries
+from osii import prepare_osii_by_country, build_osii_table_html, get_osii_countries, build_all_sii_institutions_table_html
 
 logger = logging.getLogger(__name__)
 
@@ -79,9 +79,24 @@ class RenderStage:
             syrb_snapshots_resp = self.supabase_client.table("mv_latest_syrb_snapshot").select("*").execute()
             osii_snapshots_resp = self.supabase_client.table("mv_latest_osii_snapshot").select("*").execute()
             
+            # Fetch actual O-SII banks to calculate min/max rates
+            osii_banks_resp = self.supabase_client.table("osii_banks").select("*").filter("status", "eq", "Active").execute()
+            
             ccyb_snapshots = {row["country_iso2"]: row for row in ccyb_snapshots_resp.data}
             syrb_snapshots = {row["country_iso2"]: row for row in syrb_snapshots_resp.data}
             osii_snapshots = {row["country_iso2"]: row for row in osii_snapshots_resp.data}
+            
+            # Group O-SII banks by country to calculate min/max
+            osii_by_country_iso2 = {}
+            for bank in osii_banks_resp.data:
+                iso2 = bank.get("country_iso2")
+                if not iso2:
+                    continue
+                rate = float(bank.get("rate", 0)) if bank.get("rate") else 0.0
+                if rate > 0:  # Only count banks with positive rates
+                    if iso2 not in osii_by_country_iso2:
+                        osii_by_country_iso2[iso2] = []
+                    osii_by_country_iso2[iso2].append(rate)
             
             # Fetch historical data
             ccyb_decisions_resp = self.supabase_client.table("ccyb_decisions").select("*").order("effective_date").execute()
@@ -142,10 +157,7 @@ class RenderStage:
                         "type": "General" if syrb_snap.get("general_rate", 0) > 0 else ("Sectoral" if syrb_snap.get("sectoral_rate", 0) > 0 else "General"),
                         "status": "Active" if syrb_snap.get("total_rate", 0) > 0 else "Inactive",
                     } if syrb_snap else None,
-                    "osii": {
-                        "rate": float(osii_snap.get("total_rate", 0)) if osii_snap.get("total_rate") else 0.0,  # Materialized View uses total_rate
-                        "status": "Active" if osii_snap.get("total_rate", 0) > 0 else "Inactive",
-                    } if osii_snap else None,
+                    "osii": self._build_osii_status(osii_snap, osii_by_country_iso2.get(iso2, [])),
                     "bbm": bbm_types,
                     "total_capital": None,  # Would need capital_overall calculation
                 }
@@ -203,6 +215,52 @@ class RenderStage:
         except Exception as exc:
             logger.error(f"Error fetching countries data from Supabase: {exc}", exc_info=True)
             return {}
+    
+    def _build_osii_status(self, osii_snap: Dict[str, Any], osii_rates: List[float]) -> Dict[str, Any]:
+        """
+        Build O-SII status with min/max rates for proper display.
+        If rates are available, calculate min/max. Otherwise use snapshot total_rate.
+        Special handling: if min is 0 and max is very small (like 0.02), show "0-2%".
+        """
+        if not osii_snap:
+            return None
+        
+        total_rate = float(osii_snap.get("total_rate", 0)) if osii_snap.get("total_rate") else 0.0
+        
+        if osii_rates and len(osii_rates) > 0:
+            # Calculate min/max from actual bank rates
+            min_rate = min(osii_rates)
+            max_rate = max(osii_rates)
+            
+            # Special case: if min is 0 and max is very small (like 0.02), show "0-2%"
+            if min_rate < 0.01 and max_rate < 0.05:
+                max_int = int(max_rate * 100)  # Convert to integer percentage (0.02 -> 2)
+                rate_display = f"0-{max_int}%"
+            elif abs(max_rate - min_rate) < 0.01:
+                # If min and max are very close, show as single value
+                rate_display = f"{max_rate:.2f}%"
+            else:
+                # Round min down and max up to nearest integer for range display
+                min_int = int(min_rate)
+                max_int = int(max_rate) + (1 if max_rate % 1 > 0 else 0)
+                rate_display = f"{min_int}-{max_int}%"
+            
+            return {
+                "rate": max_rate,  # Backward compatibility
+                "rate_min": min_rate,
+                "rate_max": max_rate,
+                "rate_display": rate_display,
+                "status": "Active" if max_rate > 0 else "Inactive",
+            }
+        else:
+            # Fallback to snapshot total_rate
+            return {
+                "rate": total_rate,
+                "rate_min": total_rate,
+                "rate_max": total_rate,
+                "rate_display": f"{total_rate:.2f}%" if total_rate > 0 else "0%",
+                "status": "Active" if total_rate > 0 else "Inactive",
+            }
     
     def process(
         self,
@@ -325,6 +383,7 @@ class RenderStage:
         osii_by_country = prepare_osii_by_country(data.get('osii_df'))
         osii_countries = get_osii_countries(data.get('osii_df'))
         osii_table_html = build_osii_table_html(osii_by_country, selected_country="Austria")
+        all_sii_table_html = build_all_sii_institutions_table_html(data.get('osii_df'))
         
         # Fetch countries_data from Supabase if enabled, otherwise use pipeline data
         if self.use_supabase:
@@ -357,6 +416,7 @@ class RenderStage:
             knowledge_graph_json=knowledge_graph_json,
             osii_countries=osii_countries,
             osii_table_html=osii_table_html,
+            all_sii_table_html=all_sii_table_html,
             osii_by_country=osii_by_country,
             supabase_url=supabase_url,
             supabase_key=supabase_key,

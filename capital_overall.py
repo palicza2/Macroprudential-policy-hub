@@ -61,18 +61,25 @@ def build_capital_overall_df(
         syrb_general = gen.groupby("iso2")["rate_numeric"].max() if not gen.empty else pd.Series(dtype=float)
         syrb_sectoral = sec.groupby("iso2")["rate_numeric"].max() if not sec.empty else pd.Series(dtype=float)
 
-    # --- GSII/O-SII (max per country) ---
+    # --- GSII/O-SII: highest of O-SII or G-SII buffer per country, same scale as other buffers (e.g. 2.5 for 2.5%) ---
     osii_series = pd.Series(dtype=float)
     if osii_df is not None and not osii_df.empty and "iso2" in osii_df.columns:
         df = osii_df.copy()
-        df["rate_numeric"] = pd.to_numeric(df.get("rate_numeric"), errors="coerce").fillna(0.0)
         df["iso2"] = df["iso2"].astype(str)
-        # Csak aktív méréseket számoljuk (status != Revoked/Deactivated)
         if "status" in df.columns:
             status_str = df["status"].astype(str)
             mask_active = ~status_str.str.contains("Revoked|Deactivated|Expired|No longer", case=False, na=False)
             df = df[mask_active].copy()
-        osii_series = df.groupby("iso2")["rate_numeric"].max()
+        gsii = pd.to_numeric(df.get("gsii_rate"), errors="coerce").fillna(0.0)
+        osii = pd.to_numeric(df.get("osii_rate"), errors="coerce").fillna(0.0)
+        df["effective_rate"] = gsii.combine(osii, max)
+        if (df["effective_rate"] == 0).all() and "rate_numeric" in df.columns:
+            df["effective_rate"] = pd.to_numeric(df["rate_numeric"], errors="coerce").fillna(0.0)
+        # Normalize to percentage scale (2.5 for 2.5%): if values are decimal (e.g. 0.025), multiply by 100
+        max_rate = df["effective_rate"].max()
+        if max_rate > 0 and max_rate < 1:
+            df["effective_rate"] = df["effective_rate"] * 100
+        osii_series = df.groupby("iso2")["effective_rate"].max()
 
     # union of iso2s
     countries = sorted(set(ccyb_series.index) | set(syrb_general.index) | set(syrb_sectoral.index) | set(osii_series.index))
