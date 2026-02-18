@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 import pandas as pd
 from pathlib import Path
 from utils import SuppressOutput
-from utils.dataframe import ccyb_change_only_points
+from utils.dataframe import ccyb_change_only_points, get_latest_quarter_end
 
 class Visualizer:
     def __init__(self, figures_dir: Path):
@@ -51,12 +51,19 @@ class Visualizer:
                 df_plot = df_plot.sort_values(['country', 'date']).copy()
             fig = go.Figure()
             country_col = 'country' if 'country' in df_plot.columns else 'iso2'
+            latest_q_end = get_latest_quarter_end()
             for country in df_plot[country_col].unique():
                 country_data = df_plot[df_plot[country_col] == country].sort_values('date')
                 if country_data.empty:
                     continue
                 dates = country_data['date'].tolist()
                 rates = country_data['rate'].tolist()
+                # Extrapolate last rate to latest quarter end (no rate change assumed)
+                if dates and rates:
+                    last_ts = pd.Timestamp(dates[-1])
+                    if last_ts < latest_q_end:
+                        dates = dates + [latest_q_end]
+                        rates = rates + [rates[-1]]
                 x_vals, y_vals = [], []
                 for i in range(len(dates)):
                     x_vals.append(dates[i])

@@ -313,6 +313,21 @@ function initNewsFilters() {
     });
 }
 
+function getFlagEmoji(iso2) {
+    if (!iso2 || iso2.length !== 2) return '';
+    var a = iso2.toUpperCase().charCodeAt(0) - 65 + 0x1F1E6;
+    var b = iso2.toUpperCase().charCodeAt(1) - 65 + 0x1F1E6;
+    if (a < 0x1F1E6 || a > 0x1F1FF || b < 0x1F1E6 || b > 0x1F1FF) return '';
+    return String.fromCodePoint(a, b);
+}
+
+function getFlagImgUrl(iso2) {
+    if (!iso2 || iso2.length !== 2 || !iso2.match(/^[a-zA-Z]{2}$/)) return '';
+    var code = iso2.toUpperCase();
+    var urlCode = (code === 'UK' || code === 'GB') ? 'gb' : code.toLowerCase();
+    return 'https://flagcdn.com/w40/' + urlCode + '.png';
+}
+
 function initCountryProfiles() {
     var selector = document.getElementById('country-selector');
     var content = document.getElementById('country-profile-content');
@@ -334,7 +349,7 @@ function initCountryProfiles() {
     
     var countries = Object.keys(countriesData).sort();
     
-    // Populate selector
+    // Populate native select (value only; used for form behavior)
     countries.forEach(function(country) {
         var option = document.createElement('option');
         option.value = country;
@@ -342,11 +357,88 @@ function initCountryProfiles() {
         selector.appendChild(option);
     });
     
+    // Build custom dropdown with flag images (native select doesn't support img in options)
+    var wrapper = document.createElement('div');
+    wrapper.className = 'country-selector-wrapper';
+    var trigger = document.createElement('div');
+    trigger.className = 'country-selector-trigger';
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    var triggerLabel = document.createElement('span');
+    triggerLabel.className = 'country-selector-trigger-label';
+    triggerLabel.textContent = '-- Select Country --';
+    trigger.appendChild(triggerLabel);
+    var dropdown = document.createElement('ul');
+    dropdown.className = 'country-selector-dropdown';
+    dropdown.setAttribute('role', 'listbox');
+    countries.forEach(function(country) {
+        var iso2 = (countriesData[country] && countriesData[country].iso2) ? countriesData[country].iso2 : '';
+        var flagUrl = getFlagImgUrl(iso2);
+        var li = document.createElement('li');
+        li.setAttribute('role', 'option');
+        li.dataset.country = country;
+        li.innerHTML = flagUrl
+            ? '<img src="' + flagUrl + '" alt="" class="country-flag-in-select" width="20" height="15"> <span>' + country + '</span>'
+            : '<span>' + country + '</span>';
+        dropdown.appendChild(li);
+    });
+    wrapper.appendChild(trigger);
+    wrapper.appendChild(dropdown);
+    selector.parentNode.insertBefore(wrapper, selector);
+    selector.style.position = 'absolute';
+    selector.style.opacity = '0';
+    selector.style.pointerEvents = 'none';
+    selector.style.width = '0';
+    selector.style.height = '0';
+    
+    function updateTriggerDisplay() {
+        var val = selector.value;
+        if (!val) {
+            triggerLabel.textContent = '-- Select Country --';
+            triggerLabel.innerHTML = '-- Select Country --';
+            return;
+        }
+        var iso2 = (countriesData[val] && countriesData[val].iso2) ? countriesData[val].iso2 : '';
+        var flagUrl = getFlagImgUrl(iso2);
+        if (flagUrl) {
+            triggerLabel.innerHTML = '<img src="' + flagUrl + '" alt="" class="country-flag-in-select" width="20" height="15"> <span>' + val + '</span>';
+        } else {
+            triggerLabel.textContent = val;
+        }
+    }
+    
+    trigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var open = wrapper.classList.toggle('country-selector-open');
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    dropdown.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    dropdown.querySelectorAll('li').forEach(function(li) {
+        li.addEventListener('click', function() {
+            var country = li.dataset.country;
+            selector.value = country;
+            selector.dispatchEvent(new Event('change', { bubbles: true }));
+            updateTriggerDisplay();
+            wrapper.classList.remove('country-selector-open');
+            trigger.setAttribute('aria-expanded', 'false');
+        });
+    });
+    document.addEventListener('click', function() {
+        wrapper.classList.remove('country-selector-open');
+        trigger.setAttribute('aria-expanded', 'false');
+    });
+    selector.addEventListener('change', function() {
+        updateTriggerDisplay();
+    });
+    
     // Default country: Austria (or first country if Austria not available)
     var defaultCountry = 'Austria';
     if (countries.indexOf(defaultCountry) === -1 && countries.length > 0) {
         defaultCountry = countries[0];
     }
+    selector.value = defaultCountry;
     
     // Handle country selection
     selector.addEventListener('change', async function(e) {
@@ -408,11 +500,15 @@ function initCountryProfiles() {
         // Load selected/default country
         if (selectedCountry) {
             selector.value = selectedCountry;
+            updateTriggerDisplay();
             var profileData = countriesData[selectedCountry] || null;
             await loadCountryProfile(selectedCountry, profileData);
             content.style.display = 'block';
         }
     }
+    
+    // Initial trigger display (default or placeholder)
+    updateTriggerDisplay();
     
     // Check on initial load
     checkHashForCountry();
@@ -525,18 +621,18 @@ function renderCurrentStatus(status) {
     });
     grid.appendChild(syrbCard);
     
-    // O-SII Card - min-max intervallum
+    // O-SII Card - use rate_display (percentages ×100, e.g. 1-2%) or build from rate_min/rate_max
     var osiiRateDisplay = '0%';
-    if (status.osii && status.osii.rate_min !== undefined && status.osii.rate_max !== undefined) {
-        if (status.osii.rate_max > 0) {
-            if (status.osii.rate_min === status.osii.rate_max) {
-                osiiRateDisplay = status.osii.rate_max.toFixed(2) + '%';
-            } else {
-                osiiRateDisplay = status.osii.rate_min.toFixed(2) + '-' + status.osii.rate_max.toFixed(2) + '%';
-            }
+    if (status.osii && status.osii.rate_display) {
+        osiiRateDisplay = status.osii.rate_display;
+    } else if (status.osii && status.osii.rate_min !== undefined && status.osii.rate_max !== undefined && status.osii.rate_max > 0) {
+        if (status.osii.rate_min === status.osii.rate_max) {
+            osiiRateDisplay = (status.osii.rate_max === Math.floor(status.osii.rate_max) ? status.osii.rate_max + '%' : status.osii.rate_max.toFixed(2) + '%');
+        } else {
+            osiiRateDisplay = status.osii.rate_min.toFixed(0) + '-' + status.osii.rate_max.toFixed(0) + '%';
         }
-    } else if (status.osii?.rate) {
-        osiiRateDisplay = status.osii.rate.toFixed(2) + '%';
+    } else if (status.osii?.rate && status.osii.rate > 0) {
+        osiiRateDisplay = (status.osii.rate === Math.floor(status.osii.rate) ? status.osii.rate + '%' : status.osii.rate.toFixed(2) + '%');
     }
     
     var osiiCard = createKeyMeasureCard({
@@ -787,18 +883,38 @@ function renderActiveMeasuresTabbed(measures) {
     initMeasuresTabs();
 }
 
+// Map full measure_type (from ESRB/data) to card key — aligned with BBM overview table (RENAME_MAP)
+function bbmMeasureTypeToCardKey(measureType) {
+    if (!measureType) return null;
+    var t = String(measureType).trim();
+    if (/LTV|loan-to-value/i.test(t)) return 'LTV';
+    if (/DSTI|debt-service-to-income/i.test(t)) return 'DSTI';
+    if (/DTI|debt-to-income/i.test(t)) return 'DTI/LTI';
+    if (/LTI|loan-to-income/i.test(t)) return 'DTI/LTI';
+    if (/maturity|loan maturity/i.test(t)) return 'Maturity';
+    if (/flexibility|flex\.? quota/i.test(t)) return 'Flex.';
+    if (/stress test|sensitivity test/i.test(t)) return 'Stress T.';
+    if (/amortisation|amort\.?/i.test(t)) return 'Amort.';
+    return null;
+}
+
+// Card definitions in same order as BBM overview (LTV, DSTI, DTI/LTI, Maturity, Flex., Stress test)
+var BBM_CARD_TYPES = [
+    { key: 'LTV', icon: '🏠', label: 'LTV' },
+    { key: 'DSTI', icon: '📊', label: 'DSTI' },
+    { key: 'DTI/LTI', icon: '📊', label: 'DTI/LTI' },
+    { key: 'Maturity', icon: '⏰', label: 'Maturity limit' },
+    { key: 'Flex.', icon: '📐', label: 'Flexibility measures' },
+    { key: 'Stress T.', icon: '🔬', label: 'Stress test' }
+];
+
 function renderBBMMeasures(bbmMeasures, container) {
     container.innerHTML = '';
     
-    // Szűrjük ki a nem aktív eszközöket
     var activeBBM = bbmMeasures.filter(function(bbm) {
         var status = (bbm.status || '').toString().toLowerCase();
-        // Kihagyjuk a "not active", "inactive", "revoked", stb. státuszú eszközöket
-        return !status || (!status.includes('not active') && 
-                          !status.includes('inactive') && 
-                          !status.includes('revoked') && 
-                          !status.includes('deactivated') &&
-                          !status.includes('expired'));
+        return !status || (!status.includes('not active') && !status.includes('inactive') &&
+                          !status.includes('revoked') && !status.includes('deactivated') && !status.includes('expired'));
     });
     
     if (!activeBBM || activeBBM.length === 0) {
@@ -806,40 +922,27 @@ function renderBBMMeasures(bbmMeasures, container) {
         return;
     }
     
-    // Csoportosítás típus szerint
-    var groupedByType = {};
+    // Group by card key (aligned with BBM overview table columns)
+    var groupedByCardKey = {};
     activeBBM.forEach(function(bbm) {
-        var type = bbm.type || 'Other';
-        if (!groupedByType[type]) {
-            groupedByType[type] = [];
-        }
-        groupedByType[type].push(bbm);
+        var cardKey = bbmMeasureTypeToCardKey(bbm.type);
+        if (!cardKey || cardKey === 'Amort.') return; // Amort. not shown as card (like overview)
+        if (!groupedByCardKey[cardKey]) groupedByCardKey[cardKey] = [];
+        groupedByCardKey[cardKey].push(bbm);
     });
     
-    // Map BBM types to icons and labels
-    var bbmTypeMap = {
-        'LTV': { icon: '🏠', label: 'LTV Limits (Loan-to-Value)' },
-        'DTI': { icon: '📊', label: 'DTI Ratio (Debt-to-Income)' },
-        'LTI': { icon: '📊', label: 'LTI Ratio (Loan-to-Income)' },
-        'DSTI': { icon: '📊', label: 'DSTI Ratio (Debt-Service-to-Income)' },
-        'Maturity': { icon: '⏰', label: 'Maturity Limits (Loan Duration)' },
-        'Other': { icon: '📋', label: 'Other BBM' }
-    };
-    
-    // Minden típusra egy kártya, összevont leírásokkal
-    Object.keys(groupedByType).forEach(function(type) {
-        var typeMeasures = groupedByType[type];
-        var typeInfo = bbmTypeMap[type] || bbmTypeMap['Other'];
+    // Render one card per BBM_CARD_TYPES that has measures (order matches overview)
+    BBM_CARD_TYPES.forEach(function(cardDef) {
+        var typeMeasures = groupedByCardKey[cardDef.key];
+        if (!typeMeasures || typeMeasures.length === 0) return;
         
-        // Összevonjuk a leírásokat - kivonjuk a lényeges információkat
         var summary = extractBBMSummary(typeMeasures);
-        
         var card = document.createElement('div');
         card.className = 'bbm-measure-card';
         card.innerHTML = '<div class="bbm-measure-header">' +
                         '<div class="bbm-measure-title">' +
-                        '<span class="bbm-measure-icon">' + typeInfo.icon + '</span>' +
-                        '<span class="bbm-measure-name">' + typeInfo.label + '</span>' +
+                        '<span class="bbm-measure-icon">' + cardDef.icon + '</span>' +
+                        '<span class="bbm-measure-name">' + cardDef.label + '</span>' +
                         '</div>' +
                         '<span class="bbm-measure-status-badge active">ACTIVE</span>' +
                         '</div>' +
@@ -966,13 +1069,18 @@ function renderCapitalMeasures(measures, container) {
         container.appendChild(syrbCard);
     }
     
-    // O-SII - min-max intervallum + bankok listája
+    // O-SII - min-max in percentage (e.g. 1-2%); bank list with rates ×100
     if (measures.osii && measures.osii.rate_max > 0) {
         hasCapital = true;
-        var osiiRateDisplay = measures.osii.rate_min === measures.osii.rate_max 
-            ? measures.osii.rate_max.toFixed(2) + '%'
-            : measures.osii.rate_min.toFixed(2) + '-' + measures.osii.rate_max.toFixed(2) + '%';
-        
+        var osiiRateDisplay = measures.osii.rate_display || (
+            measures.osii.rate_min === measures.osii.rate_max
+                ? (measures.osii.rate_max === Math.floor(measures.osii.rate_max) ? measures.osii.rate_max + '%' : measures.osii.rate_max.toFixed(2) + '%')
+                : (measures.osii.rate_min.toFixed(0) + '-' + measures.osii.rate_max.toFixed(0) + '%')
+        );
+        function osiiRatePct(r) {
+            var x = parseFloat(r) || 0;
+            return (x > 0 && x < 1) ? (x * 100).toFixed(2) : x.toFixed(2);
+        }
         // Bankok listája
         var banksContent = '';
         if (measures.osii.banks && measures.osii.banks.length > 0) {
@@ -980,7 +1088,7 @@ function renderCapitalMeasures(measures, container) {
             measures.osii.banks.forEach(function(bank) {
                 banksContent += '<div class="osii-bank-item">' +
                               '<span class="osii-bank-name">' + (bank.name || 'N/A') + '</span>' +
-                              '<span class="osii-bank-rate">' + (bank.rate || 0).toFixed(2) + '%</span>' +
+                              '<span class="osii-bank-rate">' + osiiRatePct(bank.rate || 0) + '%</span>' +
                               (bank.buffer_type ? '<span class="osii-bank-type">(' + bank.buffer_type + ')</span>' : '') +
                               '</div>';
             });
@@ -1230,9 +1338,12 @@ function renderActiveMeasures(measures) {
         container.appendChild(bbmCard);
     }
     
-    // O-SII Section - csak 1 card, ha aktív
-    if (measures.osii && measures.osii.rate > 0) {
+    // O-SII Section - csak 1 card, ha aktív (rate in % scale, e.g. 1-2%)
+    if (measures.osii && (measures.osii.rate > 0 || (measures.osii.rate_max && measures.osii.rate_max > 0))) {
         hasMeasures = true;
+        var osiiRateStr = measures.osii.rate_display || (
+            (measures.osii.rate > 0 && measures.osii.rate < 1 ? (measures.osii.rate * 100).toFixed(2) : (measures.osii.rate || 0).toFixed(2)) + '%'
+        );
         var osiiCard = document.createElement('div');
         osiiCard.className = 'measure-card measure-osii';
         osiiCard.innerHTML = '<div class="measure-header">' +
@@ -1241,7 +1352,7 @@ function renderActiveMeasures(measures) {
                             '<span class="measure-name">Other Systemically Important Institutions (O-SII)</span>' +
                             (measures.osii.count ? '<span class="measure-count">(' + measures.osii.count + ' institution' + (measures.osii.count > 1 ? 's' : '') + ')</span>' : '') +
                             '</div>' +
-                            '<div class="measure-rate">' + (measures.osii.rate || 0).toFixed(2) + '%</div>' +
+                            '<div class="measure-rate">' + osiiRateStr + '</div>' +
                             '</div>' +
                             '<div class="measure-body">' +
                             '<div class="measure-row"><span class="measure-label">Status:</span><span class="measure-value">' + (measures.osii.status || 'Active') + '</span></div>' +

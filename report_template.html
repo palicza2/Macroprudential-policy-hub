@@ -488,15 +488,14 @@
         </section>
 
         <section id="tab-country-profiles" class="tab-content">
-            <h1 id="country-profiles-section" class="section-title">Country Profiles</h1>
-            
-            <div class="card">
-                <div class="card-title">
-                    <span>Select Country</span>
+            <div class="country-profiles-header">
+                <h1 id="country-profiles-section" class="section-title">Country Profiles</h1>
+                <div class="country-profiles-filter">
+                    <label for="country-selector" class="country-profiles-filter-label">Select Country</label>
+                    <select id="country-selector" class="chart-input country-selector-input">
+                        <option value="">-- Select Country --</option>
+                    </select>
                 </div>
-                <select id="country-selector" class="chart-input" style="width: 100%; max-width: 400px; margin-top: 12px;">
-                    <option value="">-- Select Country --</option>
-                </select>
             </div>
             
             <div id="country-profile-content" style="display: none;">

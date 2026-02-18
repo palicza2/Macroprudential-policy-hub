@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 
-from render import render_report, df_to_html_table
+from render import render_report, df_to_html_table, render_capital_overall_table
 from news import fetch_news, build_news_feed_html
 from osii import prepare_osii_by_country, build_osii_table_html, get_osii_countries, build_all_sii_institutions_table_html
 
@@ -219,46 +219,46 @@ class RenderStage:
     def _build_osii_status(self, osii_snap: Dict[str, Any], osii_rates: List[float]) -> Dict[str, Any]:
         """
         Build O-SII status with min/max rates for proper display.
-        If rates are available, calculate min/max. Otherwise use snapshot total_rate.
-        Special handling: if min is 0 and max is very small (like 0.02), show "0-2%".
+        Rates are normalized to percentage scale (e.g. 1.5 for 1.5%) for display.
         """
         if not osii_snap:
             return None
         
         total_rate = float(osii_snap.get("total_rate", 0)) if osii_snap.get("total_rate") else 0.0
-        
+        # Normalize total_rate to percentage scale if stored as decimal
+        if 0 < total_rate < 1:
+            total_rate = total_rate * 100
+
         if osii_rates and len(osii_rates) > 0:
-            # Calculate min/max from actual bank rates
             min_rate = min(osii_rates)
             max_rate = max(osii_rates)
-            
-            # Special case: if min is 0 and max is very small (like 0.02), show "0-2%"
-            if min_rate < 0.01 and max_rate < 0.05:
-                max_int = int(max_rate * 100)  # Convert to integer percentage (0.02 -> 2)
-                rate_display = f"0-{max_int}%"
+            # Normalize to percentage scale (e.g. 0.01 -> 1, 0.02 -> 2)
+            if max_rate > 0 and max_rate < 1:
+                min_rate = min_rate * 100
+                max_rate = max_rate * 100
+
+            if max_rate < 0.01:
+                rate_display = "0%"
             elif abs(max_rate - min_rate) < 0.01:
-                # If min and max are very close, show as single value
-                rate_display = f"{max_rate:.2f}%"
+                rate_display = f"{int(max_rate)}%" if max_rate == int(max_rate) else f"{max_rate:.2f}%"
+            elif min_rate < 0.01:
+                rate_display = f"0-{int(round(max_rate))}%"
             else:
-                # Round min down and max up to nearest integer for range display
-                min_int = int(min_rate)
-                max_int = int(max_rate) + (1 if max_rate % 1 > 0 else 0)
-                rate_display = f"{min_int}-{max_int}%"
-            
+                rate_display = f"{int(round(min_rate))}-{int(round(max_rate))}%"
+
             return {
-                "rate": max_rate,  # Backward compatibility
+                "rate": max_rate,
                 "rate_min": min_rate,
                 "rate_max": max_rate,
                 "rate_display": rate_display,
                 "status": "Active" if max_rate > 0 else "Inactive",
             }
         else:
-            # Fallback to snapshot total_rate
             return {
                 "rate": total_rate,
                 "rate_min": total_rate,
                 "rate_max": total_rate,
-                "rate_display": f"{total_rate:.2f}%" if total_rate > 0 else "0%",
+                "rate_display": f"{int(total_rate)}%" if total_rate == int(total_rate) else f"{total_rate:.2f}%" if total_rate > 0 else "0%",
                 "status": "Active" if total_rate > 0 else "Inactive",
             }
     
@@ -357,7 +357,7 @@ class RenderStage:
             "bbm_decisions": df_to_html_table(bbm_data.get('bbm_decisions')),
             "ltv_table": df_to_html_table(bbm_data.get('ltv_table'), table_type="ltv"),
             "dti_lti_compare": df_to_html_table(bbm_data.get('dti_lti_compare'), table_type="dti_lti"),
-            "capital_overall": df_to_html_table(capital_overall_df),
+            "capital_overall": render_capital_overall_table(capital_overall_df) if capital_overall_df is not None and not capital_overall_df.empty else "<p class='no-data'>No Data</p>",
         }
         
         plot_files_input = {

@@ -5,7 +5,7 @@ import pandas as pd
 from typing import Dict, List, Any
 from datetime import datetime, timedelta
 
-from utils.dataframe import ccyb_change_only_points
+from utils.dataframe import ccyb_change_only_points, get_latest_quarter_end
 
 
 def get_current_status(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
@@ -109,11 +109,21 @@ def get_current_status(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str,
             if not active_osii.empty:
                 min_rate = float(active_osii['rate_numeric'].min())
                 max_rate = float(active_osii['rate_numeric'].max())
-                
+                # Normalize to percentage scale (e.g. 0.01-0.02 -> 1-2%)
+                if max_rate > 0 and max_rate < 1:
+                    min_rate = min_rate * 100
+                    max_rate = max_rate * 100
+                if abs(max_rate - min_rate) < 0.01:
+                    rate_display = f"{int(max_rate)}%" if max_rate == int(max_rate) else f"{max_rate:.2f}%"
+                elif min_rate < 0.01:
+                    rate_display = f"0-{int(round(max_rate))}%"
+                else:
+                    rate_display = f"{int(round(min_rate))}-{int(round(max_rate))}%"
                 status['osii'] = {
                     'rate_min': min_rate,
                     'rate_max': max_rate,
-                    'rate': max_rate,  # Backward compatibility - a max értéket használjuk
+                    'rate': max_rate,
+                    'rate_display': rate_display,
                     'count': len(active_osii),
                     'status': 'Active',
                 }
@@ -174,6 +184,18 @@ def get_historical_evolution(country: str, data: Dict[str, pd.DataFrame]) -> Dic
             if 'credit_gap' in country_ccyb.columns:
                 cols.append('credit_gap')
             evolution['ccyb'] = country_ccyb[[c for c in cols if c in country_ccyb.columns]].copy()
+            # Extrapolate last rate to latest quarter end (no rate change assumed)
+            latest_q_end = get_latest_quarter_end()
+            last_date = evolution['ccyb']['date'].iloc[-1]
+            if pd.Timestamp(last_date) < latest_q_end:
+                last_rate = float(evolution['ccyb']['rate'].iloc[-1])
+                extra = {'date': latest_q_end, 'rate': last_rate}
+                if 'credit_gap' in evolution['ccyb'].columns:
+                    extra['credit_gap'] = evolution['ccyb']['credit_gap'].iloc[-1]
+                evolution['ccyb'] = pd.concat([
+                    evolution['ccyb'],
+                    pd.DataFrame([extra])
+                ], ignore_index=True)
     
     # SyRB trend
     syrb_df = data.get('syrb_df')

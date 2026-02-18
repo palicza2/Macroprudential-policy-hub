@@ -9,6 +9,79 @@ from jinja2 import Environment, FileSystemLoader
 from exports import ensure_report_dirs, write_download, write_partial, write_plot_html
 
 
+def _iso2_to_flag_img(iso2: str) -> str:
+    """Return an <img> tag for the country flag (works where Unicode flag emoji does not)."""
+    if not iso2 or len(iso2) != 2 or not iso2.isalpha():
+        return ""
+    code = iso2.upper()
+    # flagcdn.com uses ISO 3166-1 alpha-2: UK display code -> gb for URL
+    url_code = "gb" if code == "UK" else code.lower()
+    url = f"https://flagcdn.com/w40/{url_code}.png"
+    return f'<img src="{url}" alt="" width="24" height="18" class="country-flag" style="vertical-align:middle;margin-right:4px">'
+
+
+def _normalize_capital_country_code(value: Any) -> str:
+    """Return two-letter country code for capital stack table. GB -> UK, Norway -> NO."""
+    if value is None or pd.isna(value):
+        return ""
+    s = str(value).strip()
+    if len(s) == 2 and s.isalpha():
+        if s.upper() == "GB":
+            return "UK"
+        return s.upper()
+    # Resolve names to ISO2
+    if "norway" in s.lower() or "norwegian" in s.lower():
+        return "NO"
+    try:
+        import country_converter as coco
+        out = coco.convert(names=[s], to="ISO2", not_found=None)
+        if out and (isinstance(out, list) and out[0] or isinstance(out, str) and out):
+            code = out[0] if isinstance(out, list) else out
+            if code and len(str(code)) == 2:
+                return "UK" if str(code).upper() == "GB" else str(code).upper()
+    except Exception:
+        pass
+    return s[:2].upper() if len(s) >= 2 else s.upper()
+
+
+def render_capital_overall_table(df: pd.DataFrame) -> str:
+    """
+    Render capital stack table: two-letter country codes (UK not GB, NO for Norway),
+    flags beside codes, buffer columns as decimals rounded to 2 digits with comma (e.g. 2,50).
+    """
+    if df is None or df.empty:
+        return "<p class='no-data'>No Data</p>"
+    if "ISO2" not in df.columns:
+        return df.to_html(index=False, classes="display-table", escape=False)
+
+    numeric_cols = [c for c in ["CCoB", "CCyB", "GSII/O-SII", "SyRB", "sSyRB", "TOTAL"] if c in df.columns]
+    rows = []
+    for _, row in df.iterrows():
+        raw_iso2 = row.get("ISO2", "")
+        code = _normalize_capital_country_code(raw_iso2)
+        if len(code) != 2:
+            continue
+        flag_img = _iso2_to_flag_img(code)
+        cell_country = (flag_img + " " + code) if flag_img else code
+        cells = [f"<td>{cell_country}</td>"]
+        for col in numeric_cols:
+            val = row.get(col, 0)
+            try:
+                num = float(val)
+                formatted = f"{num:.2f}".replace(".", ",")
+            except (TypeError, ValueError):
+                formatted = str(val)
+            cells.append(f"<td class='rate-cell'>{formatted}</td>")
+        rows.append("<tr>" + "".join(cells) + "</tr>")
+
+    if not rows:
+        return "<p class='no-data'>No Data</p>"
+    header_cells = ["<th>Country</th>"] + [f"<th>{c}</th>" for c in numeric_cols]
+    thead = "<thead><tr>" + "".join(header_cells) + "</tr></thead>"
+    tbody = "<tbody>" + "".join(rows) + "</tbody>"
+    return f"<table border='1' class='dataframe display-table capital-overall-table'>\n{thead}\n{tbody}\n</table>"
+
+
 def df_to_html_table(df: pd.DataFrame, table_type: str = None) -> str:
     """
     Convert DataFrame to HTML table.

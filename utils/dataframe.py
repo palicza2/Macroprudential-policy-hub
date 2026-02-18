@@ -4,7 +4,19 @@ Data cleaning and manipulation functions.
 """
 
 import re
+import calendar
+from datetime import datetime
+
 import pandas as pd
+
+
+def get_latest_quarter_end():
+    """Return end date of the current quarter (assumed no rate change until then)."""
+    now = datetime.now()
+    q = (now.month - 1) // 3 + 1
+    end_month = 3 * q
+    last_day = calendar.monthrange(now.year, end_month)[1]
+    return pd.Timestamp(datetime(now.year, end_month, last_day))
 
 
 def clean_columns(df):
