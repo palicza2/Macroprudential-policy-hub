@@ -2119,3 +2119,11 @@ h2::before {
 .reciprocation-table2 th { font-size: 0.85rem; }
 .reciprocation-reci { background: #dcfce7; color: #166534; font-weight: 500; }
 .reciprocation-neci { background: #fee2e2; color: #991b1b; }
+/* Table 2: status dots only */
+.reciprocation-table2 .reciprocation-cell { text-align: center; padding: 6px 4px; vertical-align: middle; }
+.reciprocation-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; }
+.reciprocation-dot-reci { background: #22c55e; }
+.reciprocation-dot-neci { background: #ef4444; }
+.reciprocation-dot-na { background: #94a3b8; }
+.reciprocation-legend { margin-top: 10px; font-size: 0.8rem; color: var(--text-muted); }
+.reciprocation-legend .reciprocation-dot { margin-right: 2px; vertical-align: middle; }

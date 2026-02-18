@@ -175,13 +175,25 @@ def render_reciprocation_table2(measures_df: Optional[pd.DataFrame], matrix_df: 
         cells = [f"<td class='reciprocation-ref'>{ref}</td>", f"<td>{act}</td>"]
         for cc in country_columns:
             if cc not in matrix_df.columns:
-                cells.append("<td>—</td>")
+                cells.append("<td class='reciprocation-cell'>—</td>")
                 continue
             val = matrix_df[cc].iloc[i] if i < len(matrix_df) else "—"
-            cls = "reciprocation-reci" if val == "Reciprocated" else ("reciprocation-neci" if val == "Not reciprocated" else "")
-            cells.append(f"<td class='{cls}'>{val}</td>")
+            if val == "Reciprocated":
+                icon = "<span class='reciprocation-dot reciprocation-dot-reci' title='Reciprocated'></span>"
+            elif val == "Not reciprocated":
+                icon = "<span class='reciprocation-dot reciprocation-dot-neci' title='Not reciprocated'></span>"
+            else:
+                icon = "<span class='reciprocation-dot reciprocation-dot-na' title='—'></span>"
+            cells.append(f"<td class='reciprocation-cell'>{icon}</td>")
         html_rows.append("<tr>" + "".join(cells) + "</tr>")
 
     thead = "<thead>" + html_rows[0] + "</thead>"
     tbody = "<tbody>" + "".join(html_rows[1:]) + "</tbody>"
-    return f"<table border='1' class='dataframe display-table reciprocation-table reciprocation-table2'>\n{thead}\n{tbody}\n</table>"
+    legend = (
+        "<p class='reciprocation-legend'>"
+        "<span class='reciprocation-dot reciprocation-dot-reci'></span> Reciprocated &nbsp; "
+        "<span class='reciprocation-dot reciprocation-dot-neci'></span> Not reciprocated &nbsp; "
+        "<span class='reciprocation-dot reciprocation-dot-na'></span> —"
+        "</p>"
+    )
+    return f"<table border='1' class='dataframe display-table reciprocation-table reciprocation-table2'>\n{thead}\n{tbody}\n</table>\n{legend}"
