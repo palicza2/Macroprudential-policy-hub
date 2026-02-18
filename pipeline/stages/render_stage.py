@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 
 from render import render_report, df_to_html_table, render_capital_overall_table
+from reciprocation import render_reciprocation_table1, render_reciprocation_table2
 from news import fetch_news, build_news_feed_html
 from osii import prepare_osii_by_country, build_osii_table_html, get_osii_countries, build_all_sii_institutions_table_html
 
@@ -349,6 +350,14 @@ class RenderStage:
         
         today_str = datetime.now().strftime("%Y-%m-%d")
         
+        # Reciprocation tables (from ETL data)
+        reciprocation_data = data.get("reciprocation_data") or {}
+        recip_measures = reciprocation_data.get("measures_df")
+        recip_matrix = reciprocation_data.get("matrix_df")
+        recip_countries = reciprocation_data.get("country_columns") or []
+        reciprocation_table1_html = render_reciprocation_table1(recip_measures) if recip_measures is not None else "<p class='no-data'>No data.</p>"
+        reciprocation_table2_html = render_reciprocation_table2(recip_measures, recip_matrix, recip_countries) if (recip_matrix is not None and not recip_matrix.empty) else "<p class='no-data'>No data.</p>"
+
         tables_html = {
             "ccyb_decisions": df_to_html_table(ccyb_decisions),
             "syrb_active": df_to_html_table(active_syrb),
@@ -358,6 +367,8 @@ class RenderStage:
             "ltv_table": df_to_html_table(bbm_data.get('ltv_table'), table_type="ltv"),
             "dti_lti_compare": df_to_html_table(bbm_data.get('dti_lti_compare'), table_type="dti_lti"),
             "capital_overall": render_capital_overall_table(capital_overall_df) if capital_overall_df is not None and not capital_overall_df.empty else "<p class='no-data'>No Data</p>",
+            "reciprocation_table1": reciprocation_table1_html,
+            "reciprocation_table2": reciprocation_table2_html,
         }
         
         plot_files_input = {

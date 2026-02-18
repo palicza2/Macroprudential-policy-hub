@@ -128,6 +128,9 @@
             <a href="#bbm-dsti-section" class="nav-link sub-nav" data-tab="borrower">DSTI</a>
             <a href="#bbm-dti-section" class="nav-link sub-nav" data-tab="borrower">DTI</a>
         </div>
+        <a href="#tab-reciprocation" class="nav-link" data-tab="reciprocation">
+            <i data-lucide="repeat"></i> Reciprocation
+        </a>
         <a href="#" class="nav-link" data-tab="country-profiles">
             <i data-lucide="map-pin"></i> Country Profiles
         </a>
@@ -484,6 +487,26 @@
                 <div class="ai-box" style="margin-top:20px">
                     <strong>AI-verified (strict):</strong> This table includes only EU countries where ESRB data indicates a DTI/LTI tool and the AI could verify every cell directly from the ESRB description (high confidence only).
                 </div>
+            </div>
+        </section>
+
+        <section id="tab-reciprocation" class="tab-content">
+            <h1 id="reciprocation-section" class="section-title">Reciprocation</h1>
+            <div class="card">
+                <div class="card-title">Measures currently recommended for reciprocation</div>
+                {% if table_files.get('reciprocation_table1') %}
+                    <iframe class="table-frame" src="{{ table_files['reciprocation_table1'] }}" loading="lazy"></iframe>
+                {% else %}
+                    <p class="no-data">No data.</p>
+                {% endif %}
+            </div>
+            <div class="card">
+                <div class="card-title">Reciprocation status by country</div>
+                {% if table_files.get('reciprocation_table2') %}
+                    <iframe class="table-frame" src="{{ table_files['reciprocation_table2'] }}" loading="lazy"></iframe>
+                {% else %}
+                    <p class="no-data">No data.</p>
+                {% endif %}
             </div>
         </section>
 

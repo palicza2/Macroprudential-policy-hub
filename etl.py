@@ -582,6 +582,9 @@ class ETLPipeline:
         if osii_df is not None and not osii_df.empty:
             osii_df.to_parquet(FILES["osii_processed"])
             latest_osii.to_parquet(FILES["latest_osii"])
+
+        from reciprocation import process_reciprocation_matrix
+        reciprocation_data = process_reciprocation_matrix(self.measures_overview_file)
         
         return {
             'ccyb_df': ccyb_df, 'syrb_df': syrb_df, 'bbm_df': bbm_df,
@@ -590,4 +593,5 @@ class ETLPipeline:
             'latest_bbm_df': latest_bbm,
             'osii_df': osii_df,
             'latest_osii_df': latest_osii,
+            'reciprocation_data': reciprocation_data,
         }
