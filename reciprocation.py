@@ -76,7 +76,10 @@ def process_reciprocation_matrix(measures_overview_path: Path) -> Dict[str, Any]
         col_year = next((c for c in df.columns if "year" in str(c).lower() and "initiative" in str(c).lower()), None)
         col_type = next((c for c in df.columns if "type of measure" in str(c).lower()), None)
         col_basis = next((c for c in df.columns if "basis" in str(c).lower() and "union" in str(c).lower()), None)
-        col_status = next((c for c in df.columns if "present status" in str(c).lower()), None)
+        col_status = next(
+            (c for c in df.columns if "present status" in str(c).lower() or ("status" in str(c).lower() and "measure" in str(c).lower())),
+            None,
+        )
         col_requested = next((c for c in df.columns if "reciprocity" in str(c).lower() and "requested" in str(c).lower()), None)
         col_esrb = next((c for c in df.columns if "esrb" in str(c).lower() and "recommendation" in str(c).lower()), None)
 
@@ -84,11 +87,19 @@ def process_reciprocation_matrix(measures_overview_path: Path) -> Dict[str, Any]
             logger.warning("Could not find Reference or Country column in Matrix of reciprocation")
             return result
 
-        # Filter: currently applicable (status contains "currently applicable")
+        # Filter: currently applicable (status contains "currently applicable" or "is currently applicable")
         status_col = df.get(col_status)
         if status_col is not None:
-            mask = status_col.astype(str).str.lower().str.contains("currently applicable", na=False)
+            status_str = status_col.astype(str).str.lower()
+            mask = status_str.str.contains("currently applicable", na=False)
             df = df.loc[mask].copy()
+            # If filter removed all rows, fall back to all rows so Table 2 is not empty
+            if df.empty:
+                logger.info("Reciprocation: 'currently applicable' filter had 0 rows; using all Matrix rows")
+                df = xl.parse(sheet, header=header_row)
+                clean_columns(df)
+                if col_ref not in df.columns or col_country not in df.columns:
+                    return result
         else:
             df = df.copy()
 
