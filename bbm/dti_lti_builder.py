@@ -29,7 +29,6 @@ def apply_expert_corrections(df: pd.DataFrame) -> pd.DataFrame:
     - IE: Swap Standard Limit (3.5x) and FTB Limit (4.0x)
     - GB: Set Allowance_Share to "15%"
     - NO: Set Allowance_Share to "10%"
-    - DK: Set Limit_Standard to 4.0 (or 5.0 if guidelines mention both)
     
     Args:
         df: DataFrame with DTI/LTI rules
@@ -97,17 +96,7 @@ def apply_expert_corrections(df: pd.DataFrame) -> pd.DataFrame:
             df.loc[no_mask, "Allowance_Share"] = "10%"
             logger.info("   -> Expert correction: NO Allowance_Share set to '10%'")
     
-    # 6. Denmark (DK): Set Limit_Standard to 4.0 (guidelines mention 4x and 5x, use 4.0 as primary)
-    if "Country" in df.columns and "Limit_Standard" in df.columns:
-        dk_mask = df["Country"] == "DK"
-        if dk_mask.any():
-            # Only set if currently empty/NaN
-            dk_limit = df.loc[dk_mask, "Limit_Standard"].iloc[0] if dk_mask.any() else None
-            if pd.isna(dk_limit):
-                df.loc[dk_mask, "Limit_Standard"] = 4.0
-                logger.info("   -> Expert correction: DK Limit_Standard set to 4.0x (guidelines: 4x-5x)")
-    
-    # 7. Latvia (LV): Set Limit_Green to 8.0 (green DTI limit)
+    # 6. Latvia (LV): Set Limit_Green to 8.0 (green DTI limit)
     if "Country" in df.columns and "Limit_Green" in df.columns:
         lv_mask = df["Country"] == "LV"
         if lv_mask.any():
@@ -233,12 +222,13 @@ def build_dti_lti_comparison_df_structured(
     # Filter out invalid entries:
     # 1. Remove LI (Liechtenstein) - it's DSTI (loan service to income), not LTI/DTI
     # 2. Remove SE (Sweden) - it's an amortization requirement, not an LTI/DTI limit
+    # 3. Remove DK (Denmark) - wealth recommendation dependent on LTI, not an LTI measure
     if not df.empty and 'Country' in df.columns:
         df_before_filter = df.copy()
-        df = df[~df['Country'].isin(['LI', 'SE'])].copy()
+        df = df[~df['Country'].isin(['LI', 'SE', 'DK'])].copy()
         removed = len(df_before_filter) - len(df)
         if removed > 0:
-            logger.info(f"   -> Removed {removed} entries: LI (DSTI, not LTI/DTI), SE (amortization requirement, not LTI/DTI limit)")
+            logger.info(f"   -> Removed {removed} entries: LI (DSTI, not LTI/DTI), SE (amortization), DK (wealth recommendation)")
     
     # 2. Filter out entries with limit_standard outside typical range (4-9) or suspiciously low/high
     # Also filter out LI entries with very low limits (0.3x) which are likely DSTI, not DTI/LTI

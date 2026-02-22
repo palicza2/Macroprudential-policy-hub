@@ -116,9 +116,12 @@ def get_current_status(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str,
                 if abs(max_rate - min_rate) < 0.01:
                     rate_display = f"{int(max_rate)}%" if max_rate == int(max_rate) else f"{max_rate:.2f}%"
                 elif min_rate < 0.01:
-                    rate_display = f"0-{int(round(max_rate))}%"
+                    rate_display = f"0-{int(round(max_rate))}%" if max_rate == int(max_rate) else f"0-{max_rate:.1f}%"
                 else:
-                    rate_display = f"{int(round(min_rate))}-{int(round(max_rate))}%"
+                    # Preserve 0.5 etc.: use .1f when fractional, else int (e.g. 0.5-2%, 1-2%)
+                    min_str = f"{min_rate:.1f}" if min_rate != int(min_rate) else str(int(min_rate))
+                    max_str = f"{max_rate:.1f}" if max_rate != int(max_rate) else str(int(max_rate))
+                    rate_display = f"{min_str}-{max_str}%"
                 status['osii'] = {
                     'rate_min': min_rate,
                     'rate_max': max_rate,
@@ -397,7 +400,11 @@ def get_active_measures(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str
             if not active_osii.empty:
                 min_rate = float(active_osii['rate_numeric'].min())
                 max_rate = float(active_osii['rate_numeric'].max())
-                
+                # Normalize to percentage scale (e.g. 0.005-0.02 -> 0.5-2%)
+                if max_rate > 0 and max_rate < 1:
+                    min_rate = min_rate * 100
+                    max_rate = max_rate * 100
+
                 # Bankok listája
                 banks = []
                 for _, row in active_osii.iterrows():

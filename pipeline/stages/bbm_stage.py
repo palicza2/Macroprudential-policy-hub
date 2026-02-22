@@ -15,6 +15,7 @@ from bbm import (
     build_dti_lti_eu_list_html,
 )
 from bbm.dti_lti_builder import build_dti_lti_comparison_df_structured
+from bbm.dti_excel_loader import load_dti_expert_table
 
 # Wrapper for backward compatibility
 def build_dti_lti_comparison_df(bbm_full: pd.DataFrame, analyzer, search_config=None) -> pd.DataFrame:
@@ -75,6 +76,7 @@ class BBMStage:
         dti_lti_eu_list_html = ""
         
         if bbm_full is None or bbm_full.empty:
+            dti_expert = load_dti_expert_table()
             return {
                 'active_bbm': active_bbm,
                 'bbm_decisions': bbm_decisions,
@@ -83,6 +85,7 @@ class BBMStage:
                 'ltv_table': ltv_table,
                 'ltv_ref_date': ltv_ref_date,
                 'dti_lti_compare': dti_lti_compare,
+                'dti_expert_table': dti_expert,
                 'dti_lti_eu_list_html': dti_lti_eu_list_html,
             }
         
@@ -191,7 +194,23 @@ class BBMStage:
             logger.warning(f"DTI/LTI comparison build failed: {exc}")
             dti_lti_compare = pd.DataFrame()
             dti_lti_eu_list_html = ""
-        
+
+        # DTI expert table (Excel schema, English) for BBM page display
+        from pathlib import Path
+        proj_data = Path(__file__).resolve().parent.parent.parent / "data"
+        excel_path = None
+        for candidate in [proj_data / "BBM táblázatok.xlsx", Path.home() / "Downloads" / "BBM táblázatok.xlsx"]:
+            if candidate.exists():
+                excel_path = candidate
+                break
+        if not excel_path:
+            downloads = Path.home() / "Downloads"
+            if downloads.exists():
+                excel_candidates = list(downloads.glob("*BBM*.xlsx"))
+                if excel_candidates:
+                    excel_path = excel_candidates[0]
+        dti_expert_table = load_dti_expert_table(excel_path=excel_path)
+
         return {
             'active_bbm': active_bbm,
             'bbm_decisions': bbm_decisions,
@@ -200,5 +219,6 @@ class BBMStage:
             'ltv_table': ltv_table,
             'ltv_ref_date': ltv_ref_date,
             'dti_lti_compare': dti_lti_compare,
+            'dti_expert_table': dti_expert_table,
             'dti_lti_eu_list_html': dti_lti_eu_list_html,
         }

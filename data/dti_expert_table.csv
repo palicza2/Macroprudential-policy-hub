@@ -1,0 +1,6 @@
+Country,Type,Debt Counted (Numerator),Legal Form,Standard Limit,Preferential Limit (FTB/Green/Age),Income Basis,Portfolio Limit,Nature of Breach (Hard Cap),Exemptions,Regulation Link
+IE,LTI,Only the requested mortgage amount,Binding,3.5x,4.0x (FTB),Gross,15% (on total new lending volume),Fully exceedable; no upper cap,Bridging loans; Equity release,Central Bank of Ireland - Mortgage Measures
+NO,DTI,All outstanding debt,Binding,5.0x,—,Gross,10% (8% in Oslo) quarterly,Fully exceedable; no upper cap,Debt restructuring loans if principal does not increase,Utlånsforskriften (Lending Regulation) § 12
+UK,LTI,Only the requested mortgage amount,Binding,4.5x,—,Gross,15% (on number of loans),Fully exceedable; no upper cap,Existing loan refinancing if debt does not increase,Bank of England FPC / FCA Regulations
+SK,DTI,All outstanding debt,Binding,8.0x,9.0x (under 35 / FTB),Net,5% (on portfolio volume),Partially; absolute cap (Max: 9.0x),Loans under 2000 EUR; certain state-supported schemes,NBS Decree No. 10/2016 (consolidated)
+LV,DTI,All outstanding debt,Binding,6.0x,8.0x (Green / Energy-efficient),Gross,10% (on new disbursements),Fully exceedable; no upper cap,—,Latvijas Banka Macroprudential Framework

@@ -11,6 +11,18 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 
 from render import render_report, df_to_html_table, render_capital_overall_table
+
+
+def _render_dti_table(bbm_data: Dict[str, Any]) -> str:
+    """Render DTI table: prefer expert table (Excel schema, English), else pipeline DTI/LTI."""
+    expert_df = bbm_data.get("dti_expert_table")
+    if expert_df is not None and not expert_df.empty:
+        try:
+            from bbm.dti_expert_renderer import render_dti_expert_table_html
+            return render_dti_expert_table_html(expert_df)
+        except ImportError:
+            pass
+    return df_to_html_table(bbm_data.get("dti_lti_compare"), table_type="dti_lti")
 from reciprocation import render_reciprocation_table1, render_reciprocation_table2
 from news import fetch_news, build_news_feed_html
 from osii import prepare_osii_by_country, build_osii_table_html, get_osii_countries, build_all_sii_institutions_table_html
@@ -138,13 +150,21 @@ class RenderStage:
                 syrb_snap = syrb_snapshots.get(iso2, {})
                 osii_snap = osii_snapshots.get(iso2, {})
                 
-                # BBM types
-                bbm_types = []
-                for bbm in bbm_by_country.get(iso2, []):
+                # BBM types (exclude "Not active" / inactive status, same as data_aggregators)
+                def _is_bbm_active(bbm):
                     if bbm.get("active_status") == "Active" or bbm.get("status") == "Active":
-                        measure_type = bbm.get("measure_type", "")
-                        if measure_type and measure_type not in bbm_types:
-                            bbm_types.append(measure_type)
+                        st = str(bbm.get("status", "") or "").lower()
+                        if st and any(x in st for x in ["not active", "inactive", "revoked", "deactivated", "expired"]):
+                            return False
+                        return True
+                    return False
+
+                bbm_types = []
+                active_bbm_list = [m for m in bbm_by_country.get(iso2, []) if _is_bbm_active(m)]
+                for bbm in active_bbm_list:
+                    measure_type = bbm.get("measure_type", "")
+                    if measure_type and measure_type not in bbm_types:
+                        bbm_types.append(measure_type)
                 
                 current_status = {
                     "ccyb": {
@@ -158,7 +178,7 @@ class RenderStage:
                         "type": "General" if syrb_snap.get("general_rate", 0) > 0 else ("Sectoral" if syrb_snap.get("sectoral_rate", 0) > 0 else "General"),
                         "status": "Active" if syrb_snap.get("total_rate", 0) > 0 else "Inactive",
                     } if syrb_snap else None,
-                    "osii": self._build_osii_status(osii_snap, osii_by_country_iso2.get(iso2, [])),
+                    "osii": self._build_osii_status(osii_snap, osii_by_country_iso2.get(iso2, []), iso2=iso2),
                     "bbm": bbm_types,
                     "total_capital": None,  # Would need capital_overall calculation
                 }
@@ -192,7 +212,7 @@ class RenderStage:
                 active_measures = {
                     "ccyb": current_status.get("ccyb"),
                     "syrb": [m for m in syrb_by_country.get(iso2, []) if m.get("active_status") == "Active" or m.get("status") == "Active"],
-                    "bbm": [m for m in bbm_by_country.get(iso2, []) if m.get("active_status") == "Active" or m.get("status") == "Active"],
+                    "bbm": active_bbm_list,
                     "osii": current_status.get("osii"),
                 }
                 
@@ -217,7 +237,7 @@ class RenderStage:
             logger.error(f"Error fetching countries data from Supabase: {exc}", exc_info=True)
             return {}
     
-    def _build_osii_status(self, osii_snap: Dict[str, Any], osii_rates: List[float]) -> Dict[str, Any]:
+    def _build_osii_status(self, osii_snap: Dict[str, Any], osii_rates: List[float], iso2: str = None) -> Dict[str, Any]:
         """
         Build O-SII status with min/max rates for proper display.
         Rates are normalized to percentage scale (e.g. 1.5 for 1.5%) for display.
@@ -243,9 +263,11 @@ class RenderStage:
             elif abs(max_rate - min_rate) < 0.01:
                 rate_display = f"{int(max_rate)}%" if max_rate == int(max_rate) else f"{max_rate:.2f}%"
             elif min_rate < 0.01:
-                rate_display = f"0-{int(round(max_rate))}%"
+                rate_display = f"0-{int(round(max_rate))}%" if max_rate == int(max_rate) else f"0-{max_rate:.1f}%"
             else:
-                rate_display = f"{int(round(min_rate))}-{int(round(max_rate))}%"
+                min_str = f"{min_rate:.1f}" if min_rate != int(min_rate) else str(int(min_rate))
+                max_str = f"{max_rate:.1f}" if max_rate != int(max_rate) else str(int(max_rate))
+                rate_display = f"{min_str}-{max_str}%"
 
             return {
                 "rate": max_rate,
@@ -255,11 +277,12 @@ class RenderStage:
                 "status": "Active" if max_rate > 0 else "Inactive",
             }
         else:
+            rate_display = f"{int(total_rate)}%" if total_rate == int(total_rate) else f"{total_rate:.2f}%" if total_rate > 0 else "0%"
             return {
                 "rate": total_rate,
                 "rate_min": total_rate,
                 "rate_max": total_rate,
-                "rate_display": f"{int(total_rate)}%" if total_rate == int(total_rate) else f"{total_rate:.2f}%" if total_rate > 0 else "0%",
+                "rate_display": rate_display,
                 "status": "Active" if total_rate > 0 else "Inactive",
             }
     
@@ -365,7 +388,7 @@ class RenderStage:
             "bbm_pivot": bbm_data.get('bbm_pivot_html', "") or "<p class='no-data'>No Data</p>",
             "bbm_decisions": df_to_html_table(bbm_data.get('bbm_decisions')),
             "ltv_table": df_to_html_table(bbm_data.get('ltv_table'), table_type="ltv"),
-            "dti_lti_compare": df_to_html_table(bbm_data.get('dti_lti_compare'), table_type="dti_lti"),
+            "dti_lti_compare": _render_dti_table(bbm_data),
             "capital_overall": render_capital_overall_table(capital_overall_df) if capital_overall_df is not None and not capital_overall_df.empty else "<p class='no-data'>No Data</p>",
             "reciprocation_table1": reciprocation_table1_html,
             "reciprocation_table2": reciprocation_table2_html,

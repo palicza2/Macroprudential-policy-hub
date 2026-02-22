@@ -147,16 +147,9 @@ class PipelineOrchestrator:
 
 def main():
     """Main entry point."""
-    # Check if grounding should run
-    run_grounding = False
-    if os.getenv("RUN_GROUNDING", "").lower() in ("1", "true", "yes", "y"):
-        run_grounding = True
-    else:
-        try:
-            answer = input("Run grounded validation? (y/N): ").strip().lower()
-            run_grounding = answer in ("y", "yes")
-        except Exception:
-            run_grounding = False
+    # Grounding: default yes. Set RUN_GROUNDING=0 (or false/no/n) to disable.
+    env_val = os.getenv("RUN_GROUNDING", "").strip().lower()
+    run_grounding = env_val not in ("0", "false", "no", "n")
     
     orchestrator = PipelineOrchestrator()
     orchestrator.run(run_grounding=run_grounding)

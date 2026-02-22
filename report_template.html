@@ -126,7 +126,7 @@
             <a href="#bbm-overview-section" class="nav-link sub-nav" data-tab="borrower">Overview</a>
             <a href="#bbm-ltv-section" class="nav-link sub-nav" data-tab="borrower">LTV</a>
             <a href="#bbm-dsti-section" class="nav-link sub-nav" data-tab="borrower">DSTI</a>
-            <a href="#bbm-dti-section" class="nav-link sub-nav" data-tab="borrower">DTI</a>
+            <a href="#bbm-dti-section" class="nav-link sub-nav" data-tab="borrower">DTI / LTI</a>
         </div>
         <a href="#tab-reciprocation" class="nav-link" data-tab="reciprocation">
             <i data-lucide="repeat"></i> Reciprocation
@@ -469,10 +469,10 @@
                 <div class="empty-state">Content coming soon</div>
             </div>
 
-            <h2 id="bbm-dti-section">DTI</h2>
+            <h2 id="bbm-dti-section">DTI / LTI</h2>
             
             <div class="card">
-                <div class="card-title">DTI Measures (Debt-to-Income)</div>
+                <div class="card-title">DTI/LTI Measures (Debt-to-Income / Loan-to-Income)</div>
                 {% if table_files.get('dti_lti_compare') %}
                     <iframe class="table-frame" src="{{ table_files['dti_lti_compare'] }}" loading="lazy"></iframe>
                 {% else %}
@@ -485,7 +485,7 @@
                     </div>
                 {% endif %}
                 <div class="ai-box" style="margin-top:20px">
-                    <strong>AI-verified (strict):</strong> This table includes only EU countries where ESRB data indicates a DTI/LTI tool and the AI could verify every cell directly from the ESRB description (high confidence only).
+                    <strong>Expert-verified:</strong> This table shows DTI/LTI measures with expert-verified data. Schema: Country, Type, Debt Counted, Legal Form, Standard Limit, Preferential Limit, Income Basis, Portfolio Limit, Nature of Breach, Exemptions, Regulation Link.
                 </div>
             </div>
         </section>
