@@ -56,6 +56,21 @@ The Macro Policy Hub delivers significant operational and strategic value for fi
 - **Grounded Validation:** LangGraph-based verification of AI text against data, chart context, knowledge graph relationships, and (optional) Google Search sources.
 - **Knowledge Graph Analysis:** AI analysis of policy relationships, comparing graph structure with table data to identify patterns, validate consistency, and highlight policy clusters.
 
+**Applied Grounding Methods**
+
+The system uses several techniques to keep AI output factual and traceable:
+
+| Method | Where Used | Description |
+|--------|------------|-------------|
+| **Confidence score** | Institutional Setup (Country Profiles) | Numeric 0–1 scale (1.0 = fully grounded in structured data, 0.5 = partial inference, 0.0 = no data). Shown as a badge (high/medium/low) next to AI descriptions. |
+| **Grounding notes** | Institutional Setup | Short explanation of which facts and sources the description is based on. |
+| **Sources cited** | Institutional Setup, BBM validation | List of references (e.g. ESRB NMA list, national central bank, legal basis). Displayed below the AI text. |
+| **Evidence excerpt** | LTV & DTI/LTI extraction | Exact quote from the ESRB description that justifies each extracted limit. Used to avoid hallucination. |
+| **Confidence (high/medium/low)** | BBM rules (LTV, DTI/LTI) | Per-rule confidence from the validator. Only high-confidence rules are shown by default. |
+| **Claim verification** | Executive summaries, section summaries | Extracted claims are checked against data tables and chart context; verdicts: supported / contradicted / unclear. |
+| **External search & citation** | Optional (when `RUN_GROUNDING=1`) | For contradicted or unclear claims, Google Custom Search on allowed domains (e.g. ecb.europa.eu, esrb.europa.eu). Revised text may include inline citations in the form `(Source: URL)`. |
+| **Knowledge graph grounding** | Global summaries | Graph statistics (country counts, measure counts, relationships) are included in the validation context so claims stay consistent with the structured graph. |
+
 ### 3. Supabase Integration 🗄️
 
 - **Optional Dynamic Data Loading:** Frontend can fetch data from Supabase REST API for real-time updates.
@@ -105,7 +120,7 @@ The Macro Policy Hub delivers significant operational and strategic value for fi
 - **Knowledge Graph Analysis:** AI analysis comparing graph structure with table data to identify patterns and validate consistency.
 - **Text Cleaning:** Converts LLM output to HTML-safe summaries with consistent emphasis.
 - **News Enrichment:** Generates 2–3 sentence summaries and assigns policy/theme tags.
-- **Optional Grounding:** Multimodal validation against data tables, chart images, knowledge graph relationships, and optional Google Search context.
+- **Optional Grounding:** Multimodal validation against data tables, chart images, and knowledge graph relationships; optional Google Search for contradicted/unclear claims with inline citations. See _Applied Grounding Methods_ above.
 
 ---
 
