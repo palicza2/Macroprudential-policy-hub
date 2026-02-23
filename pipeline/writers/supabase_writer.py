@@ -6,6 +6,7 @@ Handles writing data to Supabase during pipeline execution.
 import math
 import logging
 import os
+from datetime import datetime
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, Optional, List
@@ -47,6 +48,11 @@ except ImportError:
     transform_trends = None
 
 logger = logging.getLogger(__name__)
+
+
+def _now_iso() -> str:
+    """Return current UTC time as ISO string for Supabase timestamptz."""
+    return datetime.utcnow().isoformat(timespec="seconds") + "Z"
 
 
 def _sanitize_for_json(obj: Any) -> Any:
@@ -350,3 +356,59 @@ class SupabaseWriter:
             # Don't raise - allow pipeline to continue
         
         return results
+
+    def write_institutional_setup(self, countries_data: Dict[str, Any]) -> int:
+        """
+        Upsert AI-generated institutional setup (ai_description, ai_confidence_score, etc.)
+        to the institutional_setup table. Requires migration 015 and existing rows.
+        
+        Args:
+            countries_data: Dict mapping country name to profile data with institutional_setup
+            
+        Returns:
+            Number of records updated, or 0 on failure
+        """
+        if not self.is_enabled() or not countries_data:
+            return 0
+        
+        count = 0
+        try:
+            for country_name, profile in countries_data.items():
+                inst = profile.get("institutional_setup")
+                if not inst or not isinstance(inst, dict):
+                    continue
+                iso2 = profile.get("iso2") or inst.get("country_iso2")
+                if not iso2:
+                    continue
+                
+                # Build update record (AI columns + base fields if present)
+                record = {
+                    "country_iso2": iso2,
+                    "ai_description": inst.get("ai_description") or None,
+                    "ai_confidence_score": inst.get("ai_confidence_score"),
+                    "ai_grounding_notes": inst.get("ai_grounding_notes") or None,
+                    "ai_sources_cited": inst.get("ai_sources_cited") or None,
+                    "ai_generated_at": _now_iso() if inst.get("ai_description") else None,
+                }
+                # Include base fields for upsert (in case row doesn't exist yet)
+                for k in ("macroprudential_authority", "designated_authority", "institutional_model",
+                          "legal_basis", "decision_making_body", "relationship_to_cb", "key_regulations", "source_url"):
+                    if k in inst and inst[k] is not None:
+                        record[k] = inst[k]
+                
+                record = _sanitize_for_json(record)
+                if record.get("ai_confidence_score") is not None:
+                    record["ai_confidence_score"] = float(record["ai_confidence_score"])
+                
+                self.client.table("institutional_setup").upsert(
+                    record,
+                    on_conflict="country_iso2"
+                ).execute()
+                count += 1
+            
+            if count:
+                logger.info(f"  -> {count} institutional_setup AI records written")
+        except Exception as e:
+            logger.warning(f"Failed to write institutional_setup AI to Supabase (table may not exist): {e}")
+        
+        return count

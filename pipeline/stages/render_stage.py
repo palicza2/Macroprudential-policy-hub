@@ -433,6 +433,14 @@ class RenderStage:
             if supabase_countries_data:
                 countries_data = supabase_countries_data
                 logger.info("Using countries data from Supabase")
+                # Fallback: if Supabase has no institutional_setup for a country, use pipeline data
+                pipeline_profiles = ctx.countries_data or {}
+                for cname, supabase_profile in countries_data.items():
+                    if not supabase_profile.get("institutional_setup") and cname in pipeline_profiles:
+                        pipe_inst = pipeline_profiles[cname].get("institutional_setup")
+                        if pipe_inst:
+                            supabase_profile["institutional_setup"] = pipe_inst
+                            logger.debug(f"Merged institutional_setup from pipeline for {cname}")
             else:
                 logger.warning("Supabase fetch returned empty data, falling back to pipeline data")
         

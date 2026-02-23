@@ -124,6 +124,10 @@ class PipelineOrchestrator:
         ctx.countries_data = profile_results["countries_data"]
         ctx.analyses = profile_results["analyses"]
 
+        # Write institutional setup AI to Supabase (when enabled)
+        if self.supabase_writer.is_enabled() and ctx.countries_data:
+            self.supabase_writer.write_institutional_setup(ctx.countries_data)
+
         # Stage 4: Render
         rendered_html = self.render_stage.process(ctx)
 
