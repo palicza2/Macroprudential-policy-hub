@@ -3,9 +3,11 @@ Supabase Writer Module.
 Handles writing data to Supabase during pipeline execution.
 """
 
+import math
 import logging
 import os
 import pandas as pd
+import numpy as np
 from typing import Dict, Any, Optional, List
 from pathlib import Path
 
@@ -45,6 +47,30 @@ except ImportError:
     transform_trends = None
 
 logger = logging.getLogger(__name__)
+
+
+def _sanitize_for_json(obj: Any) -> Any:
+    """
+    Replace NaN, Inf, and -Inf with None so records are JSON-serializable.
+    Supabase/PostgREST rejects float('nan') in request bodies.
+    """
+    if obj is None:
+        return None
+    if isinstance(obj, dict):
+        return {k: _sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize_for_json(v) for v in obj]
+    if isinstance(obj, (int, str, bool)):
+        return obj
+    if isinstance(obj, (float, np.floating)):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return float(obj)
+    if isinstance(obj, (np.integer, np.bool_)):
+        return int(obj)
+    if pd.isna(obj):
+        return None
+    return obj
 
 
 class SupabaseWriter:
@@ -125,7 +151,7 @@ class SupabaseWriter:
                 # Remove duplicates
                 countries_df = pd.DataFrame(countries_records)
                 countries_df = countries_df.drop_duplicates(subset=['iso2'])
-                records = countries_df.to_dict('records')
+                records = _sanitize_for_json(countries_df.to_dict('records'))
                 response = self.client.table("countries").upsert(records).execute()
                 results['countries'] = len(response.data) if response.data else len(records)
                 logger.info(f"  -> {results['countries']} countries written")
@@ -138,7 +164,7 @@ class SupabaseWriter:
                     # Remove duplicates
                     ccyb_df_clean = pd.DataFrame(ccyb_records)
                     ccyb_df_clean = ccyb_df_clean.drop_duplicates(subset=['country_iso2', 'effective_date'])
-                    records = ccyb_df_clean.to_dict('records')
+                    records = _sanitize_for_json(ccyb_df_clean.to_dict('records'))
                     response = self.client.table("ccyb_decisions").upsert(
                         records,
                         on_conflict="country_iso2,effective_date"
@@ -151,7 +177,7 @@ class SupabaseWriter:
                 logger.info("Writing SyRB measures to Supabase...")
                 syrb_records = transform_syrb_data(syrb_df)
                 if syrb_records:
-                    records = pd.DataFrame(syrb_records).to_dict('records')
+                    records = _sanitize_for_json(pd.DataFrame(syrb_records).to_dict('records'))
                     response = self.client.table("syrb_measures").upsert(records).execute()
                     results['syrb'] = len(response.data) if response.data else len(records)
                     logger.info(f"  -> {results['syrb']} SyRB measures written")
@@ -161,7 +187,7 @@ class SupabaseWriter:
                 logger.info("Writing BBM measures to Supabase...")
                 bbm_records = transform_bbm_data(bbm_df)
                 if bbm_records:
-                    records = pd.DataFrame(bbm_records).to_dict('records')
+                    records = _sanitize_for_json(pd.DataFrame(bbm_records).to_dict('records'))
                     response = self.client.table("bbm_measures").upsert(records).execute()
                     results['bbm'] = len(response.data) if response.data else len(records)
                     logger.info(f"  -> {results['bbm']} BBM measures written")
@@ -171,7 +197,7 @@ class SupabaseWriter:
                 logger.info("Writing OSII banks to Supabase...")
                 osii_records = transform_osii_data(osii_df)
                 if osii_records:
-                    records = pd.DataFrame(osii_records).to_dict('records')
+                    records = _sanitize_for_json(pd.DataFrame(osii_records).to_dict('records'))
                     response = self.client.table("osii_banks").upsert(records).execute()
                     results['osii'] = len(response.data) if response.data else len(records)
                     logger.info(f"  -> {results['osii']} OSII banks written")
@@ -204,7 +230,7 @@ class SupabaseWriter:
                             df = df.drop_duplicates(subset=['country_iso2'])
                         elif table_name == 'osii':
                             df = df.drop_duplicates(subset=['country_iso2'])
-                        records_clean = df.to_dict('records')
+                        records_clean = _sanitize_for_json(df.to_dict('records'))
                         
                         # Old table names (will be removed after migration)
                         table_map = {
@@ -245,7 +271,7 @@ class SupabaseWriter:
                         # Remove duplicates
                         df = pd.DataFrame(records)
                         df = df.drop_duplicates(subset=['date'])
-                        records_clean = df.to_dict('records')
+                        records_clean = _sanitize_for_json(df.to_dict('records'))
                         
                         # Old table names (will be removed after migration)
                         table_map = {
@@ -295,7 +321,7 @@ class SupabaseWriter:
                     # Remove duplicates
                     df = pd.DataFrame(dti_lti_records)
                     df = df.drop_duplicates(subset=['country_iso2', 'measure_code'])
-                    records = df.to_dict('records')
+                    records = _sanitize_for_json(df.to_dict('records'))
                     response = self.client.table("dti_lti_rules").upsert(
                         records,
                         on_conflict="country_iso2,measure_code"
@@ -311,7 +337,7 @@ class SupabaseWriter:
                     # Remove duplicates
                     df = pd.DataFrame(ltv_records)
                     df = df.drop_duplicates(subset=['country_iso2'])
-                    records = df.to_dict('records')
+                    records = _sanitize_for_json(df.to_dict('records'))
                     response = self.client.table("ltv_rules").upsert(
                         records,
                         on_conflict="country_iso2"

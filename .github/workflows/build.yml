@@ -1,7 +1,9 @@
 name: Build Dashboard
 
 on:
-  workflow_dispatch: # Manual trigger only - no automatic run on push
+  workflow_dispatch:  # Manual trigger from Actions tab
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
 
 jobs:
   build:
@@ -43,7 +45,7 @@ jobs:
 
     - name: Commit and push dashboard
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"

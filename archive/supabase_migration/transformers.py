@@ -359,6 +359,17 @@ def transform_osii_data(df: pd.DataFrame) -> List[Dict[str, Any]]:
     return records
 
 
+def _safe_float(v: Any) -> Optional[float]:
+    """Convert to float or None; never return NaN (JSON-incompatible)."""
+    if v is None or pd.isna(v):
+        return None
+    try:
+        f = float(v)
+        return None if (np.isnan(f) or np.isinf(f)) else f
+    except (TypeError, ValueError):
+        return None
+
+
 def transform_dti_lti_data(df: pd.DataFrame) -> List[Dict[str, Any]]:
     """
     Transform DTI/LTI CSV data to Supabase format.
@@ -400,9 +411,9 @@ def transform_dti_lti_data(df: pd.DataFrame) -> List[Dict[str, Any]]:
             "implementation_status": str(row.get("Implementation_Status", "")).strip() if pd.notna(row.get("Implementation_Status")) else None,
             "legal_form": str(row.get("Legal_Form", "")).strip() if pd.notna(row.get("Legal_Form")) else None,
             "limit_standard": limit_standard_str,
-            "limit_ftb": float(row.get("Limit_FTB", 0)) if pd.notna(row.get("Limit_FTB")) else None,
-            "limit_btl": float(row.get("Limit_BTL", 0)) if pd.notna(row.get("Limit_BTL")) else None,
-            "limit_green": float(row.get("Limit_Green", 0)) if pd.notna(row.get("Limit_Green")) else None,
+            "limit_ftb": _safe_float(row.get("Limit_FTB")),
+            "limit_btl": _safe_float(row.get("Limit_BTL")),
+            "limit_green": _safe_float(row.get("Limit_Green")),
             "income_basis": str(row.get("Income_Basis", "")).strip() if pd.notna(row.get("Income_Basis")) else None,
             "allowance_share": str(row.get("Allowance_Share", "")).strip() if pd.notna(row.get("Allowance_Share")) else None,
             "regulation_url": str(row.get("Regulation_URL", "")).strip() if pd.notna(row.get("Regulation_URL")) else None,
@@ -454,8 +465,8 @@ def transform_ltv_data(df: pd.DataFrame) -> List[Dict[str, Any]]:
             "implementation_status": str(row.get("Implementation_Status", "")).strip() if pd.notna(row.get("Implementation_Status")) else None,
             "legal_form": str(row.get("Legal_Form", "")).strip() if pd.notna(row.get("Legal_Form")) else None,
             "limit_standard": limit_standard_str,
-            "limit_ftb": float(row.get("Limit_FTB", 0)) if pd.notna(row.get("Limit_FTB")) else None,
-            "limit_btl": float(row.get("Limit_BTL", 0)) if pd.notna(row.get("Limit_BTL")) else None,
+            "limit_ftb": _safe_float(row.get("Limit_FTB")),
+            "limit_btl": _safe_float(row.get("Limit_BTL")),
             "exception_quota": str(row.get("Exception_Quota", "")).strip() if pd.notna(row.get("Exception_Quota")) else None,
             "notes": str(row.get("Notes", "")).strip() if pd.notna(row.get("Notes")) else None,
         }
