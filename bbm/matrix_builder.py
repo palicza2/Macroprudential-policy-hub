@@ -3,7 +3,7 @@ BBM Matrix Builder.
 Builds HTML pivot table for BBM measures matrix.
 """
 
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any
 import pandas as pd
 
 # Rename map for measure types
@@ -18,6 +18,33 @@ RENAME_MAP: Dict[str, str] = {
     "Flexibility quota": "Flex.",
     "Stress test / sensitivity test": "Stress T.",
 }
+
+
+def is_bbm_row_active(row: Any) -> bool:
+    """
+    Same logic as overview matrix: row is active if status text contains 'active' or 'applicable',
+    and does not contain inactive terms. Use this for country profiles to match the BBM overview.
+    """
+    status_text = f"{row.get('active_status', '')} {row.get('status', '')}".lower()
+    if not ("active" in status_text or "applicable" in status_text):
+        return False
+    if any(x in status_text for x in ["not active", "inactive", "revoked", "deactivated", "expired"]):
+        return False
+    return True
+
+
+def get_active_bbm_for_country(bbm_df: pd.DataFrame, country: str, iso2: str = None) -> pd.DataFrame:
+    """
+    Get BBM rows active for a country, using same logic as the overview matrix.
+    Matches by country name or iso2 (for name mismatches across data sources).
+    """
+    if bbm_df is None or bbm_df.empty:
+        return pd.DataFrame()
+    mask = bbm_df.apply(is_bbm_row_active, axis=1)
+    country_match = bbm_df["country"] == country
+    if iso2 and "iso2" in bbm_df.columns:
+        country_match = country_match | (bbm_df["iso2"] == iso2)
+    return bbm_df[mask & country_match].copy()
 
 
 def build_bbm_matrix_html(bbm_full: pd.DataFrame) -> Tuple[str, str]:

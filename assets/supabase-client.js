@@ -206,7 +206,8 @@ async function fetchCountryProfile(countryIso2) {
         }
         
         // Fetch all data in parallel (using Materialized Views for snapshots)
-        const [country, ccybSnapshot, syrbSnapshot, osiiSnapshot, ccybDecisions, syrbMeasures, bbmMeasures] = await Promise.all([
+        const instFetch = fetchFromSupabase('institutional_setup', { filter: { country_iso2: countryIso2 }, limit: 1 }).catch(() => []);
+        const [country, ccybSnapshot, syrbSnapshot, osiiSnapshot, ccybDecisions, syrbMeasures, bbmMeasures, instResult] = await Promise.all([
             fetchFromSupabase('countries', { filter: { iso2: countryIso2 }, limit: 1 }),
             fetchFromSupabase('mv_latest_ccyb_snapshot', { filter: { country_iso2: countryIso2 }, limit: 1 }),
             fetchFromSupabase('mv_latest_syrb_snapshot', { filter: { country_iso2: countryIso2 }, limit: 1 }),
@@ -214,6 +215,7 @@ async function fetchCountryProfile(countryIso2) {
             fetchFromSupabase('ccyb_decisions', { filter: { country_iso2: countryIso2 }, order: 'effective_date.asc' }),
             fetchFromSupabase('syrb_measures', { filter: { country_iso2: countryIso2 }, order: 'effective_date.asc' }),
             fetchFromSupabase('bbm_measures', { filter: { country_iso2: countryIso2 }, order: 'effective_date.asc' }),
+            instFetch,
         ]);
         
         if (!country || country.length === 0) {
@@ -292,10 +294,26 @@ async function fetchCountryProfile(countryIso2) {
             osii: currentStatus.osii,
         };
         
+        const instRow = instResult && instResult.length > 0 ? instResult[0] : null;
+        const institutionalSetup = instRow ? {
+            macroprudential_authority: instRow.macroprudential_authority,
+            designated_authority: instRow.designated_authority,
+            institutional_model: instRow.institutional_model,
+            legal_basis: instRow.legal_basis,
+            decision_making_body: instRow.decision_making_body,
+            relationship_to_cb: instRow.relationship_to_cb,
+            key_regulations: instRow.key_regulations || [],
+            ai_description: instRow.ai_description,
+            ai_confidence_score: instRow.ai_confidence_score != null ? parseFloat(instRow.ai_confidence_score) : null,
+            ai_grounding_notes: instRow.ai_grounding_notes,
+            ai_sources_cited: instRow.ai_sources_cited || [],
+        } : null;
+
         return {
             country: countryName,
             iso2: countryIso2,
             current_status: currentStatus,
+            institutional_setup: institutionalSetup,
             historical_evolution: historicalEvolution,
             recent_changes: [], // TODO: Calculate from historical data
             active_measures: activeMeasures,

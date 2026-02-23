@@ -674,6 +674,61 @@ Return a concise summary."""
             logger.error(f"Error in summarize_text: {e}")
             return ""
 
+    def generate_institutional_description(
+        self,
+        country: str,
+        setup_data: Dict[str, Any],
+        profile_context: str = "",
+    ) -> Dict[str, Any]:
+        """
+        Generate AI description of institutional setup with grounding metadata.
+        Returns dict with: description, confidence_score (0-1), grounding_notes, sources_cited.
+        """
+        if not setup_data:
+            return {"description": "", "confidence_score": 0.0, "grounding_notes": "", "sources_cited": []}
+        setup_str = "\n".join(f"- {k}: {v}" for k, v in setup_data.items() if v is not None and str(v).strip())
+        prompt = f"""TASK: Write a 2-3 paragraph description of the institutional setup of macroprudential policy for {country}.
+Use the following structured data as your PRIMARY source. Do not invent facts not present in the data.
+
+STRUCTURED DATA:
+{setup_str}
+{f"ADDITIONAL CONTEXT: {profile_context[:800]}" if profile_context else ""}
+
+OUTPUT: Return valid JSON only, with these exact keys:
+- "description": string, 2-3 paragraphs of prose (HTML allowed: <b>, <p>)
+- "confidence_score": number 0.0-1.0 (1.0 = fully grounded in data, 0.5 = partial inference, 0.0 = no data)
+- "grounding_notes": string, brief explanation of what sources/facts the description is based on
+- "sources_cited": array of strings, e.g. ["ESRB list of NMAs", "national central bank", "legal basis in data"]
+
+Be factual. If data is sparse, lower confidence_score accordingly."""
+        model_name = self.config.get("model_name", "")
+        cached_response = _cache.get(prompt=prompt, model=model_name, temperature=0.2)
+        if cached_response:
+            res = cached_response
+        else:
+            try:
+                llm = self._get_llm(temperature=0.2)
+                res = (llm | StrOutputParser()).invoke([HumanMessage(content=prompt)])
+                _cache.set(prompt=prompt, response=res, model=model_name, temperature=0.2)
+            except Exception as e:
+                logger.error(f"Error in generate_institutional_description: {e}")
+                return {"description": "", "confidence_score": 0.0, "grounding_notes": "Generation failed", "sources_cited": []}
+        out = safe_json_loads_dict(res, default={})
+        desc = out.get("description", "")
+        if desc:
+            desc = self._clean_text(desc, is_global=False)
+        conf = out.get("confidence_score", 0.5)
+        if isinstance(conf, (int, float)):
+            conf = max(0.0, min(1.0, float(conf)))
+        else:
+            conf = 0.5
+        return {
+            "description": desc,
+            "confidence_score": conf,
+            "grounding_notes": out.get("grounding_notes", ""),
+            "sources_cited": out.get("sources_cited") or [],
+        }
+
     def summarize_news_items(self, text_list):
         if not text_list:
             return []

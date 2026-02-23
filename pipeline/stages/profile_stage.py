@@ -76,6 +76,25 @@ class ProfileStage:
             except Exception as e:
                 logger.warning(f"Failed to generate AI analysis for {country}: {e}")
                 profile_data['ai_analysis'] = ''
+
+            # Generate AI institutional setup description with grounding
+            inst = profile_data.get('institutional_setup')
+            if inst and isinstance(inst, dict):
+                try:
+                    ai_result = self.analyzer.generate_institutional_description(
+                        country,
+                        {k: v for k, v in inst.items() if k not in ('ai_description', 'ai_confidence_score', 'ai_grounding_notes', 'ai_sources_cited', 'ai_generated_at')},
+                        profile_context=format_profile_for_llm(profile_data),
+                    )
+                    profile_data['institutional_setup'] = {
+                        **inst,
+                        'ai_description': ai_result.get('description', ''),
+                        'ai_confidence_score': ai_result.get('confidence_score', 0.5),
+                        'ai_grounding_notes': ai_result.get('grounding_notes', ''),
+                        'ai_sources_cited': ai_result.get('sources_cited', []),
+                    }
+                except Exception as e:
+                    logger.warning(f"Failed to generate institutional description for {country}: {e}")
         
         return {
             'countries_data': countries_data,

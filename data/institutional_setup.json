@@ -1,0 +1,302 @@
+{
+  "AT": {
+    "macroprudential_authority": "Financial Market Stability Board (FMSB)",
+    "designated_authority": "Financial Market Authority (FMA)",
+    "institutional_model": "separate",
+    "legal_basis": "Financial Market Stability Act (FMStG); Nationalbank Act",
+    "decision_making_body": "FMSB (links OeNB monitoring with FMA supervision)",
+    "relationship_to_cb": "OeNB provides analysis and FMSB secretariat; FMA implements instruments",
+    "key_regulations": ["FMStG", "Nationalbank Act", "CRR/CRD IV"],
+    "source_url": "https://www.fmsg.at/en/"
+  },
+  "BE": {
+    "macroprudential_authority": "Nationale Bank van België / Banque Nationale de Belgique (NBB)",
+    "designated_authority": "Nationale Bank van België / Banque Nationale de Belgique (NBB)",
+    "institutional_model": "unified",
+    "legal_basis": "Banking Law; NBB Organic Law",
+    "decision_making_body": "Board of Directors of the NBB",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["Banking Law", "NBB Organic Law", "CRR/CRD IV"],
+    "source_url": "https://www.nbb.be/"
+  },
+  "BG": {
+    "macroprudential_authority": "Bulgarian National Bank (BNB)",
+    "designated_authority": "Bulgarian National Bank (BNB)",
+    "institutional_model": "unified",
+    "legal_basis": "Law on the BNB; Credit Institutions Act",
+    "decision_making_body": "Governing Council of the BNB",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["Law on BNB", "Credit Institutions Act", "CRR/CRD IV"],
+    "source_url": "https://www.bnb.bg/"
+  },
+  "HR": {
+    "macroprudential_authority": "Hrvatska narodna banka (HNB)",
+    "designated_authority": "Hrvatska narodna banka (HNB)",
+    "institutional_model": "unified",
+    "legal_basis": "HNB Act; Credit Institutions Act",
+    "decision_making_body": "Governor and Council of the HNB",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["HNB Act", "Credit Institutions Act", "CRR/CRD IV"],
+    "source_url": "https://www.hnb.hr/"
+  },
+  "CY": {
+    "macroprudential_authority": "Central Bank of Cyprus (CBC)",
+    "designated_authority": "Central Bank of Cyprus (CBC)",
+    "institutional_model": "unified",
+    "legal_basis": "Central Bank of Cyprus Laws; Banking Law",
+    "decision_making_body": "Board of the CBC",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["CBC Laws", "Banking Law", "CRR/CRD IV"],
+    "source_url": "https://www.centralbank.cy/"
+  },
+  "CZ": {
+    "macroprudential_authority": "Česká národní banka (CNB)",
+    "designated_authority": "Česká národní banka (CNB)",
+    "institutional_model": "unified",
+    "legal_basis": "Act on the CNB; Banking Act",
+    "decision_making_body": "Bank Board of the CNB",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["Act on CNB", "Banking Act", "CRR/CRD IV"],
+    "source_url": "https://www.cnb.cz/"
+  },
+  "DK": {
+    "macroprudential_authority": "Finansiel Stabilitet; Danmarks Nationalbank",
+    "designated_authority": "Finanstilsynet (Danish FSA)",
+    "institutional_model": "separate",
+    "legal_basis": "Financial Business Act; Act on the Danmarks Nationalbank",
+    "decision_making_body": "Finansiel Stabilitet; Finanstilsynet implements",
+    "relationship_to_cb": "Nationalbank advises; FSA designated for instruments",
+    "key_regulations": ["Financial Business Act", "CRR/CRD IV"],
+    "source_url": "https://www.nationalbanken.dk/"
+  },
+  "EE": {
+    "macroprudential_authority": "Eesti Pank",
+    "designated_authority": "Finantsinspektsioon (Estonian FSA)",
+    "institutional_model": "separate",
+    "legal_basis": "Eesti Pank Act; Credit Institutions Act",
+    "decision_making_body": "Board of Eesti Pank; Finantsinspektsioon implements",
+    "relationship_to_cb": "Eesti Pank monitors; FSA designated",
+    "key_regulations": ["Eesti Pank Act", "Credit Institutions Act", "CRR/CRD IV"],
+    "source_url": "https://www.eestipank.ee/"
+  },
+  "FI": {
+    "macroprudential_authority": "Suomen Pankki (Bank of Finland) / Finanssivalvonta (FIVA)",
+    "designated_authority": "Finanssivalvonta (FIVA)",
+    "institutional_model": "unified",
+    "legal_basis": "Act on the Bank of Finland; Act on Financial Supervisory Authority",
+    "decision_making_body": "Board of Finanssivalvonta",
+    "relationship_to_cb": "Bank of Finland in ECB; FIVA is national authority",
+    "key_regulations": ["Act on FIVA", "Credit Institutions Act", "CRR/CRD IV"],
+    "source_url": "https://www.finanssivalvonta.fi/"
+  },
+  "FR": {
+    "macroprudential_authority": "Haut Conseil de Stabilité Financière (HCSF)",
+    "designated_authority": "Haut Conseil de Stabilité Financière (HCSF)",
+    "institutional_model": "unified",
+    "legal_basis": "Monetary and Financial Code; ORDINANCE on HCSF",
+    "decision_making_body": "HCSF (chaired by Minister of Finance)",
+    "relationship_to_cb": "Banque de France provides secretariat; ACPR implements",
+    "key_regulations": ["Monetary and Financial Code", "CRR/CRD IV"],
+    "source_url": "https://www.tresor.economie.gouv.fr/"
+  },
+  "DE": {
+    "macroprudential_authority": "Ausschuss für Finanzstabilität (Financial Stability Committee)",
+    "designated_authority": "Deutsche Bundesbank",
+    "institutional_model": "separate",
+    "legal_basis": "Financial Stability Act (FinStabG); Kreditwesengesetz (KWG)",
+    "decision_making_body": "Ausschuss für Finanzstabilität; BaFin and Bundesbank",
+    "relationship_to_cb": "Bundesbank (designated); BaFin in committee",
+    "key_regulations": ["FinStabG", "KWG", "CRR/CRD IV"],
+    "source_url": "https://www.bundesbank.de/"
+  },
+  "GR": {
+    "macroprudential_authority": "Bank of Greece (BoG)",
+    "designated_authority": "Bank of Greece (BoG)",
+    "institutional_model": "unified",
+    "legal_basis": "Bank of Greece Statute; Banking Law",
+    "decision_making_body": "Governor and General Council of the BoG",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["BoG Statute", "Banking Law", "CRR/CRD IV"],
+    "source_url": "https://www.bankofgreece.gr/"
+  },
+  "HU": {
+    "macroprudential_authority": "Magyar Nemzeti Bank (MNB)",
+    "designated_authority": "Magyar Nemzeti Bank (MNB)",
+    "institutional_model": "unified",
+    "legal_basis": "Act CCXXXVII of 2013 on the Magyar Nemzeti Bank",
+    "decision_making_body": "Monetary Council of the MNB",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["MNB Act", "CRR/CRD IV"],
+    "source_url": "https://www.mnb.hu/"
+  },
+  "IE": {
+    "macroprudential_authority": "Central Bank of Ireland (CBI)",
+    "designated_authority": "Central Bank of Ireland (CBI)",
+    "institutional_model": "unified",
+    "legal_basis": "Central Bank Act 1942; European Union (Capital Requirements) Regulations",
+    "decision_making_body": "Commission of the CBI; Governor",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["Central Bank Act", "CRR/CRD IV"],
+    "source_url": "https://www.centralbank.ie/"
+  },
+  "IT": {
+    "macroprudential_authority": "Comitato per le Politiche Macroprudenziali (CMP)",
+    "designated_authority": "Banca d'Italia",
+    "institutional_model": "separate",
+    "legal_basis": "Banking Act; Legislative Decree 385/1993",
+    "decision_making_body": "CMP (chaired by BoI Governor); Banca d'Italia implements",
+    "relationship_to_cb": "Banca d'Italia is designated; CMP coordinates",
+    "key_regulations": ["Banking Act", "CRR/CRD IV"],
+    "source_url": "https://www.bancaditalia.it/"
+  },
+  "LV": {
+    "macroprudential_authority": "Latvijas Banka",
+    "designated_authority": "Latvijas Banka",
+    "institutional_model": "unified",
+    "legal_basis": "Law on the Bank of Latvia; Credit Institution Law",
+    "decision_making_body": "Council of Latvijas Banka",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["Law on Bank of Latvia", "Credit Institution Law", "CRR/CRD IV"],
+    "source_url": "https://www.bank.lv/"
+  },
+  "LT": {
+    "macroprudential_authority": "Lietuvos bankas",
+    "designated_authority": "Lietuvos bankas",
+    "institutional_model": "unified",
+    "legal_basis": "Law on the Bank of Lithuania; Law on Financial Institutions",
+    "decision_making_body": "Board of Lietuvos bankas",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["Law on Bank of Lithuania", "CRR/CRD IV"],
+    "source_url": "https://www.lb.lt/"
+  },
+  "LU": {
+    "macroprudential_authority": "Commission de Surveillance du Secteur Financier (CSSF)",
+    "designated_authority": "Commission de Surveillance du Secteur Financier (CSSF)",
+    "institutional_model": "unified",
+    "legal_basis": "Law on the CSSF; Law of 5 April 1993 on the financial sector",
+    "decision_making_body": "Board of the CSSF",
+    "relationship_to_cb": "CSSF (supervisor) acts as NMA and NDA; BCL advises",
+    "key_regulations": ["CSSF Law", "Banking Law", "CRR/CRD IV"],
+    "source_url": "https://www.cssf.lu/"
+  },
+  "MT": {
+    "macroprudential_authority": "Central Bank of Malta (CBM)",
+    "designated_authority": "Central Bank of Malta (CBM)",
+    "institutional_model": "unified",
+    "legal_basis": "Central Bank of Malta Act; Banking Act",
+    "decision_making_body": "Board of Directors of the CBM",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["CBM Act", "Banking Act", "CRR/CRD IV"],
+    "source_url": "https://www.centralbankmalta.org/"
+  },
+  "NL": {
+    "macroprudential_authority": "Comité Financiële Stabiliteit (CFS) / Financial Stability Committee",
+    "designated_authority": "De Nederlandsche Bank (DNB)",
+    "institutional_model": "separate",
+    "legal_basis": "Financial Supervision Act; DNB Act",
+    "decision_making_body": "CFS; DNB implements macroprudential instruments",
+    "relationship_to_cb": "DNB (central bank) is designated; CFS coordinates",
+    "key_regulations": ["Financial Supervision Act", "DNB Act", "CRR/CRD IV"],
+    "source_url": "https://www.dnb.nl/"
+  },
+  "PL": {
+    "macroprudential_authority": "Komisja Nadzoru Finansowego (KNF)",
+    "designated_authority": "Narodowy Bank Polski (NBP)",
+    "institutional_model": "separate",
+    "legal_basis": "Banking Law; Act on the NBP; Act on KNF",
+    "decision_making_body": "KNF for supervision; NBP for CCyB and designated instruments",
+    "relationship_to_cb": "NBP (designated for CCyB); KNF (macroprudential supervisor)",
+    "key_regulations": ["Banking Law", "Act on NBP", "Act on KNF", "CRR/CRD IV"],
+    "source_url": "https://www.nbpl.pl/"
+  },
+  "PT": {
+    "macroprudential_authority": "Banco de Portugal (BdP)",
+    "designated_authority": "Banco de Portugal (BdP)",
+    "institutional_model": "unified",
+    "legal_basis": "Legal Framework of Credit Institutions; Organic Law of BdP",
+    "decision_making_body": "Board of Directors of BdP",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["Organic Law BdP", "Legal Framework CIs", "CRR/CRD IV"],
+    "source_url": "https://www.bportugal.pt/"
+  },
+  "RO": {
+    "macroprudential_authority": "Banca Națională a României (BNR)",
+    "designated_authority": "Banca Națională a României (BNR)",
+    "institutional_model": "unified",
+    "legal_basis": "Statute of the BNR; Banking Law",
+    "decision_making_body": "Board of the BNR",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["Statute of BNR", "Banking Law", "CRR/CRD IV"],
+    "source_url": "https://www.bnr.ro/"
+  },
+  "SK": {
+    "macroprudential_authority": "Národná banka Slovenska (NBS)",
+    "designated_authority": "Národná banka Slovenska (NBS)",
+    "institutional_model": "unified",
+    "legal_basis": "Act on the NBS; Act on Financial Market Supervision",
+    "decision_making_body": "Bank Board of the NBS",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["Act on NBS", "CRR/CRD IV"],
+    "source_url": "https://www.nbs.sk/"
+  },
+  "SI": {
+    "macroprudential_authority": "Banka Slovenije",
+    "designated_authority": "Banka Slovenije",
+    "institutional_model": "unified",
+    "legal_basis": "Banka Slovenije Act; Banking Act",
+    "decision_making_body": "Governing Board of Banka Slovenije",
+    "relationship_to_cb": "Central bank acts as both NMA and NDA",
+    "key_regulations": ["Banka Slovenije Act", "Banking Act", "CRR/CRD IV"],
+    "source_url": "https://www.bsi.si/"
+  },
+  "ES": {
+    "macroprudential_authority": "Consejo de Estabilidad Financiera (CEF)",
+    "designated_authority": "Banco de España",
+    "institutional_model": "separate",
+    "legal_basis": "Law on the CEF; Law on Banco de España",
+    "decision_making_body": "CEF; Banco de España implements",
+    "relationship_to_cb": "Banco de España (designated); CEF coordinates",
+    "key_regulations": ["CEF Law", "Law on Banco de España", "CRR/CRD IV"],
+    "source_url": "https://www.bde.es/"
+  },
+  "SE": {
+    "macroprudential_authority": "Finansinspektionen (FI)",
+    "designated_authority": "Finansinspektionen (FI)",
+    "institutional_model": "unified",
+    "legal_basis": "Act on Finansinspektionen; Banking and Financing Business Act",
+    "decision_making_body": "Board of Finansinspektionen",
+    "relationship_to_cb": "FI (FSA) acts as both NMA and NDA; Riksbank advises",
+    "key_regulations": ["Act on FI", "Banking and Financing Business Act", "CRR/CRD IV"],
+    "source_url": "https://www.fi.se/"
+  },
+  "IS": {
+    "macroprudential_authority": "Seðlabanki Íslands (Central Bank of Iceland)",
+    "designated_authority": "Fjármálaeftirlitið (FME)",
+    "institutional_model": "separate",
+    "legal_basis": "Act on the Central Bank of Iceland; Act on Financial Undertakings",
+    "decision_making_body": "Governor of CBI; FME implements",
+    "relationship_to_cb": "CBI monitors; FME designated for instruments",
+    "key_regulations": ["CBI Act", "Act on Financial Undertakings"],
+    "source_url": "https://www.cb.is/"
+  },
+  "LI": {
+    "macroprudential_authority": "Finanzmarktaufsicht Liechtenstein (FMA)",
+    "designated_authority": "Finanzmarktaufsicht Liechtenstein (FMA)",
+    "institutional_model": "unified",
+    "legal_basis": "Banking Act; FMA Act",
+    "decision_making_body": "Board of the FMA",
+    "relationship_to_cb": "FMA (no national central bank) acts as NMA and NDA",
+    "key_regulations": ["Banking Act", "FMA Act", "CRR/CRD IV"],
+    "source_url": "https://www.fma-li.li/"
+  },
+  "NO": {
+    "macroprudential_authority": "Finanstilsynet (Financial Supervisory Authority of Norway)",
+    "designated_authority": "Finanstilsynet",
+    "institutional_model": "unified",
+    "legal_basis": "Financial Institutions Act; Norges Bank Act",
+    "decision_making_body": "Board of Finanstilsynet; Norges Bank advises",
+    "relationship_to_cb": "Finanstilsynet designated; Norges Bank provides analysis",
+    "key_regulations": ["Financial Institutions Act", "CRR/CRD IV"],
+    "source_url": "https://www.finanstilsynet.no/"
+  }
+}

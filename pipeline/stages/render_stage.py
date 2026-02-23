@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List, TYPE_CHECKING
 
 from render import render_report, df_to_html_table, render_capital_overall_table
+from bbm.matrix_builder import is_bbm_row_active, RENAME_MAP
 
 if TYPE_CHECKING:
     from pipeline.context import PipelineContext
@@ -118,6 +119,21 @@ class RenderStage:
             ccyb_decisions_resp = self.supabase_client.table("ccyb_decisions").select("*").order("effective_date").execute()
             syrb_measures_resp = self.supabase_client.table("syrb_measures").select("*").order("effective_date").execute()
             bbm_measures_resp = self.supabase_client.table("bbm_measures").select("*").order("effective_date").execute()
+
+            # Fetch institutional setup (optional; table may not exist before migration)
+            inst_by_iso2: Dict[str, Dict[str, Any]] = {}
+            try:
+                inst_resp = self.supabase_client.table("institutional_setup").select("*").execute()
+                for row in inst_resp.data or []:
+                    iso = row.get("country_iso2")
+                    if iso:
+                        r = dict(row)
+                        for k in ("key_regulations", "ai_sources_cited"):
+                            if k in r and r[k] is None:
+                                r[k] = []
+                        inst_by_iso2[iso] = r
+            except Exception as inst_exc:
+                logger.debug("institutional_setup table not available: %s", inst_exc)
             
             # Group by country
             ccyb_by_country = {}
@@ -153,21 +169,21 @@ class RenderStage:
                 syrb_snap = syrb_snapshots.get(iso2, {})
                 osii_snap = osii_snapshots.get(iso2, {})
                 
-                # BBM types (exclude "Not active" / inactive status, same as data_aggregators)
-                def _is_bbm_active(bbm):
-                    if bbm.get("active_status") == "Active" or bbm.get("status") == "Active":
-                        st = str(bbm.get("status", "") or "").lower()
-                        if st and any(x in st for x in ["not active", "inactive", "revoked", "deactivated", "expired"]):
-                            return False
-                        return True
-                    return False
-
+                # BBM - same logic as BBM overview (is_bbm_row_active)
+                raw_active = [m for m in bbm_by_country.get(iso2, []) if is_bbm_row_active(m)]
                 bbm_types = []
-                active_bbm_list = [m for m in bbm_by_country.get(iso2, []) if _is_bbm_active(m)]
-                for bbm in active_bbm_list:
-                    measure_type = bbm.get("measure_type", "")
-                    if measure_type and measure_type not in bbm_types:
-                        bbm_types.append(measure_type)
+                active_bbm_list = []
+                for m in raw_active:
+                    measure_type = m.get("measure_type", "")
+                    measure_short = RENAME_MAP.get(measure_type, measure_type) if measure_type else ""
+                    if measure_short and measure_short not in bbm_types:
+                        bbm_types.append(measure_short)
+                    active_bbm_list.append({
+                        "type": measure_short or measure_type,
+                        "status": "Active",
+                        "date": m.get("effective_date") or m.get("date"),
+                        "description": m.get("description", ""),
+                    })
                 
                 current_status = {
                     "ccyb": {
@@ -219,10 +235,12 @@ class RenderStage:
                     "osii": current_status.get("osii"),
                 }
                 
+                inst = inst_by_iso2.get(iso2)
                 countries_data[country_name] = {
                     "country": country_name,
                     "iso2": iso2,
                     "current_status": current_status,
+                    "institutional_setup": inst,
                     "historical_evolution": historical_evolution,
                     "recent_changes": recent_changes,
                     "active_measures": active_measures,

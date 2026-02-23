@@ -13,6 +13,7 @@ from .data_aggregators import (
     get_recent_changes,
     get_active_measures,
     get_comparison,
+    get_institutional_setup,
 )
 from knowledge_graph import build_knowledge_graph_data
 
@@ -62,9 +63,11 @@ class CountryProfileGenerator:
         Returns:
             Dictionary a profil adataival
         """
+        iso2 = get_iso2(country)
         profile = {
             'country': country,
-            'iso2': get_iso2(country),
+            'iso2': iso2,
+            'institutional_setup': get_institutional_setup(country, self.data, iso2=iso2),
             'current_status': get_current_status(country, self.data),
             'historical_evolution': get_historical_evolution(country, self.data),
             'recent_changes': get_recent_changes(country, self.data),

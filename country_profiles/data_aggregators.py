@@ -1,11 +1,19 @@
 """
 Data aggregation functions for country profiles.
 """
+import json
+import logging
+from pathlib import Path
+
 import pandas as pd
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 
 from utils.dataframe import ccyb_change_only_points, get_latest_quarter_end
+from country_profiles.region_mapper import get_iso2
+from bbm.matrix_builder import get_active_bbm_for_country, RENAME_MAP
+
+logger = logging.getLogger(__name__)
 
 
 def get_current_status(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
@@ -139,15 +147,17 @@ def get_current_status(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str,
                     'status': 'Inactive',
                 }
     
-    # BBM
+    # BBM - same logic as BBM overview table (is_bbm_row_active, country or iso2 match)
     bbm_df = data.get('bbm_df')
     if bbm_df is not None and not bbm_df.empty:
-        country_bbm = bbm_df[
-            (bbm_df['country'] == country) &
-            (bbm_df.get('active_status', '') == 'Active')
-        ]
+        iso2 = get_iso2(country)
+        country_bbm = get_active_bbm_for_country(bbm_df, country, iso2=iso2)
         if not country_bbm.empty:
-            status['bbm'] = country_bbm['measure_type'].unique().tolist()
+            # Use measure_short (LTV, DSTI, etc.) for consistency with overview; fallback to measure_type
+            if "measure_short" not in country_bbm.columns:
+                country_bbm = country_bbm.copy()
+                country_bbm["measure_short"] = country_bbm["measure_type"].map(lambda x: RENAME_MAP.get(x, x))
+            status['bbm'] = country_bbm["measure_short"].unique().tolist()
     
     # Total Capital (Capital Overall)
     capital_df = data.get('capital_overall_df')
@@ -357,24 +367,18 @@ def get_active_measures(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str
                     'description': row.get('description', ''),
                 })
     
-    # BBM részletek - csak aktív eszközök
+    # BBM részletek - same logic as BBM overview (get_active_bbm_for_country)
     bbm_df = data.get('bbm_df')
     if bbm_df is not None and not bbm_df.empty:
-        country_bbm = bbm_df[
-            (bbm_df['country'] == country) &
-            (bbm_df.get('active_status', '') == 'Active')
-        ]
+        iso2 = get_iso2(country)
+        country_bbm = get_active_bbm_for_country(bbm_df, country, iso2=iso2)
         
         for _, row in country_bbm.iterrows():
-            # Ellenőrizzük a status mezőt is - csak aktív eszközöket adjunk vissza
-            status = str(row.get('status', '')).strip()
-            # Ha a status tartalmazza a "not active", "inactive", "revoked", "deactivated" szavakat, akkor kihagyjuk
-            if status and any(inactive_term in status.lower() for inactive_term in ['not active', 'inactive', 'revoked', 'deactivated', 'expired']):
-                continue
-            
+            measure_type = row.get('measure_type', '')
+            measure_short = RENAME_MAP.get(measure_type, measure_type)
             measures['bbm'].append({
-                'type': row.get('measure_type', ''),
-                'status': 'Active',  # Mivel már szűrtük, mindig Active
+                'type': measure_short or measure_type,
+                'status': 'Active',
                 'date': row.get('date'),
                 'description': row.get('description', ''),
             })
@@ -455,3 +459,56 @@ def get_comparison(country: str, data: Dict[str, pd.DataFrame]) -> Dict[str, Any
                     comparison['similar_countries'] = similar[[country_col, 'Total']].to_dict('records')
     
     return comparison
+
+
+def _load_institutional_setup_json() -> Dict[str, Dict[str, Any]]:
+    """Load institutional setup from data/institutional_setup.json (keyed by iso2)."""
+    candidates = [
+        Path(__file__).resolve().parent.parent / "data" / "institutional_setup.json",
+        Path("data") / "institutional_setup.json",
+    ]
+    for p in candidates:
+        if p.exists():
+            try:
+                with open(p, encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.warning(f"Failed to load institutional_setup.json from {p}: {e}")
+    return {}
+
+
+def get_institutional_setup(
+    country: str,
+    data: Dict[str, Any],
+    iso2: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    """
+    Get institutional setup of macroprudential policy for a country.
+    Priority: data['institutional_setup_df'] > data['institutional_setup_by_country'] > data/institutional_setup.json.
+    """
+    iso2 = iso2 or get_iso2(country)
+
+    # 1. DataFrame in pipeline data (e.g. from Supabase)
+    df = data.get("institutional_setup_df")
+    if df is not None and not df.empty and iso2:
+        col = "country_iso2" if "country_iso2" in df.columns else "iso2"
+        if col in df.columns:
+            row = df[df[col] == iso2]
+            if not row.empty:
+                r = row.iloc[0].to_dict()
+                return {k: (None if pd.isna(v) else v) for k, v in r.items()}
+
+    # 2. Dict by country/iso2 in pipeline data
+    by_country = data.get("institutional_setup_by_country") or {}
+    if country in by_country:
+        return dict(by_country[country])
+    if iso2 and iso2 in by_country:
+        return dict(by_country[iso2])
+
+    # 3. Load from data/institutional_setup.json
+    if iso2:
+        setup_map = _load_institutional_setup_json()
+        if iso2 in setup_map:
+            return dict(setup_map[iso2])
+
+    return None

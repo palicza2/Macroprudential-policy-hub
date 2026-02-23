@@ -558,14 +558,24 @@ async function loadCountryProfile(country, profileData) {
     // Update current status
     renderCurrentStatus(profileData.current_status || {});
     
+    // Update institutional setup
+    renderInstitutionalSetup(profileData.institutional_setup || null);
+    
     // Update historical evolution
     renderHistoricalEvolution(country, profileData.historical_evolution || {});
     
     // Update recent changes
     renderRecentChanges(profileData.recent_changes || []);
     
-    // Update active measures (tab-based)
-    renderActiveMeasuresTabbed(profileData.active_measures || {});
+    // Update active measures (tab-based): use merged BBM list so tab matches top-right BBM card
+    var activeMeasures = profileData.active_measures || {};
+    var mergedBBM = getMergedBBMForTab(profileData.current_status || {}, activeMeasures);
+    renderActiveMeasuresTabbed({
+        ccyb: activeMeasures.ccyb,
+        syrb: activeMeasures.syrb,
+        bbm: mergedBBM,
+        osii: activeMeasures.osii
+    });
     
     // Update AI inflection points
     renderAIInflectionPoints(profileData.ai_inflection_points || []);
@@ -658,6 +668,83 @@ function renderCurrentStatus(status) {
         bbmTypes: bbmActive ? status.bbm : []
     });
     grid.appendChild(bbmCard);
+}
+
+function renderInstitutionalSetup(inst) {
+    var container = document.getElementById('institutional-setup-content');
+    var card = document.getElementById('institutional-setup-card');
+    if (!container || !card) return;
+    
+    if (!inst || (typeof inst !== 'object')) {
+        card.style.display = 'none';
+        return;
+    }
+    
+    card.style.display = 'block';
+    
+    var tableFields = ['macroprudential_authority', 'designated_authority', 'institutional_model', 'legal_basis', 'decision_making_body', 'relationship_to_cb', 'key_regulations'];
+    var labels = {
+        macroprudential_authority: 'Macroprudential Authority',
+        designated_authority: 'Designated Authority',
+        institutional_model: 'Institutional Model',
+        legal_basis: 'Legal Basis',
+        decision_making_body: 'Decision-Making Body',
+        relationship_to_cb: 'Relationship to Central Bank',
+        key_regulations: 'Key Regulations'
+    };
+    
+    var html = '';
+    
+    // Structured table
+    var hasTableData = tableFields.some(function(k) { return inst[k]; });
+    if (hasTableData) {
+        html += '<div class="institutional-setup-table-wrap"><table class="institutional-setup-table">';
+        tableFields.forEach(function(k) {
+            var v = inst[k];
+            if (!v) return;
+            var display = Array.isArray(v) ? (v.join(', ') || '-') : String(v);
+            html += '<tr><th>' + escapeHtml(labels[k] || k) + '</th><td>' + escapeHtml(display) + '</td></tr>';
+        });
+        html += '</table></div>';
+    }
+    
+    // AI-generated description
+    var aiDesc = inst.ai_description;
+    if (aiDesc) {
+        html += '<div class="institutional-setup-ai-description">';
+        html += '<h4 class="institutional-setup-ai-title">AI Analysis</h4>';
+        html += '<div class="institutional-setup-ai-text">' + aiDesc + '</div>';
+        
+        // Grounding / confidence
+        var conf = inst.ai_confidence_score;
+        var grounding = inst.ai_grounding_notes;
+        var sources = inst.ai_sources_cited;
+        if (conf !== undefined && conf !== null) {
+            var confPct = Math.round(parseFloat(conf) * 100);
+            var confClass = confPct >= 70 ? 'high' : (confPct >= 40 ? 'medium' : 'low');
+            html += '<div class="institutional-setup-grounding">';
+            html += '<span class="confidence-badge confidence-' + confClass + '" title="Confidence in AI grounding">Confidence: ' + confPct + '%</span>';
+            if (grounding) html += ' <span class="grounding-notes">' + escapeHtml(grounding) + '</span>';
+            if (sources && sources.length) {
+                html += '<div class="sources-cited"><small>Sources: ' + escapeHtml(sources.join(', ')) + '</small></div>';
+            }
+            html += '</div>';
+        }
+        html += '</div>';
+    }
+    
+    if (!hasTableData && !aiDesc) {
+        html = '<p style="color: #64748b; padding: 20px;">No institutional setup data available for this country.</p>';
+    }
+    
+    container.innerHTML = html;
+}
+
+function escapeHtml(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
 }
 
 function createKeyMeasureCard(config) {
@@ -866,6 +953,32 @@ function renderRecentChanges(changes) {
     });
 }
 
+// Ensure BBM tab shows the same measure types as the top-right BBM card (current_status.bbm).
+// Merges active_measures.bbm (full objects) with placeholders for any type in current_status.bbm that has no detail.
+function getMergedBBMForTab(currentStatus, activeMeasures) {
+    var detailList = activeMeasures.bbm || [];
+    var topCardTypes = currentStatus.bbm || [];
+    if (topCardTypes.length === 0) return detailList;
+    
+    var normalized = detailList.map(normalizeBBMItem);
+    var coveredKeys = {};
+    normalized.forEach(function(bbm) {
+        var key = bbmMeasureTypeToCardKey(bbm.type);
+        if (key && key !== 'Amort.') coveredKeys[key] = true;
+    });
+    
+    topCardTypes.forEach(function(typeStr) {
+        if (!typeStr || typeof typeStr !== 'string') return;
+        var key = bbmMeasureTypeToCardKey(typeStr.trim());
+        if (!key || key === 'Amort.') return;
+        if (coveredKeys[key]) return;
+        coveredKeys[key] = true;
+        normalized.push({ type: typeStr.trim(), status: 'Active', date: null, description: '', _raw: {} });
+    });
+    
+    return normalized;
+}
+
 function renderActiveMeasuresTabbed(measures) {
     // Borrower-Based tab
     var borrowerContainer = document.getElementById('active-measures-borrower');
@@ -908,11 +1021,24 @@ var BBM_CARD_TYPES = [
     { key: 'Stress T.', icon: '🔬', label: 'Stress test' }
 ];
 
+// Normalize BBM item: support both pipeline (type, status, date, description) and Supabase (measure_type, measure_short, active_status, effective_date, description)
+function normalizeBBMItem(bbm) {
+    var type = bbm.type || bbm.measure_type || bbm.measure_short || '';
+    var status = (bbm.status != null && bbm.status !== '') ? bbm.status : (bbm.active_status || '');
+    var date = bbm.date || bbm.effective_date || bbm.decision_date;
+    var description = bbm.description || '';
+    return { type: type, status: status, date: date, description: description, _raw: bbm };
+}
+
 function renderBBMMeasures(bbmMeasures, container) {
     container.innerHTML = '';
     
-    var activeBBM = bbmMeasures.filter(function(bbm) {
+    var normalized = (bbmMeasures || []).map(normalizeBBMItem);
+    var activeBBM = normalized.filter(function(bbm) {
+        var type = (bbm.type || '').toString().trim();
+        if (!type) return false;
         var status = (bbm.status || '').toString().toLowerCase();
+        if (status === 'active') return true;
         return !status || (!status.includes('not active') && !status.includes('inactive') &&
                           !status.includes('revoked') && !status.includes('deactivated') && !status.includes('expired'));
     });
@@ -931,7 +1057,47 @@ function renderBBMMeasures(bbmMeasures, container) {
         groupedByCardKey[cardKey].push(bbm);
     });
     
-    // Render one card per BBM_CARD_TYPES that has measures (order matches overview)
+    // 1. Table: Active BBM overview (one row, one column per measure type — same as BBM page overview)
+    var tableWrap = document.createElement('div');
+    tableWrap.className = 'country-bbm-overview-wrap';
+    var table = document.createElement('table');
+    table.className = 'display-table country-bbm-overview-table';
+    var thead = document.createElement('thead');
+    var headerRow = document.createElement('tr');
+    headerRow.innerHTML = '<th>Measure</th>';
+    BBM_CARD_TYPES.forEach(function(cardDef) {
+        headerRow.innerHTML += '<th>' + cardDef.label + '</th>';
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    var dataRow = document.createElement('tr');
+    dataRow.innerHTML = '<td><strong>Status</strong></td>';
+    BBM_CARD_TYPES.forEach(function(cardDef) {
+        var typeMeasures = groupedByCardKey[cardDef.key];
+        var cell = document.createElement('td');
+        if (typeMeasures && typeMeasures.length > 0) {
+            cell.innerHTML = "<span class='dot dot--active'></span> Active";
+        } else {
+            cell.textContent = '—';
+            cell.classList.add('no-measure');
+        }
+        dataRow.appendChild(cell);
+    });
+    tbody.appendChild(dataRow);
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    container.appendChild(tableWrap);
+    
+    // 2. Section title for detail cards
+    var detailsTitle = document.createElement('h3');
+    detailsTitle.className = 'country-bbm-details-title';
+    detailsTitle.textContent = 'Details by measure';
+    container.appendChild(detailsTitle);
+    
+    // 3. One card per measure type (column) that has measures
+    var cardsWrap = document.createElement('div');
+    cardsWrap.className = 'country-bbm-cards-grid';
     BBM_CARD_TYPES.forEach(function(cardDef) {
         var typeMeasures = groupedByCardKey[cardDef.key];
         if (!typeMeasures || typeMeasures.length === 0) return;
@@ -950,8 +1116,9 @@ function renderBBMMeasures(bbmMeasures, container) {
                         '<div class="bbm-summary">' + summary + '</div>' +
                         (typeMeasures.length > 1 ? '<div class="bbm-count">(' + typeMeasures.length + ' active measure' + (typeMeasures.length > 1 ? 's' : '') + ')</div>' : '') +
                         '</div>';
-        container.appendChild(card);
+        cardsWrap.appendChild(card);
     });
+    container.appendChild(cardsWrap);
 }
 
 function extractBBMSummary(measures) {

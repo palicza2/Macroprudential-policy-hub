@@ -44,7 +44,7 @@ The Macro Policy Hub delivers significant operational and strategic value for fi
 - **Part I: CCyB Monitor:** Tracks Countercyclical Capital Buffer rates, calculating diffusion indices and analyzing the credit gap vs. rate decoupling.
 - **Part II: SyRB Monitor:** A dedicated section for the **Systemic Risk Buffer**, distinguishing between **General** and **Sectoral** measures (e.g., Residential/Commercial Real Estate).
 - **Part III: BBM Monitor:** Borrower-Based Measures adoption, cross-country active tools matrix, structured LTV comparison table (with AI verification), DTI/LTI comparison table (with AI verification and expert corrections, supporting multiple limits/ranges), and recent decisions.
-- **Part IV: Country Profiles:** Interactive country-specific pages with current status, historical evolution, recent changes, active measures, and peer comparison.
+- **Part IV: Country Profiles:** Interactive country-specific pages with institutional setup of macroprudential policy (NMA, NDA, legal basis, AI-generated descriptions with confidence scores), current status, historical evolution, recent changes, active measures, and peer comparison.
 - **Part V: Knowledge Graph Analysis:** AI-powered analysis of policy relationships and patterns, comparing graph-derived insights with table-based data for validation and pattern identification.
 
 ### 2. AI-Driven Intelligence (Gemini 2.5 Flash Lite) 🧠
@@ -59,7 +59,7 @@ The Macro Policy Hub delivers significant operational and strategic value for fi
 ### 3. Supabase Integration 🗄️
 
 - **Optional Dynamic Data Loading:** Frontend can fetch data from Supabase REST API for real-time updates.
-- **Structured Data Storage:** PostgreSQL-based storage for CCyB, SyRB, BBM, LTV, DTI/LTI rules, and country profiles.
+- **Structured Data Storage:** PostgreSQL-based storage for CCyB, SyRB, BBM, LTV, DTI/LTI rules, institutional setup, and country profiles.
 - **On-Demand Data Fetching:** Country profiles and BBM rules can be loaded dynamically from Supabase when enabled.
 - **Fallback Support:** Gracefully falls back to static embedded data if Supabase is unavailable.
 

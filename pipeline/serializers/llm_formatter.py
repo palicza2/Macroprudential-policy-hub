@@ -19,6 +19,13 @@ def format_profile_for_llm(profile_data):
     if status.get('total_capital'):
         text += f"- Total Capital: {status['total_capital'].get('total', 0)}%\n"
     
+    inst = profile_data.get('institutional_setup')
+    if inst and isinstance(inst, dict):
+        text += "\nInstitutional Setup:\n"
+        for k, v in inst.items():
+            if k.startswith('ai_') or not v:
+                continue
+            text += f"- {k}: {v}\n"
     text += "\nRecent Changes (Last 12 Months):\n"
     for change in changes[:5]:
         date_str = change.get('date', 'N/A')
