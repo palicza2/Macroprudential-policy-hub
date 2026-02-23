@@ -1,0 +1,14 @@
+# Macroprudential Hub - Local pipeline run
+# Usage: docker-compose run --rm pipeline
+# Requires: .env with GOOGLE_API_KEY (and optional Supabase/search keys)
+
+services:
+  pipeline:
+    build: .
+    image: macroprudential-hub:latest
+    env_file: .env
+    volumes:
+      # Mount project dir so output (index.html, reports/, figures/, data/) appears on host
+      - .:/app
+    # Run pipeline
+    command: python main.py

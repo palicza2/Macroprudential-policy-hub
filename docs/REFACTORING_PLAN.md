@@ -51,8 +51,7 @@ scripts/
 │   ├── test_ai_validation_dk.py
 │   └── ...
 ├── run_migrations.py        # Production scriptek
-├── run_migrations_cli.py
-└── etl_process.py
+└── run_migrations_cli.py
 ```
 
 ---

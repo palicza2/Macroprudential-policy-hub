@@ -8,9 +8,12 @@ import os
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, TYPE_CHECKING
 
 from render import render_report, df_to_html_table, render_capital_overall_table
+
+if TYPE_CHECKING:
+    from pipeline.context import PipelineContext
 
 
 def _render_dti_table(bbm_data: Dict[str, Any]) -> str:
@@ -286,45 +289,32 @@ class RenderStage:
                 "status": "Active" if total_rate > 0 else "Inactive",
             }
     
-    def process(
-        self,
-        data: Dict[str, Any],
-        analyses: Dict[str, str],
-        plots_inline: Dict[str, str],
-        plot_figs: Dict[str, Any],
-        download_data: Dict[str, Any],
-        ccyb_decisions,
-        active_syrb,
-        syrb_decisions,
-        bbm_data: Dict[str, Any],
-        capital_overall_df,
-        countries_data: Dict[str, Any],
-        knowledge_graph_json: str,
-    ) -> str:
+    def process(self, ctx: "PipelineContext") -> str:
         """
         Render final HTML report.
-        
+
         Args:
-            data: Processed data dictionary
-            analyses: AI analyses
-            plots_inline: Inline plot HTML
-            plot_figs: Plot figure files
-            download_data: Download data
-            ccyb_decisions: CCyB decisions dataframe
-            active_syrb: Active SyRB dataframe
-            syrb_decisions: SyRB decisions dataframe
-            bbm_data: BBM processing results
-            capital_overall_df: Capital overall dataframe
-            countries_data: Country profiles data
-            knowledge_graph_json: Knowledge graph JSON string
-            
+            ctx: Pipeline context with data, analyses, plots, and all stage outputs.
+
         Returns:
             Rendered HTML string
         """
         logger.info("4. Riport...")
-        
+
+        data = ctx.data
+        analyses = ctx.analyses
+        plots_inline = ctx.plots_inline
+        plot_figs = ctx.plot_figs
+        download_data = ctx.download_data
+        ccyb_decisions = ctx.ccyb_decisions
+        active_syrb = ctx.active_syrb
+        syrb_decisions = ctx.syrb_decisions
+        bbm_data = ctx.bbm_data
+        capital_overall_df = data.get("capital_overall_df")
+        countries_data = ctx.countries_data
+        knowledge_graph_json = ctx.knowledge_graph_json
+
         # News Processing
-        import os
         api_key = os.getenv(self.news_config.get("api_key_env", "CUSTOM_SEARCH_API_KEY"), "")
         cse_id = os.getenv(self.news_config.get("cse_id_env", "GOOGLE_CSE_ID"), "")
         query = self.news_config.get("query", "")

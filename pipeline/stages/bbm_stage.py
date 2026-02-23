@@ -196,20 +196,8 @@ class BBMStage:
             dti_lti_eu_list_html = ""
 
         # DTI expert table (Excel schema, English) for BBM page display
-        from pathlib import Path
-        proj_data = Path(__file__).resolve().parent.parent.parent / "data"
-        excel_path = None
-        for candidate in [proj_data / "BBM táblázatok.xlsx", Path.home() / "Downloads" / "BBM táblázatok.xlsx"]:
-            if candidate.exists():
-                excel_path = candidate
-                break
-        if not excel_path:
-            downloads = Path.home() / "Downloads"
-            if downloads.exists():
-                excel_candidates = list(downloads.glob("*BBM*.xlsx"))
-                if excel_candidates:
-                    excel_path = excel_candidates[0]
-        dti_expert_table = load_dti_expert_table(excel_path=excel_path)
+        from config import BBM_EXCEL_PATH
+        dti_expert_table = load_dti_expert_table(excel_path=BBM_EXCEL_PATH)
 
         return {
             'active_bbm': active_bbm,

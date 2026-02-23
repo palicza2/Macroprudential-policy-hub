@@ -98,6 +98,12 @@ NEWS_CONFIG = {
     ),
 }
 
+# --- BBM / DTI Expert Table ---
+# Path to expert DTI table Excel (BBM táblázatok.xlsx).
+# Set BBM_EXCEL_PATH in .env to override. If unset, uses data/BBM táblázatok.xlsx.
+_BBM_EXCEL_ENV = os.getenv("BBM_EXCEL_PATH", "").strip()
+BBM_EXCEL_PATH = Path(_BBM_EXCEL_ENV) if _BBM_EXCEL_ENV else (DATA_DIR / "BBM táblázatok.xlsx")
+
 # --- Supabase Configuration (for Render Stage) ---
 SUPABASE_RENDER_CONFIG = {
     "enabled": os.getenv("USE_SUPABASE_FOR_RENDER", "false").lower() == "true",

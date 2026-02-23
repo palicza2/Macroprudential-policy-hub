@@ -215,6 +215,8 @@ graph TD
     ├── config.py                    # Centralized configuration (URLs, Model settings)
     ├── utils.py                     # Helper functions
     ├── requirements.txt             # Python dependencies
+    ├── Dockerfile                   # Docker image for pipeline
+    ├── docker-compose.yml           # Local Docker run
     └── README.md                    # Project documentation
 
 ---
@@ -264,7 +266,22 @@ To generate the static HTML report:
 - **Step 6:** Optional Supabase data writing (if `ENABLE_SUPABASE=true`).
 - **Step 7:** Renders the final `index.html` (optionally using Supabase data if `USE_SUPABASE_FOR_RENDER=true`).
 
-### 5. Automated Build & Deployment
+### 5. Run with Docker (optional)
+
+For a reproducible environment without installing Python locally:
+
+**Using Docker directly:**
+
+    docker build -t macroprudential-hub .
+    docker run --rm -e GOOGLE_API_KEY=your_key -v "$(pwd)":/app macroprudential-hub
+
+**Using Docker Compose:**
+
+    docker-compose run --rm pipeline
+
+Output (`index.html`, `reports/`, `figures/`, `data/`) is written to the current directory. Ensure `.env` exists with your API keys when using docker-compose.
+
+### 6. Automated Build & Deployment
 
 This repository uses **GitHub Actions** to automatically build and deploy the dashboard:
 
@@ -272,8 +289,8 @@ This repository uses **GitHub Actions** to automatically build and deploy the da
 - **Manual trigger:** Can be triggered manually from GitHub Actions tab
 
 The workflow:
-1. Installs Python dependencies
-2. Runs `main.py` to generate the dashboard
+1. Builds the Docker image
+2. Runs the pipeline inside the container to generate the dashboard
 3. Commits and pushes the generated `index.html` and assets
 
 **GitHub Secrets Required:**
@@ -288,6 +305,7 @@ The workflow:
 If you prefer manual publishing:
 
     python main.py
+    # or: docker run --rm -e GOOGLE_API_KEY=xxx -v "$(pwd)":/app macroprudential-hub
     git add index.html assets/ reports/ CNAME
     git commit -m "Publish dashboard YYYY-MM-DD"
     git push

@@ -1,32 +1,56 @@
 name: Build Dashboard
 
 on:
-  push:
-    branches:
-      - master
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch: # Manual trigger only - no automatic run on push
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: write  # Allow pushing to repository
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    
-    - name: Commit and push existing files
+
+    - name: Build Docker image
+      run: docker build -t macroprudential-hub:latest .
+
+    - name: Run pipeline
+      env:
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        CUSTOM_SEARCH_API_KEY: ${{ secrets.CUSTOM_SEARCH_API_KEY }}
+        GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+        SEARCH_ENABLED: ${{ secrets.SEARCH_ENABLED }}
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        USE_SUPABASE_FOR_RENDER: ${{ secrets.USE_SUPABASE_FOR_RENDER }}
+        ENABLE_SUPABASE: ${{ secrets.ENABLE_SUPABASE }}
+      run: |
+        docker run --rm \
+          -e GOOGLE_API_KEY \
+          -e CUSTOM_SEARCH_API_KEY \
+          -e GOOGLE_CSE_ID \
+          -e SEARCH_ENABLED \
+          -e SUPABASE_URL \
+          -e SUPABASE_KEY \
+          -e SUPABASE_SERVICE_KEY \
+          -e USE_SUPABASE_FOR_RENDER \
+          -e ENABLE_SUPABASE \
+          -v "${{ github.workspace }}:/app" \
+          macroprudential-hub:latest
+
+    - name: Commit and push dashboard
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        # Only commit if there are changes to commit
         if [ -n "$(git status --porcelain index.html assets/ reports/ figures/ 2>/dev/null)" ]; then
-          git add index.html assets/ reports/ figures/ || true
-          git commit -m "Auto-update dashboard files [skip ci]" || true
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:master || true
+          git add index.html assets/ reports/ figures/
+          git commit -m "Auto-update dashboard files [skip ci]"
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:master
         else
           echo "No changes to commit"
         fi

@@ -1,0 +1,38 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+.venv
+venv
+ENV
+env
+*.egg-info
+.eggs
+
+# Environment and secrets
+.env
+.env.*
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Build and cache
+cache
+*.parquet
+data/validation_report.json
+
+# Documentation (optional - include if small)
+docs/
+*.md
+!README.md
+
+# Tests and scripts (not needed for pipeline run)
+scripts/tests
+archive
