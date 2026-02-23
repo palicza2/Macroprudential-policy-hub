@@ -20,7 +20,14 @@ data/validation_report.json
 # Optional: if you don't want to commit these caches, uncomment:
 # data/*.xlsx
 # data/*.parquet
+
+# Environment / secrets - NEVER commit
 .env
+.env.*
+!.env.example
+.env.local
+.env.production
+.env.development
 
 # LLM / analysis cache
 cache/
