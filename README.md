@@ -281,24 +281,40 @@ For a reproducible environment without installing Python locally:
 
 Output (`index.html`, `reports/`, `figures/`, `data/`) is written to the current directory. Ensure `.env` exists with your API keys when using docker-compose.
 
-### 6. Automated Build & Deployment
+### 6. Automated Build & Deployment (GitHub Actions)
 
-This repository uses **GitHub Actions** to automatically build and deploy the dashboard:
+This repository uses **GitHub Actions** to build and deploy the dashboard:
 
-- **Automatic builds:** Runs on every push to `master` branch
-- **Manual trigger:** Can be triggered manually from GitHub Actions tab
+- **Manual trigger:** Actions → **Build Dashboard** → **Run workflow**
+- **Scheduled:** Every Monday at 06:00 UTC
 
-The workflow:
+**The workflow:**
 1. Builds the Docker image
-2. Runs the pipeline inside the container to generate the dashboard
-3. Commits and pushes the generated `index.html` and assets
+2. Runs the pipeline inside the container (ETL, AI analysis, country profiles)
+3. Commits and pushes the generated `index.html`, `reports/`, and `figures/`
 
-**GitHub Secrets Required:**
-- `GOOGLE_API_KEY` - For Gemini AI analysis
-- `CUSTOM_SEARCH_API_KEY` (optional) - For news search
-- `GOOGLE_CSE_ID` (optional) - For news search
-- `SEARCH_ALLOWED_DOMAINS` (optional) - Allowed search domains
-- `SEARCH_ENABLED` (optional) - Enable/disable search ("1" or "0")
+**Required secrets** (Settings → Secrets and variables → Actions):
+
+| Secret | Description |
+|--------|-------------|
+| `GOOGLE_API_KEY` | Google AI (Gemini) API key |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_KEY` | Supabase anon/public key |
+| `SUPABASE_SERVICE_KEY` | Supabase service_role key |
+| `ENABLE_SUPABASE` | `true` to write pipeline data to Supabase |
+| `USE_SUPABASE_FOR_RENDER` | `true` to use Supabase data in the report |
+
+**Optional secrets** (for grounding/external search):
+- `CUSTOM_SEARCH_API_KEY`, `GOOGLE_CSE_ID`, `SEARCH_ENABLED`
+
+**Batch-set secrets from `.env` (PowerShell):**
+```powershell
+$secrets = @("GOOGLE_API_KEY","SUPABASE_URL","SUPABASE_KEY","SUPABASE_SERVICE_KEY","ENABLE_SUPABASE","USE_SUPABASE_FOR_RENDER")
+foreach ($name in $secrets) {
+  $line = Get-Content .env | Select-String "^$name=" | Select-Object -First 1
+  if ($line) { $val = ($line -replace "^$name=","").Trim(); gh secret set $name --body $val }
+}
+```
 
 **Manual Publish (Alternative):**
 
@@ -337,6 +353,7 @@ The generated `index.html` includes:
     - _DTI/LTI Measures:_ Comprehensive comparison table of Debt-to-Income and Loan-to-Income limits across EU/EEA countries, including standard limits (supporting ranges like "3.0x, 8.0x"), FTB/BTL limits, green limits, income basis, allowances, and regulation links. AI-verified with expert corrections. Notes column explains multiple limit meanings (e.g., "Decreasing by age" for SK's 3-8x range).
     - _Latest Decisions:_ AI-cleaned BBM decisions.
 5.  **Country Profiles:**
+    - _Institutional Setup:_ Macroprudential authority (NMA), designated authority (NDA), legal basis, and AI-generated descriptions with confidence scores for 30 EEA countries.
     - _Current Status:_ Snapshot of active measures (CCyB, SyRB, O-SII, BBM) and total capital buffer.
     - _Historical Evolution:_ Time-series trends for CCyB and SyRB rates.
     - _Recent Changes:_ Last 12 months of policy changes and activations.
