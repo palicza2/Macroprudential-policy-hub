@@ -52,6 +52,8 @@ jobs:
         if [ -n "$(git status --porcelain index.html assets/ reports/ figures/ 2>/dev/null)" ]; then
           git add index.html assets/ reports/ figures/
           git commit -m "Auto-update dashboard files [skip ci]"
+          git fetch origin master
+          git rebase origin/master
           git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:master
         else
           echo "No changes to commit"
