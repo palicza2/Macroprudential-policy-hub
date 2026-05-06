@@ -301,7 +301,7 @@ Output (`index.html`, `reports/`, `figures/`, `data/`) is written to the current
 This repository uses **GitHub Actions** to build and deploy the dashboard:
 
 - **Manual trigger:** Actions → **Build Dashboard** → **Run workflow**
-- **Scheduled:** Every Monday at 06:00 UTC
+- **Scheduled:** 1st of every month at 06:00 UTC
 
 **The workflow:**
 1. Builds the Docker image
