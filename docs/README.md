@@ -5,6 +5,7 @@ Ez a mappa tartalmazza a projekt összes dokumentációs fájlját.
 ## 📋 Fő Dokumentáció
 
 - **[README.md](../README.md)** - Projekt fő README (root mappában)
+- **[architecture/MEDALLION_LAYOUT.md](architecture/MEDALLION_LAYOUT.md)** - Bronze / silver / gold layout and pipeline DAG
 
 ## 🗺️ Roadmap és Tervezés
 

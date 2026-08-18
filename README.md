@@ -122,9 +122,52 @@ The system uses several techniques to keep AI output factual and traceable:
 - **News Enrichment:** Generates 2–3 sentence summaries and assigns policy/theme tags.
 - **Optional Grounding:** Multimodal validation against data tables, chart images, and knowledge graph relationships; optional Google Search for contradicted/unclear claims with inline citations. See _Applied Grounding Methods_ above.
 
----
+Data is organized as a **medallion** (bronze → silver → gold) without moving files yet. File map and full DAG: [`docs/architecture/MEDALLION_LAYOUT.md`](docs/architecture/MEDALLION_LAYOUT.md).
+
+## 🧭 Pipeline stages (as run)
+
+Knowledge graph is skipped. Grounding runs only if `RUN_GROUNDING=true`.
+
+```mermaid
+flowchart TD
+    subgraph bronze [Bronze]
+        ESRB[ESRB Excel]
+        CUR[Curated JSON / expert DTI]
+    end
+
+    subgraph stages [PipelineOrchestrator]
+        DS[1 DataStage ETL]
+        VS[2 VisualizationStage]
+        BS[3a BBMStage]
+        AI[3b AIStage]
+        PS[3c ProfileStage]
+        RS[4 RenderStage]
+    end
+
+    subgraph gold [Gold]
+        HTML[index.html + reports/]
+        DB[(Supabase optional)]
+    end
+
+    ESRB --> DS
+    CUR --> PS
+    DS --> VS --> AI
+    DS --> BS --> AI
+    DS --> PS
+    BS --> PS
+    AI --> RS
+    PS --> RS
+    VS --> RS
+    BS --> RS
+    DS -->|ETL upsert| DB
+    BS -->|LTV DTI upsert| DB
+    PS -->|institutional AI upsert| DB
+    RS --> HTML
+```
 
 ## 🧭 System Overview (Mermaid)
+
+Product-oriented view (Knowledge Graph is **not** run in the current orchestrator). For the executed DAG, use the diagram above.
 
 ```mermaid
 graph TD
@@ -195,7 +238,7 @@ graph TD
 ## 📂 Project Structure
 
     MacroPolicyHub/
-    ├── data/                        # Raw Excel downloads & Processed Parquet files
+    ├── data/                        # Bronze Excel/JSON, silver parquet, gold snapshots (see data/README.md)
     ├── figures/                     # Static PNG exports for LLM consumption
     ├── assets/                      # UI assets (styles, scripts, embed styles)
     ├── reports/                     # Generated partials, plots, downloads

@@ -16,6 +16,7 @@
 - `DEBUG_SYRB_SNAPSHOT.md` - Debug dokumentáció
 
 ### `architecture/` - Architektúra és Implementáció
+- `MEDALLION_LAYOUT.md` - Bronze / silver / gold file map and pipeline DAG
 - `MATERIALIZED_VIEWS_MIGRATION.md` - Materialized Views migráció
 - `SUPABASE_RENDER_IMPLEMENTATION.md` - Supabase render implementáció
 - `SUPABASE_FRONTEND_INTEGRATION.md` - Frontend integráció
