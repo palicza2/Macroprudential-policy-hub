@@ -225,72 +225,94 @@ async function fetchCountryProfile(countryIso2) {
         const countryInfo = country[0];
         const countryName = countryInfo.country_name || countryInfo.name || '';
         
-        // Transform to countries_data format
         const ccyb_snap = ccybSnapshot && ccybSnapshot.length > 0 ? ccybSnapshot[0] : null;
         const syrb_snap = syrbSnapshot && syrbSnapshot.length > 0 ? syrbSnapshot[0] : null;
         const osii_snap = osiiSnapshot && osiiSnapshot.length > 0 ? osiiSnapshot[0] : null;
-        
-        // BBM types
-        const bbmTypes = [];
-        if (bbmMeasures) {
-            const activeBBM = bbmMeasures.filter(m => 
-                m.active_status === 'Active' || m.status === 'Active'
-            );
-            activeBBM.forEach(m => {
-                const measureType = m.measure_type;
-                if (measureType && !bbmTypes.includes(measureType)) {
-                    bbmTypes.push(measureType);
-                }
-            });
+
+        const RENAME_MAP = {
+            'Loan-to-value (LTV)': 'LTV',
+            'Debt-service-to-income (DSTI)': 'DSTI',
+            'Loan-to-income (LTI)': 'LTI',
+            'DTI': 'DTI',
+            'LTI': 'LTI',
+            'Loan maturity': 'Maturity',
+            'Loan amortisation': 'Amort.',
+            'Flexibility quota': 'Flex.',
+            'Stress test / sensitivity test': 'Stress T.',
+        };
+        function isBbmRowActive(m) {
+            var statusText = ((m.active_status || '') + ' ' + (m.status || '')).toLowerCase();
+            if (!(statusText.indexOf('active') !== -1 || statusText.indexOf('applicable') !== -1)) return false;
+            if (['not active', 'inactive', 'revoked', 'deactivated', 'expired'].some(function(x) { return statusText.indexOf(x) !== -1; })) return false;
+            return true;
         }
-        
-        // Current status (Materialized Views use different column names)
+        function bbmShort(measureType) {
+            if (!measureType) return '';
+            return RENAME_MAP[measureType] || measureType;
+        }
+
+        var bbmTypes = [];
+        var activeBbmList = [];
+        (bbmMeasures || []).filter(isBbmRowActive).forEach(function(m) {
+            var short = bbmShort(m.measure_type) || m.measure_type;
+            if (short && bbmTypes.indexOf(short) === -1) bbmTypes.push(short);
+            activeBbmList.push({
+                type: short || m.measure_type,
+                status: 'Active',
+                date: m.effective_date || m.date,
+                description: m.description || '',
+            });
+        });
+
+        var ccybRate = ccyb_snap ? (parseFloat(ccyb_snap.rate) || 0) : 0;
+        var syrbTotal = syrb_snap ? (parseFloat(syrb_snap.total_rate) || 0) : 0;
+        var osiiTotal = osii_snap ? (parseFloat(osii_snap.total_rate) || parseFloat(osii_snap.rate) || 0) : 0;
+        if (osiiTotal > 0 && osiiTotal < 1) osiiTotal = osiiTotal * 100;
+
         const currentStatus = {
             ccyb: ccyb_snap ? {
-                rate: parseFloat(ccyb_snap.rate) || 0.0,
-                date: ccyb_snap.effective_date || '',  // Materialized View uses effective_date
-                status: (parseFloat(ccyb_snap.rate) || 0) > 0 ? 'Active' : 'Inactive',
+                rate: ccybRate,
+                date: ccyb_snap.effective_date || ccyb_snap.date || '',
+                status: ccybRate > 0 ? 'Active' : 'Inactive',
             } : null,
             syrb: syrb_snap ? {
-                rate: parseFloat(syrb_snap.total_rate) || 0.0,  // Materialized View uses total_rate
-                date: '',  // Materialized View doesn't have date field
+                rate: syrbTotal,
+                date: '',
                 type: (parseFloat(syrb_snap.general_rate) || 0) > 0 ? 'General' : ((parseFloat(syrb_snap.sectoral_rate) || 0) > 0 ? 'Sectoral' : 'General'),
-                status: (parseFloat(syrb_snap.total_rate) || 0) > 0 ? 'Active' : 'Inactive',
+                status: syrbTotal > 0 ? 'Active' : 'Inactive',
             } : null,
             osii: osii_snap ? {
-                rate: parseFloat(osii_snap.total_rate) || 0.0,  // Materialized View uses total_rate
-                status: (parseFloat(osii_snap.total_rate) || 0) > 0 ? 'Active' : 'Inactive',
+                rate: osiiTotal,
+                rate_min: osiiTotal,
+                rate_max: osiiTotal,
+                rate_display: osiiTotal > 0 ? (osiiTotal === parseInt(osiiTotal, 10) ? (parseInt(osiiTotal, 10) + '%') : osiiTotal.toFixed(2) + '%') : '0%',
+                status: osiiTotal > 0 ? 'Active' : 'Inactive',
             } : null,
             bbm: bbmTypes,
             total_capital: null,
         };
-        
-        // Historical evolution
-        const ccybHistory = (ccybDecisions || []).map(d => ({
-            date: d.effective_date || '',
-            rate: parseFloat(d.rate) || 0.0,
-            credit_gap: d.credit_gap ? parseFloat(d.credit_gap) : null,
-        }));
-        
-        const syrbHistory = (syrbMeasures || []).map(m => ({
-            date: m.effective_date || '',
-            rate_numeric: parseFloat(m.rate) || 0.0,
-        }));
-        
-        const historicalEvolution = {
-            ccyb: ccybHistory,
-            syrb: syrbHistory,
-        };
-        
-        // Active measures
+
+        const ccybHistory = (ccybDecisions || []).map(function(d) {
+            return {
+                date: d.effective_date || d.date || '',
+                rate: parseFloat(d.rate) || 0,
+                credit_gap: d.credit_gap != null ? parseFloat(d.credit_gap) : null,
+            };
+        });
+        const syrbHistory = (syrbMeasures || []).map(function(m) {
+            return {
+                date: m.effective_date || m.date || '',
+                rate_numeric: parseFloat(m.rate) || 0,
+            };
+        });
+
         const activeMeasures = {
             ccyb: currentStatus.ccyb,
-            syrb: (syrbMeasures || []).filter(m => 
-                m.active_status === 'Active' || m.status === 'Active'
-            ),
-            bbm: (bbmMeasures || []).filter(m => 
-                m.active_status === 'Active' || m.status === 'Active'
-            ),
+            syrb: (syrbMeasures || []).filter(function(m) {
+                var s = ((m.active_status || '') + ' ' + (m.status || '')).toLowerCase();
+                return s.indexOf('active') !== -1 && s.indexOf('inactive') === -1;
+            }),
+            bbm: activeBbmList,
             osii: currentStatus.osii,
         };
         
@@ -314,14 +336,14 @@ async function fetchCountryProfile(countryIso2) {
             iso2: countryIso2,
             current_status: currentStatus,
             institutional_setup: institutionalSetup,
-            historical_evolution: historicalEvolution,
-            recent_changes: [], // TODO: Calculate from historical data
+            historical_evolution: { ccyb: ccybHistory, syrb: syrbHistory },
+            recent_changes: [],
             active_measures: activeMeasures,
             comparison: {
                 regional_average: null,
                 similar_countries: [],
             },
-            ai_analysis: '', // Would need separate fetch
+            ai_analysis: '',
         };
     } catch (error) {
         console.error('Error fetching country profile from Supabase:', error);

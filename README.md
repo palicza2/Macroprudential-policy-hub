@@ -266,6 +266,7 @@ Create a `.env` file in the root directory and add your API key(s):
     SUPABASE_SERVICE_KEY=your_service_role_key_here
     USE_SUPABASE_FOR_RENDER=false  # Set to true to use Supabase for render stage
     ENABLE_SUPABASE=false  # Set to true to enable Supabase data writing
+    RUN_GROUNDING=false  # Set to true to enable claim verification + external search (extra token cost)
 
 ### 4. Run the Pipeline
 
@@ -277,7 +278,7 @@ To generate the static HTML report:
 - **Step 2:** Processes data, identifying active vs. revoked measures.
 - **Step 3:** Generates interactive Plotly charts and static PNGs.
 - **Step 4:** Sequential AI analysis: Chart Analysis -> Section Summaries -> Global Executive Summary.
-- **Step 5:** Optional grounded validation (data + charts + optional external sources).
+- **Step 5:** Optional grounded validation if `RUN_GROUNDING=true` (off by default).
 - **Step 6:** Optional Supabase data writing (if `ENABLE_SUPABASE=true`).
 - **Step 7:** Renders the final `index.html` (optionally using Supabase data if `USE_SUPABASE_FOR_RENDER=true`).
 

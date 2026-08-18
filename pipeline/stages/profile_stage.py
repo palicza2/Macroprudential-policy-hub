@@ -7,6 +7,7 @@ import logging
 from typing import Dict, Any
 
 from country_profiles import CountryProfileGenerator
+from country_profiles.profile_mapper import canonicalize_profile
 from pipeline.serializers import serialize_profile, format_profile_for_llm
 
 logger = logging.getLogger(__name__)
@@ -95,6 +96,8 @@ class ProfileStage:
                     }
                 except Exception as e:
                     logger.warning(f"Failed to generate institutional description for {country}: {e}")
+
+            countries_data[country] = canonicalize_profile(profile_data)
         
         return {
             'countries_data': countries_data,

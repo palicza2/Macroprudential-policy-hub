@@ -6,7 +6,7 @@ import pandas as pd
 from typing import Dict, List, Optional, Any
 import logging
 
-from .region_mapper import get_iso2, get_region
+from .region_mapper import get_iso2
 from .data_aggregators import (
     get_current_status,
     get_historical_evolution,
@@ -15,7 +15,7 @@ from .data_aggregators import (
     get_comparison,
     get_institutional_setup,
 )
-from knowledge_graph import build_knowledge_graph_data
+from .profile_mapper import canonicalize_profile
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +74,5 @@ class CountryProfileGenerator:
             'active_measures': get_active_measures(country, self.data),
             'comparison': get_comparison(country, self.data),
         }
-        
-        return profile
+        return canonicalize_profile(profile)
     

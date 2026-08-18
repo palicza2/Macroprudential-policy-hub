@@ -139,7 +139,7 @@ class PipelineOrchestrator:
 def main():
     """Main entry point."""
     env_val = os.getenv("RUN_GROUNDING", "").strip().lower()
-    run_grounding = env_val not in ("0", "false", "no", "n")
+    run_grounding = env_val in ("1", "true", "yes", "on")
 
     orchestrator = PipelineOrchestrator()
     orchestrator.run(run_grounding=run_grounding)

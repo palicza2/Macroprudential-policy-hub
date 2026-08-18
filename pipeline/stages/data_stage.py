@@ -65,9 +65,9 @@ class DataStage:
                 latest_ccyb_df=data.get("latest_ccyb_df"),
                 latest_syrb_df=data.get("latest_syrb_df"),
                 latest_osii_df=data.get("latest_osii_df"),
-                ccyb_trend_df=data.get("agg_trend_ccyb"),
-                syrb_trend_df=data.get("syrb_trend"),
-                bbm_trend_df=data.get("bbm_trend"),
+                ccyb_trend_df=data.get("agg_trend_df"),
+                syrb_trend_df=data.get("syrb_trend_df"),
+                bbm_trend_df=data.get("bbm_trend_df"),
             )
             if results:
                 logger.info(f"Supabase write results: {results}")

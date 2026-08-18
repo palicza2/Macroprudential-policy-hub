@@ -8,10 +8,13 @@ import os
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional, List, TYPE_CHECKING
+from typing import Dict, Any, Optional, TYPE_CHECKING
 
 from render import render_report, df_to_html_table, render_capital_overall_table
-from bbm.matrix_builder import is_bbm_row_active, RENAME_MAP
+from country_profiles.profile_mapper import (
+    merge_profiles,
+    profile_from_supabase_rows,
+)
 
 if TYPE_CHECKING:
     from pipeline.context import PipelineContext
@@ -157,99 +160,24 @@ class RenderStage:
                     bbm_by_country[iso2] = []
                 bbm_by_country[iso2].append(row)
             
-            # Transform to countries_data format
+            # Transform to countries_data via the canonical mapper
             countries_data = {}
             for iso2, country_info in countries.items():
                 country_name = country_info.get("country_name", country_info.get("name", ""))
                 if not country_name:
                     continue
-                
-                # Current status
-                ccyb_snap = ccyb_snapshots.get(iso2, {})
-                syrb_snap = syrb_snapshots.get(iso2, {})
-                osii_snap = osii_snapshots.get(iso2, {})
-                
-                # BBM - same logic as BBM overview (is_bbm_row_active)
-                raw_active = [m for m in bbm_by_country.get(iso2, []) if is_bbm_row_active(m)]
-                bbm_types = []
-                active_bbm_list = []
-                for m in raw_active:
-                    measure_type = m.get("measure_type", "")
-                    measure_short = RENAME_MAP.get(measure_type, measure_type) if measure_type else ""
-                    if measure_short and measure_short not in bbm_types:
-                        bbm_types.append(measure_short)
-                    active_bbm_list.append({
-                        "type": measure_short or measure_type,
-                        "status": "Active",
-                        "date": m.get("effective_date") or m.get("date"),
-                        "description": m.get("description", ""),
-                    })
-                
-                current_status = {
-                    "ccyb": {
-                        "rate": float(ccyb_snap.get("rate", 0)) if ccyb_snap.get("rate") else 0.0,
-                        "date": ccyb_snap.get("effective_date", ""),  # Materialized View uses effective_date
-                        "status": "Active" if ccyb_snap.get("rate", 0) > 0 else "Inactive",
-                    } if ccyb_snap else None,
-                    "syrb": {
-                        "rate": float(syrb_snap.get("total_rate", 0)) if syrb_snap.get("total_rate") else 0.0,  # Materialized View uses total_rate
-                        "date": "",  # Materialized View doesn't have date, use empty or fetch from measures
-                        "type": "General" if syrb_snap.get("general_rate", 0) > 0 else ("Sectoral" if syrb_snap.get("sectoral_rate", 0) > 0 else "General"),
-                        "status": "Active" if syrb_snap.get("total_rate", 0) > 0 else "Inactive",
-                    } if syrb_snap else None,
-                    "osii": self._build_osii_status(osii_snap, osii_by_country_iso2.get(iso2, []), iso2=iso2),
-                    "bbm": bbm_types,
-                    "total_capital": None,  # Would need capital_overall calculation
-                }
-                
-                # Historical evolution
-                ccyb_history = []
-                for decision in ccyb_by_country.get(iso2, []):
-                    ccyb_history.append({
-                        "date": decision.get("effective_date", ""),
-                        "rate": float(decision.get("rate", 0)) if decision.get("rate") else 0.0,
-                        "credit_gap": float(decision.get("credit_gap", 0)) if decision.get("credit_gap") else None,
-                    })
-                
-                syrb_history = []
-                for measure in syrb_by_country.get(iso2, []):
-                    syrb_history.append({
-                        "date": measure.get("effective_date", ""),
-                        "rate_numeric": float(measure.get("rate", 0)) if measure.get("rate") else 0.0,
-                    })
-                
-                historical_evolution = {
-                    "ccyb": ccyb_history,
-                    "syrb": syrb_history,
-                }
-                
-                # Recent changes (last 12 months)
-                recent_changes = []
-                # TODO: Implement recent changes logic
-                
-                # Active measures
-                active_measures = {
-                    "ccyb": current_status.get("ccyb"),
-                    "syrb": [m for m in syrb_by_country.get(iso2, []) if m.get("active_status") == "Active" or m.get("status") == "Active"],
-                    "bbm": active_bbm_list,
-                    "osii": current_status.get("osii"),
-                }
-                
-                inst = inst_by_iso2.get(iso2)
-                countries_data[country_name] = {
-                    "country": country_name,
-                    "iso2": iso2,
-                    "current_status": current_status,
-                    "institutional_setup": inst,
-                    "historical_evolution": historical_evolution,
-                    "recent_changes": recent_changes,
-                    "active_measures": active_measures,
-                    "comparison": {
-                        "regional_average": None,
-                        "similar_countries": [],
-                    },
-                    "ai_analysis": "",  # Would need to fetch from analyses
-                }
+                countries_data[country_name] = profile_from_supabase_rows(
+                    country_name=country_name,
+                    iso2=iso2,
+                    ccyb_snap=ccyb_snapshots.get(iso2),
+                    syrb_snap=syrb_snapshots.get(iso2),
+                    osii_snap=osii_snapshots.get(iso2),
+                    osii_rates=osii_by_country_iso2.get(iso2, []),
+                    ccyb_decisions=ccyb_by_country.get(iso2, []),
+                    syrb_measures=syrb_by_country.get(iso2, []),
+                    bbm_measures=bbm_by_country.get(iso2, []),
+                    institutional_setup=inst_by_iso2.get(iso2),
+                )
             
             logger.info(f"Fetched {len(countries_data)} countries from Supabase")
             return countries_data
@@ -257,55 +185,6 @@ class RenderStage:
         except Exception as exc:
             logger.error(f"Error fetching countries data from Supabase: {exc}", exc_info=True)
             return {}
-    
-    def _build_osii_status(self, osii_snap: Dict[str, Any], osii_rates: List[float], iso2: str = None) -> Dict[str, Any]:
-        """
-        Build O-SII status with min/max rates for proper display.
-        Rates are normalized to percentage scale (e.g. 1.5 for 1.5%) for display.
-        """
-        if not osii_snap:
-            return None
-        
-        total_rate = float(osii_snap.get("total_rate", 0)) if osii_snap.get("total_rate") else 0.0
-        # Normalize total_rate to percentage scale if stored as decimal
-        if 0 < total_rate < 1:
-            total_rate = total_rate * 100
-
-        if osii_rates and len(osii_rates) > 0:
-            min_rate = min(osii_rates)
-            max_rate = max(osii_rates)
-            # Normalize to percentage scale (e.g. 0.01 -> 1, 0.02 -> 2)
-            if max_rate > 0 and max_rate < 1:
-                min_rate = min_rate * 100
-                max_rate = max_rate * 100
-
-            if max_rate < 0.01:
-                rate_display = "0%"
-            elif abs(max_rate - min_rate) < 0.01:
-                rate_display = f"{int(max_rate)}%" if max_rate == int(max_rate) else f"{max_rate:.2f}%"
-            elif min_rate < 0.01:
-                rate_display = f"0-{int(round(max_rate))}%" if max_rate == int(max_rate) else f"0-{max_rate:.1f}%"
-            else:
-                min_str = f"{min_rate:.1f}" if min_rate != int(min_rate) else str(int(min_rate))
-                max_str = f"{max_rate:.1f}" if max_rate != int(max_rate) else str(int(max_rate))
-                rate_display = f"{min_str}-{max_str}%"
-
-            return {
-                "rate": max_rate,
-                "rate_min": min_rate,
-                "rate_max": max_rate,
-                "rate_display": rate_display,
-                "status": "Active" if max_rate > 0 else "Inactive",
-            }
-        else:
-            rate_display = f"{int(total_rate)}%" if total_rate == int(total_rate) else f"{total_rate:.2f}%" if total_rate > 0 else "0%"
-            return {
-                "rate": total_rate,
-                "rate_min": total_rate,
-                "rate_max": total_rate,
-                "rate_display": rate_display,
-                "status": "Active" if total_rate > 0 else "Inactive",
-            }
     
     def process(self, ctx: "PipelineContext") -> str:
         """
@@ -427,22 +306,26 @@ class RenderStage:
         osii_table_html = build_osii_table_html(osii_by_country, selected_country="Austria")
         all_sii_table_html = build_all_sii_institutions_table_html(data.get('osii_df'))
         
-        # Fetch countries_data from Supabase if enabled, otherwise use pipeline data
+        # Country profiles: pipeline is the base (has AI); Supabase fills gaps via the same mapper
         if self.use_supabase:
             supabase_countries_data = self._fetch_countries_data_from_supabase()
+            pipeline_profiles = ctx.countries_data or {}
             if supabase_countries_data:
-                countries_data = supabase_countries_data
-                logger.info("Using countries data from Supabase")
-                # Fallback: if Supabase has no institutional_setup for a country, use pipeline data
-                pipeline_profiles = ctx.countries_data or {}
-                for cname, supabase_profile in countries_data.items():
-                    if not supabase_profile.get("institutional_setup") and cname in pipeline_profiles:
-                        pipe_inst = pipeline_profiles[cname].get("institutional_setup")
-                        if pipe_inst:
-                            supabase_profile["institutional_setup"] = pipe_inst
-                            logger.debug(f"Merged institutional_setup from pipeline for {cname}")
+                merged = {}
+                names = set(pipeline_profiles) | set(supabase_countries_data)
+                for name in names:
+                    merged[name] = merge_profiles(
+                        pipeline_profiles.get(name),
+                        supabase_countries_data.get(name),
+                    )
+                countries_data = merged
+                logger.info(
+                    "Merged %s pipeline + %s Supabase country profiles",
+                    len(pipeline_profiles),
+                    len(supabase_countries_data),
+                )
             else:
-                logger.warning("Supabase fetch returned empty data, falling back to pipeline data")
+                logger.warning("Supabase fetch returned empty data, using pipeline country profiles")
         
         # Supabase credentials for frontend
         supabase_url = self.supabase_config.get("url", "") if self.use_supabase else ""
