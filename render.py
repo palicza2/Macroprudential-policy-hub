@@ -6,7 +6,7 @@ from typing import Any, Dict
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader
 
-from exports import ensure_report_dirs, write_download, write_partial, write_plot_html
+from exports import ensure_report_dirs, rel_path, write_download, write_partial, write_plot_html
 
 
 def _iso2_to_flag_img(iso2: str) -> str:
@@ -141,6 +141,7 @@ def render_report(
     osii_by_country: Dict = None,
     supabase_url: str = "",
     supabase_key: str = "",
+    reuse_plots: bool = False,
 ) -> str:
     dirs = ensure_report_dirs(reports_dir)
     partials_dir = dirs["partials"]
@@ -148,8 +149,22 @@ def render_report(
     downloads_dir = dirs["downloads"]
 
     table_files = {k: write_partial(base_dir, partials_dir, k, v) for k, v in tables_html.items()}
-    plot_files = {k: write_plot_html(base_dir, plots_dir, k, v) for k, v in plot_figs.items()}
-    download_links = {k: write_download(base_dir, downloads_dir, k, v) for k, v in download_data.items()}
+
+    plot_files = {}
+    for k, v in plot_figs.items():
+        if reuse_plots or v is None:
+            existing = plots_dir / f"{k}.html"
+            plot_files[k] = rel_path(base_dir, existing) if existing.exists() else ""
+        else:
+            plot_files[k] = write_plot_html(base_dir, plots_dir, k, v)
+
+    download_links = {}
+    for k, v in download_data.items():
+        existing = downloads_dir / f"{k}.xlsx"
+        if reuse_plots:
+            download_links[k] = rel_path(base_dir, existing) if existing.exists() else ""
+        else:
+            download_links[k] = write_download(base_dir, downloads_dir, k, v)
 
     env = Environment(loader=FileSystemLoader(str(template_dir)))
     

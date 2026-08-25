@@ -76,6 +76,68 @@ class RenderStage:
             except Exception as exc:
                 logger.warning(f"Failed to initialize Supabase client: {exc}")
                 self.use_supabase = False
+
+    def _news_cache_path(self) -> Path:
+        from config import DATA_DIR
+        return DATA_DIR / "news_cache.parquet"
+
+    def _load_or_fetch_news(self, skip) -> tuple:
+        """Return (news_df, fetched). News uses TTL, not Excel hashes."""
+        cache_path = self._news_cache_path()
+        if skip and getattr(skip, "news", False) and cache_path.exists():
+            try:
+                logger.info("   -> News cache fresh; skipping CSE fetch")
+                return pd.read_parquet(cache_path), False
+            except Exception as exc:
+                logger.warning("News cache unreadable: %s", exc)
+
+        api_key = os.getenv(self.news_config.get("api_key_env", "CUSTOM_SEARCH_API_KEY"), "")
+        cse_id = os.getenv(self.news_config.get("cse_id_env", "GOOGLE_CSE_ID"), "")
+        query = self.news_config.get("query", "")
+        months_back = int(self.news_config.get("months_back", 12))
+        max_results = int(self.news_config.get("max_results", 10))
+        news_df = None
+        try:
+            news_df = fetch_news(
+                api_key=api_key,
+                cse_id=cse_id,
+                query=query,
+                months_back=months_back,
+                max_results=max_results,
+            )
+        except Exception as exc:
+            logger.warning("News search failed: %s", exc)
+
+        if news_df is None or news_df.empty:
+            if cache_path.exists():
+                try:
+                    return pd.read_parquet(cache_path), False
+                except Exception:
+                    pass
+            return pd.DataFrame(), False
+
+        try:
+            from llm_analysis import LLMAnalyzer
+            from config import LLM_CONFIG
+            analyzer = LLMAnalyzer(LLM_CONFIG)
+            news_texts = (news_df["TITLE"].fillna("") + " - " + news_df["SUMMARY"].fillna("")).tolist()
+            news_df["TAGS"] = analyzer.classify_news_tags(news_texts)
+            news_df["SUMMARY_SHORT"] = analyzer.summarize_news_items(
+                (news_df["TITLE"].fillna("") + ". " + news_df["SUMMARY"].fillna("")).tolist()
+            )
+        except Exception as exc:
+            logger.warning("News LLM enrichment failed: %s", exc)
+            if "SUMMARY_SHORT" not in news_df.columns:
+                news_df["SUMMARY_SHORT"] = news_df["SUMMARY"].fillna("").astype(str).apply(
+                    lambda x: (x[:220] + "...") if len(x) > 220 else x
+                )
+
+        try:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            news_df.to_parquet(cache_path)
+        except Exception as exc:
+            logger.warning("Could not write news cache: %s", exc)
+        return news_df, True
     
     def _fetch_countries_data_from_supabase(self) -> Dict[str, Any]:
         """
@@ -210,54 +272,20 @@ class RenderStage:
         capital_overall_df = data.get("capital_overall_df")
         countries_data = ctx.countries_data
         knowledge_graph_json = ctx.knowledge_graph_json
+        skip = ctx.skip_plan
+        reuse_plots = bool(skip and skip.viz)
 
-        # News Processing
-        api_key = os.getenv(self.news_config.get("api_key_env", "CUSTOM_SEARCH_API_KEY"), "")
-        cse_id = os.getenv(self.news_config.get("cse_id_env", "GOOGLE_CSE_ID"), "")
-        query = self.news_config.get("query", "")
-        months_back = int(self.news_config.get("months_back", 12))
-        max_results = int(self.news_config.get("max_results", 10))
-        
-        try:
-            news_df = fetch_news(
-                api_key=api_key,
-                cse_id=cse_id,
-                query=query,
-                months_back=months_back,
-                max_results=max_results
-            )
-        except Exception as exc:
-            logger.warning(f"News search failed: {exc}")
-            news_df = None
-        
-        if news_df is not None and not news_df.empty:
-            try:
-                from llm_analysis import LLMAnalyzer
-                from config import LLM_CONFIG
-                analyzer = LLMAnalyzer(LLM_CONFIG)
-                news_texts = (news_df['TITLE'].fillna('') + " - " + news_df['SUMMARY'].fillna('')).tolist()
-                news_tags = analyzer.classify_news_tags(news_texts)
-                news_df['TAGS'] = news_tags
-            except Exception as exc:
-                logger.warning(f"News tag classification failed: {exc}")
-            try:
-                summaries = analyzer.summarize_news_items(
-                    (news_df['TITLE'].fillna('') + ". " + news_df['SUMMARY'].fillna('')).tolist()
-                )
-                news_df['SUMMARY_SHORT'] = summaries
-            except Exception as exc:
-                logger.warning(f"News summarization failed: {exc}")
-                news_df['SUMMARY_SHORT'] = news_df['SUMMARY'].fillna('').astype(str).apply(
-                    lambda x: (x[:220] + '...') if len(x) > 220 else x
-                )
-            try:
-                news_df['DATE_PARSED'] = pd.to_datetime(news_df['DATE'], errors='coerce')
-                news_df = news_df.sort_values('DATE_PARSED', ascending=False, na_position='last')
-            except Exception:
-                pass
-        else:
+        # News: own TTL, not Excel hash
+        news_df, news_fetched = self._load_or_fetch_news(skip)
+        ctx.news_fetched = news_fetched
+        if news_df is None or news_df.empty:
             news_df = pd.DataFrame()
-        
+        else:
+            try:
+                news_df["DATE_PARSED"] = pd.to_datetime(news_df["DATE"], errors="coerce")
+                news_df = news_df.sort_values("DATE_PARSED", ascending=False, na_position="last")
+            except Exception:
+                pass 
         today_str = datetime.now().strftime("%Y-%m-%d")
         
         # Reciprocation tables (from ETL data)
@@ -353,6 +381,7 @@ class RenderStage:
             osii_by_country=osii_by_country,
             supabase_url=supabase_url,
             supabase_key=supabase_key,
+            reuse_plots=reuse_plots,
         )
         
         return rendered_html

@@ -32,6 +32,9 @@ FILES = {
     "latest_bbm": DATA_DIR / "latest_bbm.parquet",
     "osii_processed": DATA_DIR / "processed_osii.parquet",
     "latest_osii": DATA_DIR / "latest_osii.parquet",
+    "trend_ccyb": DATA_DIR / "trend_ccyb.parquet",
+    "trend_syrb": DATA_DIR / "trend_syrb.parquet",
+    "trend_bbm": DATA_DIR / "trend_bbm.parquet",
 }
 
 # --- LLM ---
@@ -99,10 +102,26 @@ NEWS_CONFIG = {
 }
 
 # --- BBM / DTI Expert Table ---
-# Path to expert DTI table Excel (BBM táblázatok.xlsx).
+# Gold CSVs are the dashboard source of truth (gold + delta). Excel is optional import.
 # Set BBM_EXCEL_PATH in .env to override. If unset, uses data/BBM táblázatok.xlsx.
 _BBM_EXCEL_ENV = os.getenv("BBM_EXCEL_PATH", "").strip()
 BBM_EXCEL_PATH = Path(_BBM_EXCEL_ENV) if _BBM_EXCEL_ENV else (DATA_DIR / "BBM táblázatok.xlsx")
+
+FILES["dti_gold"] = DATA_DIR / "dti_expert_table.csv"
+FILES["ltv_gold"] = DATA_DIR / "ltv_gold.csv"
+FILES["bbm_gold_state"] = DATA_DIR / "bbm_gold_state.json"
+FILES["bbm_delta_report"] = DATA_DIR / "bbm_delta_report.json"
+FILES["pipeline_manifest"] = DATA_DIR / "pipeline_manifest.json"
+
+# When true, changed ESRB descriptions are sent to the LLM for match/conflict.
+# Hash comparison always runs. Set BBM_GOLD_DELTA_AI=false to only flag hashes.
+BBM_GOLD_DELTA_AI = os.getenv("BBM_GOLD_DELTA_AI", "true").strip().lower() in (
+    "1", "true", "yes", "on",
+)
+
+# Skip bronze/silver/LLM when hashes match. FORCE_REBUILD=true disables all skips.
+FORCE_REBUILD = os.getenv("FORCE_REBUILD", "").strip().lower() in ("1", "true", "yes", "on")
+NEWS_TTL_DAYS = int(os.getenv("NEWS_TTL_DAYS", "7"))
 
 # --- Supabase Configuration (for Render Stage) ---
 SUPABASE_RENDER_CONFIG = {

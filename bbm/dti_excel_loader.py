@@ -111,46 +111,36 @@ def load_dti_expert_table(
     csv_path: Optional[Path] = None,
 ) -> pd.DataFrame:
     """
-    Load DTI expert table. Tries Excel first, then CSV, then embedded data.
-    
-    Args:
-        excel_path: Path to BBM táblázatok.xlsx (optional)
-        csv_path: Path to data/dti_expert_table.csv (optional)
-        
-    Returns:
-        DataFrame with English schema for DTI table display
+    Load DTI gold table. CSV is canonical; Excel is import-only if CSV is missing.
+    Embedded DTI_EXPERT_DATA is a last-resort fallback so the dashboard is not blank.
     """
-    # Try project data folder first
     proj_data = Path(__file__).resolve().parent.parent / "data"
-    project_excel = proj_data / "BBM táblázatok.xlsx"
-    if not excel_path and project_excel.exists():
-        excel_path = project_excel
+    csv = csv_path or (proj_data / "dti_expert_table.csv")
 
-    # Try Excel
+    if csv.exists():
+        try:
+            df = pd.read_csv(csv, encoding="utf-8")
+            if not df.empty:
+                logger.info("Loaded DTI gold table from CSV: %s", csv)
+                return df
+        except Exception as e:
+            logger.warning("Could not load DTI from CSV %s: %s", csv, e)
+
+    project_excel = proj_data / "BBM táblázatok.xlsx"
+    if excel_path is None and project_excel.exists():
+        excel_path = project_excel
     if excel_path and excel_path.exists():
         try:
             df = pd.read_excel(excel_path, sheet_name="DTI", header=0)
             df = _normalize_excel_to_english(df)
             if not df.empty:
-                logger.info("Loaded DTI expert table from Excel: %s", excel_path)
+                logger.info("Loaded DTI table from Excel (CSV missing): %s", excel_path)
                 return df
         except Exception as e:
             logger.warning("Could not load DTI from Excel %s: %s", excel_path, e)
 
-    # Try CSV in project data
-    csv = csv_path or Path(__file__).resolve().parent.parent / "data" / "dti_expert_table.csv"
-    if csv.exists():
-        try:
-            df = pd.read_csv(csv, encoding="utf-8")
-            if not df.empty:
-                logger.info("Loaded DTI expert table from CSV: %s", csv)
-                return df
-        except Exception as e:
-            logger.warning("Could not load DTI from CSV %s: %s", csv, e)
-
-    # Fallback to embedded expert data
     df = pd.DataFrame(DTI_EXPERT_DATA)
-    logger.info("Using embedded DTI expert table (%d rows)", len(df))
+    logger.info("Using embedded DTI fallback table (%d rows)", len(df))
     return df
 
 

@@ -9,9 +9,9 @@ from typing import List, Optional, Dict, Any
 
 import pandas as pd
 
-from .dti_lti_model import DTILTIRule, MeasureCode, rules_to_dataframe, create_dti_lti_schema
+from .dti_lti_model import DTILTIRule, rules_to_dataframe, create_dti_lti_schema
 from .dti_lti_extractor import extract_dti_lti_rule_from_item
-from .dti_lti_validator import validate_rules_with_ai, validate_complete_table_with_ai
+from .dti_lti_validator import validate_rules_with_ai
 
 # Import build_dti_lti_items from dti_lti subpackage
 from .dti_lti.items_builder import build_dti_lti_items
@@ -21,20 +21,8 @@ logger = logging.getLogger(__name__)
 
 def apply_expert_corrections(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Apply expert corrections based on policy expert validation.
-    
-    This function applies specific corrections identified by domain experts:
-    - SK: Income_Basis should be "Net" (not "Gross")
-    - SE: Add note that it's an amortization trigger, not a hard cap
-    - IE: Swap Standard Limit (3.5x) and FTB Limit (4.0x)
-    - GB: Set Allowance_Share to "15%"
-    - NO: Set Allowance_Share to "10%"
-    
-    Args:
-        df: DataFrame with DTI/LTI rules
-        
-    Returns:
-        Corrected DataFrame
+    Deprecated overlay: those country facts live in data/dti_expert_table.csv.
+    Not used on the dashboard gold path. Kept for one-off extract debugging.
     """
     if df.empty:
         return df
@@ -257,22 +245,6 @@ def build_dti_lti_comparison_df_structured(
         logger.info(f"   -> After deduplication: {len(df)} rows (removed {len(df_before_dedup) - len(df)} duplicates)")
         logger.info(f"   -> Countries in DataFrame AFTER deduplication: {sorted(df['Country'].unique().tolist()) if not df.empty and 'Country' in df.columns else []}")
     df = df.sort_values(["Measure_Code", "Country"]).reset_index(drop=True)
-    
-    # Step 5: Apply expert corrections (policy expert validations)
-    df = apply_expert_corrections(df)
-    
-    # Step 6: Final validation pass with external search
-    # Note: This step is optional and may filter out rows if confidence is not "high"
-    # For now, we skip this to ensure all extracted rules are shown
-    # if final_validation_with_search and not df.empty:
-    #     logger.info("   -> Final validation with external search...")
-    #     df = validate_complete_table_with_ai(
-    #         df,
-    #         analyzer,
-    #         use_external_search=True,
-    #         search_config=search_config
-    #     )
-    
     return df
 
 

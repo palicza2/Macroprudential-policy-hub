@@ -552,46 +552,190 @@ class ETLPipeline:
 
         return agg_trend_ccyb, syrb_trend, bbm_trend
 
-    def run_pipeline(self):
+    @staticmethod
+    def _read_parquet(path: Path) -> pd.DataFrame:
+        if path is None or not Path(path).exists():
+            return pd.DataFrame()
+        try:
+            return pd.read_parquet(path)
+        except Exception as exc:
+            logger.warning("Could not read %s: %s", path, exc)
+            return pd.DataFrame()
+
+    @staticmethod
+    def _write_parquet(df: pd.DataFrame, path: Path) -> None:
+        if df is None or df.empty:
+            return
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        df.to_parquet(path)
+
+    @staticmethod
+    def _get_latest(df: pd.DataFrame) -> pd.DataFrame:
+        if df is None or df.empty:
+            return pd.DataFrame()
+        if "date" not in df.columns or "country" not in df.columns:
+            return df
+        return df.sort_values("date").groupby("country").tail(1).reset_index(drop=True)
+
+    @staticmethod
+    def _latest_osii(osii_df: pd.DataFrame) -> pd.DataFrame:
+        if osii_df is None or osii_df.empty:
+            return pd.DataFrame()
+        if "status" in osii_df.columns:
+            return osii_df[osii_df["status"] == "Active"].reset_index(drop=True)
+        return osii_df.copy()
+
+    def download_bronze(self) -> None:
+        """Fetch ESRB Excel files; identical bytes are not overwritten."""
         download_file_safely(self.syrb_url, self.syrb_file)
         download_file_safely(self.ccyb_url, self.ccyb_file)
-        syrb_df = self._process_syrb()
-        ccyb_df = self._process_ccyb()
-        bbm_df = self._process_bbm()
-        osii_df = self._process_osii()
-        agg_trend, syrb_trend, bbm_trend = self.calculate_trends(ccyb_df, syrb_df, bbm_df)
-        def get_latest(df): 
-            if df.empty: return df
-            return df.sort_values('date').groupby('country').tail(1).reset_index(drop=True)
-        latest_syrb = get_latest(syrb_df)
-        latest_ccyb = get_latest(ccyb_df)
-        latest_bbm = bbm_df[bbm_df['active_status'] == 'Active'].reset_index(drop=True) if not bbm_df.empty else pd.DataFrame()
-        # For OSII, we want all banks, not just the latest per country
-        # Filter to only active banks if status column exists
-        if osii_df is not None and not osii_df.empty:
-            if 'status' in osii_df.columns:
-                latest_osii = osii_df[osii_df['status'] == 'Active'].reset_index(drop=True)
-            else:
-                latest_osii = osii_df.copy()
-        else:
-            latest_osii = pd.DataFrame()
-        
-        if not syrb_df.empty: syrb_df.to_parquet(FILES["syrb_processed"])
-        if not ccyb_df.empty: ccyb_df.to_parquet(FILES["ccyb_processed"])
-        if not bbm_df.empty: bbm_df.to_parquet(FILES["bbm_processed"])
-        if osii_df is not None and not osii_df.empty:
-            osii_df.to_parquet(FILES["osii_processed"])
-            latest_osii.to_parquet(FILES["latest_osii"])
+        if self.capital_measures_url and self.capital_measures_file:
+            download_file_safely(self.capital_measures_url, self.capital_measures_file)
 
-        from reciprocation import process_reciprocation_matrix
-        reciprocation_data = process_reciprocation_matrix(self.measures_overview_file)
-        
+    def _reciprocation_paths(self):
         return {
-            'ccyb_df': ccyb_df, 'syrb_df': syrb_df, 'bbm_df': bbm_df,
-            'agg_trend_df': agg_trend, 'syrb_trend_df': syrb_trend, 'bbm_trend_df': bbm_trend,
-            'latest_ccyb_df': latest_ccyb, 'latest_syrb_df': latest_syrb,
-            'latest_bbm_df': latest_bbm,
-            'osii_df': osii_df,
-            'latest_osii_df': latest_osii,
-            'reciprocation_data': reciprocation_data,
+            "measures": self.data_dir / "reciprocation_measures.parquet",
+            "matrix": self.data_dir / "reciprocation_matrix.parquet",
+            "meta": self.data_dir / "reciprocation_meta.json",
         }
+
+    def _save_reciprocation(self, data: dict) -> None:
+        import json
+        paths = self._reciprocation_paths()
+        measures = data.get("measures_df")
+        matrix = data.get("matrix_df")
+        if measures is not None and not measures.empty:
+            measures.to_parquet(paths["measures"])
+        if matrix is not None and not matrix.empty:
+            matrix.to_parquet(paths["matrix"])
+        paths["meta"].write_text(
+            json.dumps({"country_columns": data.get("country_columns") or []}, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+    def _load_reciprocation(self) -> dict:
+        import json
+        paths = self._reciprocation_paths()
+        country_columns = []
+        if paths["meta"].exists():
+            try:
+                country_columns = json.loads(paths["meta"].read_text(encoding="utf-8")).get("country_columns") or []
+            except (OSError, json.JSONDecodeError):
+                country_columns = []
+        return {
+            "measures_df": self._read_parquet(paths["measures"]),
+            "matrix_df": self._read_parquet(paths["matrix"]),
+            "country_columns": country_columns,
+        }
+
+    def load_silver(self) -> dict:
+        """Load processed parquet, snapshots, trends, and reciprocation from disk."""
+        logger.info("   -> Loading silver from parquet (bronze unchanged)")
+        ccyb_df = self._read_parquet(FILES["ccyb_processed"])
+        syrb_df = self._read_parquet(FILES["syrb_processed"])
+        bbm_df = self._read_parquet(FILES["bbm_processed"])
+        osii_df = self._read_parquet(FILES["osii_processed"])
+        latest_ccyb = self._read_parquet(FILES["latest_ccyb"])
+        latest_syrb = self._read_parquet(FILES["latest_syrb"])
+        latest_bbm = self._read_parquet(FILES["latest_bbm"])
+        latest_osii = self._read_parquet(FILES["latest_osii"])
+        if latest_ccyb.empty:
+            latest_ccyb = self._get_latest(ccyb_df)
+        if latest_syrb.empty:
+            latest_syrb = self._get_latest(syrb_df)
+        if latest_bbm.empty and not bbm_df.empty:
+            latest_bbm = bbm_df[bbm_df["active_status"] == "Active"].reset_index(drop=True)
+        if latest_osii.empty:
+            latest_osii = self._latest_osii(osii_df)
+        agg_trend = self._read_parquet(FILES["trend_ccyb"])
+        syrb_trend = self._read_parquet(FILES["trend_syrb"])
+        bbm_trend = self._read_parquet(FILES["trend_bbm"])
+        if agg_trend.empty or syrb_trend.empty or bbm_trend.empty:
+            agg_trend, syrb_trend, bbm_trend = self.calculate_trends(ccyb_df, syrb_df, bbm_df)
+        return {
+            "ccyb_df": ccyb_df,
+            "syrb_df": syrb_df,
+            "bbm_df": bbm_df,
+            "agg_trend_df": agg_trend,
+            "syrb_trend_df": syrb_trend,
+            "bbm_trend_df": bbm_trend,
+            "latest_ccyb_df": latest_ccyb,
+            "latest_syrb_df": latest_syrb,
+            "latest_bbm_df": latest_bbm,
+            "osii_df": osii_df,
+            "latest_osii_df": latest_osii,
+            "reciprocation_data": self._load_reciprocation(),
+        }
+
+    def _persist_silver(self, payload: dict) -> None:
+        self._write_parquet(payload.get("ccyb_df"), FILES["ccyb_processed"])
+        self._write_parquet(payload.get("syrb_df"), FILES["syrb_processed"])
+        self._write_parquet(payload.get("bbm_df"), FILES["bbm_processed"])
+        self._write_parquet(payload.get("osii_df"), FILES["osii_processed"])
+        self._write_parquet(payload.get("latest_ccyb_df"), FILES["latest_ccyb"])
+        self._write_parquet(payload.get("latest_syrb_df"), FILES["latest_syrb"])
+        self._write_parquet(payload.get("latest_bbm_df"), FILES["latest_bbm"])
+        self._write_parquet(payload.get("latest_osii_df"), FILES["latest_osii"])
+        self._write_parquet(payload.get("agg_trend_df"), FILES["trend_ccyb"])
+        self._write_parquet(payload.get("syrb_trend_df"), FILES["trend_syrb"])
+        self._write_parquet(payload.get("bbm_trend_df"), FILES["trend_bbm"])
+        recip = payload.get("reciprocation_data")
+        if recip:
+            self._save_reciprocation(recip)
+
+    def run_pipeline(self, skip_ccyb: bool = False, skip_measures: bool = False, skip_capital: bool = False):
+        """
+        Parse bronze Excel into silver parquet.
+
+        skip_* reuses existing parquet for that source when the workbook hash
+        and parser fingerprint are unchanged. Downloads happen in download_bronze().
+        """
+        if skip_ccyb:
+            logger.info("   -> CCyB: reuse parquet")
+            ccyb_df = self._read_parquet(FILES["ccyb_processed"])
+        else:
+            ccyb_df = self._process_ccyb()
+
+        if skip_measures:
+            logger.info("   -> SyRB/BBM: reuse parquet")
+            syrb_df = self._read_parquet(FILES["syrb_processed"])
+            bbm_df = self._read_parquet(FILES["bbm_processed"])
+            reciprocation_data = self._load_reciprocation()
+        else:
+            syrb_df = self._process_syrb()
+            bbm_df = self._process_bbm()
+            from reciprocation import process_reciprocation_matrix
+            reciprocation_data = process_reciprocation_matrix(self.measures_overview_file)
+
+        if skip_capital:
+            logger.info("   -> O-SII: reuse parquet")
+            osii_df = self._read_parquet(FILES["osii_processed"])
+        else:
+            osii_df = self._process_osii()
+
+        agg_trend, syrb_trend, bbm_trend = self.calculate_trends(ccyb_df, syrb_df, bbm_df)
+        latest_syrb = self._get_latest(syrb_df)
+        latest_ccyb = self._get_latest(ccyb_df)
+        latest_bbm = (
+            bbm_df[bbm_df["active_status"] == "Active"].reset_index(drop=True)
+            if not bbm_df.empty
+            else pd.DataFrame()
+        )
+        latest_osii = self._latest_osii(osii_df)
+
+        payload = {
+            "ccyb_df": ccyb_df,
+            "syrb_df": syrb_df,
+            "bbm_df": bbm_df,
+            "agg_trend_df": agg_trend,
+            "syrb_trend_df": syrb_trend,
+            "bbm_trend_df": bbm_trend,
+            "latest_ccyb_df": latest_ccyb,
+            "latest_syrb_df": latest_syrb,
+            "latest_bbm_df": latest_bbm,
+            "osii_df": osii_df,
+            "latest_osii_df": latest_osii,
+            "reciprocation_data": reciprocation_data,
+        }
+        self._persist_silver(payload)
+        return payload

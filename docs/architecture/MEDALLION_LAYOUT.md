@@ -148,5 +148,5 @@ flowchart LR
 1. **Never hand-edit silver parquet.** Fix bronze (or the parser) and re-run ETL.
 2. **Curated overrides** (expert DTI, institutional JSON) live in bronze and are applied when building gold.
 3. **Supabase is a gold replica**, not bronze. MVs (`mv_latest_*`) are gold views over silver-like fact tables.
-4. **Skip LLM** when bronze file hashes are unchanged (future cost control); still refresh gold HTML if needed.
+4. **Skip parse / plots / LLM** when bronze and parser hashes are unchanged (`data/pipeline_manifest.json`). News uses a separate TTL. `FORCE_REBUILD=true` disables skips.
 5. **Canonical country profile** is `country_profiles/profile_mapper.py` — one shape for pipeline, Supabase render, and the frontend.

@@ -29,6 +29,7 @@ jobs:
         SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         USE_SUPABASE_FOR_RENDER: ${{ secrets.USE_SUPABASE_FOR_RENDER }}
         ENABLE_SUPABASE: ${{ secrets.ENABLE_SUPABASE }}
+        FORCE_REBUILD: ${{ secrets.FORCE_REBUILD }}
       run: |
         docker run --rm \
           -e GOOGLE_API_KEY \
@@ -40,6 +41,7 @@ jobs:
           -e SUPABASE_SERVICE_KEY \
           -e USE_SUPABASE_FOR_RENDER \
           -e ENABLE_SUPABASE \
+          -e FORCE_REBUILD \
           -v "${{ github.workspace }}:/app" \
           macroprudential-hub:latest
 
@@ -49,8 +51,23 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        if [ -n "$(git status --porcelain index.html assets/ reports/ figures/ 2>/dev/null)" ]; then
-          git add index.html assets/ reports/ figures/
+        git add index.html assets/ reports/ figures/ \
+          data/bbm_gold_state.json data/ltv_gold.csv data/dti_expert_table.csv \
+          data/bbm_delta_report.json data/bbm_gold_proposals.json \
+          data/pipeline_manifest.json data/analyses_cache.json data/countries_data.json \
+          data/plots_inline_cache.json data/news_cache.parquet \
+          data/processed_*.parquet data/latest_*.parquet data/trend_*.parquet \
+          data/reciprocation_*.parquet data/reciprocation_meta.json \
+          data/gold_*.parquet 2>/dev/null || true
+        if [ -n "$(git status --porcelain -- index.html assets/ reports/ figures/ data/ 2>/dev/null)" ]; then
+          git add index.html assets/ reports/ figures/ \
+            data/bbm_gold_state.json data/ltv_gold.csv data/dti_expert_table.csv \
+            data/bbm_delta_report.json data/bbm_gold_proposals.json \
+            data/pipeline_manifest.json data/analyses_cache.json data/countries_data.json \
+            data/plots_inline_cache.json data/news_cache.parquet \
+            data/processed_*.parquet data/latest_*.parquet data/trend_*.parquet \
+            data/reciprocation_*.parquet data/reciprocation_meta.json \
+            data/gold_*.parquet
           git commit -m "Auto-update dashboard files [skip ci]"
           git fetch origin master
           git restore . || true

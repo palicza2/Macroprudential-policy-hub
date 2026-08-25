@@ -40,3 +40,5 @@ class PipelineContext:
 
     # --- Misc ---
     knowledge_graph_json: str = '{"nodes": [], "edges": []}'
+    skip_plan: Any = None
+    news_fetched: bool = False

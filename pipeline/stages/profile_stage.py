@@ -25,16 +25,10 @@ class ProfileStage:
         """
         self.analyzer = analyzer
     
-    def process(self, data: Dict[str, Any], analyses: Dict[str, str]) -> Dict[str, Any]:
+    def process(self, data: Dict[str, Any], analyses: Dict[str, str], skip_ai: bool = False) -> Dict[str, Any]:
         """
         Generate country profiles and AI analysis.
-        
-        Args:
-            data: Processed data dictionary
-            analyses: Existing analyses dictionary
-            
-        Returns:
-            Dictionary with countries_data and updated analyses
+        skip_ai: still build structured profiles, do not call Gemini.
         """
         logger.info("3c. Country Profiles...")
         profile_gen = CountryProfileGenerator({
@@ -60,7 +54,15 @@ class ProfileStage:
                 logger.debug(traceback.format_exc())
         
         logger.info(f"   -> Generated {len(countries_data)} country profiles")
-        
+
+        if skip_ai:
+            logger.info("   -> Country profile AI skipped (manifest)")
+            for country, profile_data in countries_data.items():
+                analysis_key = f"country_profile_{country.lower().replace(' ', '_')}"
+                profile_data["ai_analysis"] = analyses.get(analysis_key, "")
+                countries_data[country] = canonicalize_profile(profile_data)
+            return {"countries_data": countries_data, "analyses": analyses}
+
         # Generate AI analysis for each country profile
         for country, profile_data in countries_data.items():
             try:

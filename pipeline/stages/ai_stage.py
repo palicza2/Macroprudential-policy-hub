@@ -4,7 +4,6 @@ Handles LLM analysis and grounded validation.
 """
 
 import logging
-import json
 from typing import Dict, Any
 
 from llm_analysis import LLMAnalyzer
@@ -39,20 +38,18 @@ class AIStage:
         analysis_inputs: Dict[str, Any],
         paths: Dict[str, Any],
         data: Dict[str, Any],
+        skip: bool = False,
+        cached: Dict[str, Any] = None,
     ) -> Dict[str, Any]:
-        """
-        Run AI analysis.
-        
-        Args:
-            ccyb_full: Full CCyB dataframe
-            syrb_full: Full SyRB dataframe
-            analysis_inputs: Inputs for analysis
-            paths: Plot paths
-            data: Additional data dictionary
-            
-        Returns:
-            Dictionary with 'analyses' and 'decisions' (ccyb_decisions, active_syrb, syrb_decisions)
-        """
+        if skip and cached:
+            logger.info("3. AI Elemzés... (skipped; reusing analyses cache)")
+            return {
+                "analyses": cached.get("analyses") or {},
+                "ccyb_decisions": cached.get("ccyb_decisions"),
+                "active_syrb": cached.get("active_syrb"),
+                "syrb_decisions": cached.get("syrb_decisions"),
+            }
+
         logger.info("3. AI Elemzés...")
         
         ccyb_decisions = prepare_ccyb_decisions(ccyb_full, self.analyzer)
