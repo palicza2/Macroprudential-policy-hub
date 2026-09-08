@@ -184,8 +184,11 @@ def load_ltv_gold(paths: GoldPaths) -> pd.DataFrame:
     except Exception as exc:
         logger.warning("Could not load LTV gold %s: %s", paths.ltv_csv, exc)
         return pd.DataFrame()
+    if df is None or df.empty:
+        return pd.DataFrame()
+    from .ltv_model import migrate_legacy_ltv_columns
+    df = migrate_legacy_ltv_columns(df)
     if "Country" in df.columns:
-        df = df.copy()
         df["Country"] = df["Country"].map(normalize_iso2)
     return df
 
@@ -193,7 +196,8 @@ def load_ltv_gold(paths: GoldPaths) -> pd.DataFrame:
 def save_ltv_gold(df: pd.DataFrame, paths: GoldPaths) -> None:
     if df is None or df.empty:
         return
-    out = df.copy()
+    from .ltv_model import migrate_legacy_ltv_columns
+    out = migrate_legacy_ltv_columns(df)
     if "Country" in out.columns:
         out["Country"] = out["Country"].map(normalize_iso2)
     paths.ltv_csv.parent.mkdir(parents=True, exist_ok=True)

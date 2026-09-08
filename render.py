@@ -103,7 +103,15 @@ def df_to_html_table(df: pd.DataFrame, table_type: str = None) -> str:
             pass
     
     # Use specialized renderer for LTV tables
-    if table_type == "ltv" or ("Limit_Standard" in df.columns and "Exception_Quota" in df.columns and "Measure_Code" not in df.columns):
+    if table_type == "ltv" or (
+        "Exception_Quota" in df.columns
+        and "Measure_Code" not in df.columns
+        and (
+            "Limit_FTB_OOO" in df.columns
+            or "Limit_Standard" in df.columns
+            or "FTB / OOO" in df.columns
+        )
+    ):
         try:
             from bbm.ltv_renderer import render_ltv_table_html
             return render_ltv_table_html(df)

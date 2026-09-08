@@ -864,6 +864,13 @@ h2::before {
     display: block;
 }
 
+.table-note {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+    margin: 12px 0 0;
+}
+
 /* Filter Controls */
 .controls-row {
     display: flex;

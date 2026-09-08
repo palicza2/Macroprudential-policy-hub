@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "updated_at": "2026-09-08T22:20:29.449484+00:00",
+  "bronze": {
+    "ccyb": "f4d57833629046c7",
+    "measures": "79d7d74140746cc3",
+    "capital": "76edd753316dc79d"
+  },
+  "parser": "4decc405bfcc63a8",
+  "silver": "5bc87e1e33aa0563",
+  "viz_code": "5ae638359e12bf87",
+  "llm_code": "8691b79d742aa389",
+  "figures": "8ba0ab8772b1c21c",
+  "supabase_silver": "5bc87e1e33aa0563",
+  "news_fetched_at": "2026-09-08T22:20:29.464754+00:00",
+  "skipped": {
+    "etl": false,
+    "viz": false,
+    "llm": false,
+    "supabase": false,
+    "news": false
+  }
+}

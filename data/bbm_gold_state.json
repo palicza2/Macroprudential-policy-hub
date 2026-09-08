@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "updated_at": "2026-09-08T22:18:06.502942+00:00",
+  "entries": {
+    "dti:CZ:DTI": {
+      "status": "new",
+      "proposal_hash": "62dfe452dc74a3db",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "dti:DK:LTI": {
+      "status": "new",
+      "proposal_hash": "a0ec4fce4fadfa94",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "dti:IE:LTI": {
+      "approved_hash": "e5687ce874811ab9",
+      "gold_fingerprint": "cb30e95197e66690",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "dti:LV:DTI": {
+      "approved_hash": "d72735193ebaa871",
+      "gold_fingerprint": "f804efc77a6d9f20",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "dti:NO:DTI": {
+      "approved_hash": "38ed50abba99d4e0",
+      "gold_fingerprint": "9e355c96ea5fda77",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "dti:SK:DTI": {
+      "approved_hash": "0c74e7ac46208a31",
+      "gold_fingerprint": "8a81eca89c43007f",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "dti:UK:LTI": {
+      "approved_hash": "1fcb394ac37435b9",
+      "gold_fingerprint": "a134bbc25606d11a",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "dti:LI:LTI": {
+      "status": "new",
+      "proposal_hash": "8c0f4553212e3b41",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:AT": {
+      "approved_hash": "66c4209bc39765cd",
+      "gold_fingerprint": "debf13586876ba99",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:BE": {
+      "approved_hash": "ca48301ebe44be1f",
+      "gold_fingerprint": "435bbecb71e750c8",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:BG": {
+      "status": "new",
+      "proposal_hash": "ffd03abba6648a1b",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:HR": {
+      "status": "new",
+      "proposal_hash": "c40c6ce00f977e87",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:CY": {
+      "status": "new",
+      "proposal_hash": "c9e42c36bef332f7",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:CZ": {
+      "approved_hash": "2f585e0f28e1f502",
+      "gold_fingerprint": "6a7b57b3b447ec03",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:DK": {
+      "approved_hash": "60890d18638c85fd",
+      "gold_fingerprint": "081154fe8093f1b7",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:EE": {
+      "status": "new",
+      "proposal_hash": "818e346518dc9493",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:FI": {
+      "approved_hash": "08eeaf7c85048208",
+      "gold_fingerprint": "51b50a690fad2015",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:GR": {
+      "approved_hash": "c92992226689bb1c",
+      "gold_fingerprint": "0aba7daaa85d8147",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:HU": {
+      "approved_hash": "8c3dd20cf70f4ff8",
+      "gold_fingerprint": "8b7cf5b27e046cdf",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:IS": {
+      "approved_hash": "65fbbb87a3553450",
+      "gold_fingerprint": "6b36a1adf648dc5b",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:IE": {
+      "approved_hash": "0ecc84865ecf05c4",
+      "gold_fingerprint": "ff8c5b3511bd4be2",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:LV": {
+      "status": "new",
+      "proposal_hash": "042f1553a4c4f361",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:LI": {
+      "approved_hash": "3cc31f4e54a2dfa8",
+      "gold_fingerprint": "3bee70d74e30999b",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:LT": {
+      "approved_hash": "78a02c878c12dd37",
+      "gold_fingerprint": "9c81fdd7b2d53dec",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:LU": {
+      "status": "new",
+      "proposal_hash": "68f82cce63a465be",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:MT": {
+      "status": "new",
+      "proposal_hash": "225262fce8bffdb3",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:NL": {
+      "approved_hash": "cb0f894c64a9938f",
+      "gold_fingerprint": "da58d411345dc8cb",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:NO": {
+      "approved_hash": "06aeaee878c87f28",
+      "gold_fingerprint": "2aa1121bfc3e3dff",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:PL": {
+      "status": "new",
+      "proposal_hash": "669c1a72c22e3b3b",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:PT": {
+      "status": "new",
+      "proposal_hash": "077474bc3786ebf8",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:RO": {
+      "approved_hash": "5252cfbd7f978f34",
+      "gold_fingerprint": "0a32f25c07e861c3",
+      "status": "ok",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:SK": {
+      "status": "new",
+      "proposal_hash": "47add21f4e353b39",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    },
+    "ltv:SI": {
+      "status": "new",
+      "proposal_hash": "a9e3040fd7a11296",
+      "updated_at": "2026-09-08T22:18:06.502557+00:00"
+    }
+  }
+}

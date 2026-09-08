@@ -1,0 +1,22 @@
+[
+  {
+    "family": "dti",
+    "action": "append to data/dti_expert_table.csv after review",
+    "rows": [
+      {
+        "Country": "CZ",
+        "Measure_Code": "DTI",
+        "Implementation_Status": "Active",
+        "Legal_Form": "Recommendation",
+        "Limit_Standard": 7.0,
+        "Limit_FTB": NaN,
+        "Limit_BTL": NaN,
+        "Limit_Green": NaN,
+        "Income_Basis": "Net",
+        "Allowance_Share": "",
+        "Regulation_URL": null,
+        "Notes": null
+      }
+    ]
+  }
+]

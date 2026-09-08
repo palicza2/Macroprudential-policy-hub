@@ -408,7 +408,7 @@ The generated `index.html` includes:
     - _Section Summary:_ Overview of borrower-based constraints.
     - _Adoption Count:_ Countries using at least one BBM.
     - _Active Measures Cross-Country Comparison:_ Pivot table of active tools.
-    - _LTV Measures:_ Structured comparison table of Loan-to-Value limits across EU/EEA countries, including standard limits, FTB/BTL limits, exception quotas, legal form, implementation status, and explanatory notes. Supports multiple limits per country (e.g., "80%, 90%") with notes explaining each value. AI-verified with external search validation.
+    - _LTV Measures:_ Structured comparison table of Loan-to-Value limits across EU/EEA countries, grouped as FTB/owner-occupied (OOO), second/subsequent buyer or buy-to-let (SSB/BTL), and other differentiations (green, secondary home, FX). Exception quotas, legal form, status, and notes are separate. There is no single “standard” LTV column.
     - _DTI/LTI Measures:_ Comprehensive comparison table of Debt-to-Income and Loan-to-Income limits across EU/EEA countries, including standard limits (supporting ranges like "3.0x, 8.0x"), FTB/BTL limits, green limits, income basis, allowances, and regulation links. AI-verified with expert corrections. Notes column explains multiple limit meanings (e.g., "Decreasing by age" for SK's 3-8x range).
     - _Latest Decisions:_ AI-cleaned BBM decisions.
 5.  **Country Profiles:**

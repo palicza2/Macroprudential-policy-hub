@@ -1,0 +1,196 @@
+{
+  "generated_at": "2026-09-08T22:18:06.503907+00:00",
+  "dti": {
+    "unchanged": 5,
+    "changed": 0,
+    "new": 3,
+    "withdrawn": 0
+  },
+  "ltv": {
+    "unchanged": 14,
+    "changed": 0,
+    "new": 11,
+    "withdrawn": 0
+  },
+  "review": [
+    {
+      "key": "dti:CZ:DTI",
+      "family": "dti",
+      "country": "CZ",
+      "measure": "DTI",
+      "kind": "new",
+      "reason": "Present in ESRB, not in gold",
+      "current_hash": "62dfe452dc74a3db",
+      "approved_hash": null,
+      "description_excerpt": "Introduction of recommended upper limits on the ratio of the consumer’s total debt to the consumer’s net income (“DTI ratio”), set at a maximum of 7, which apply only to applicants for credit secured by residential property to purchase residential property for investment purposes and to applicants for credit secured by residential property to purchase a third and each additional residential property."
+    },
+    {
+      "key": "dti:DK:LTI",
+      "family": "dti",
+      "country": "DK",
+      "measure": "LTI",
+      "kind": "new",
+      "reason": "Present in ESRB, not in gold",
+      "current_hash": "a0ec4fce4fadfa94",
+      "approved_hash": null,
+      "description_excerpt": "Guidelines for banks and mortgage credit institutions to ensure caution in new lending for residential real estate in geographical areas with high price levels and high price increases compared to the rest of the country. The guideline includes 7 best practices including an LTI-rule (loan to gross income) that states: a) If LTI is between 4 and 5 households should have sufficient wealth (including properties but excluding pension schemes) so that net wealth is still positive in case of a decline"
+    },
+    {
+      "key": "dti:LI:LTI",
+      "family": "dti",
+      "country": "LI",
+      "measure": "LTI",
+      "kind": "new",
+      "reason": "Present in ESRB, not in gold",
+      "current_hash": "8c0f4553212e3b41",
+      "approved_hash": null,
+      "description_excerpt": "The Financial Market Authority has decided to implement an amortisation requirement based on affordability with affordability being defined as a loan-service-to-income ratio below 33% for new residential real estate loans (RRE) and 37% for existing RRE loans. Loans not meeting these criteria should apply a minimum annual amortisation of 1% until the loan classifies as affordable. According to the regulation on requirements for mortgage loans applicable to home loans and loans on income property,"
+    },
+    {
+      "key": "ltv:BG",
+      "family": "ltv",
+      "country": "BG",
+      "measure": null,
+      "kind": "new",
+      "reason": "Present in ESRB, not in gold",
+      "current_hash": "ffd03abba6648a1b",
+      "approved_hash": null,
+      "description_excerpt": "On 11 September 2024 the Governing Council (GC) of the Bulgarian National Bank (BNB) introduced the following restrictions to lending standards’ indicators of loans to the household sector, secured by residential real estate (RRE): - Restriction of up to 85% on the loan-to-value ratio at origination (LTV-O); - Restriction of up to 50% on the debt-serviceto-income ratio at origination (DSTI-O); - Restriction of up to 30 years on the maturity of the loan at origination. Banks could originate or re"
+    },
+    {
+      "key": "ltv:HR",
+      "family": "ltv",
+      "country": "HR",
+      "measure": null,
+      "kind": "new",
+      "reason": "Present in ESRB, not in gold",
+      "current_hash": "c40c6ce00f977e87",
+      "approved_hash": null,
+      "description_excerpt": "Hrvatska Narodna Banka enforced a 90% LTV limit with up to 20% of new loans allowed to exceed this limit. Of these exemptions, at least 75% of loans must be granted to consumers purchasing their primary residence."
+    },
+    {
+      "key": "ltv:CY",
+      "family": "ltv",
+      "country": "CY",
+      "measure": null,
+      "kind": "new",
+      "reason": "Present in ESRB, not in gold",
+      "current_hash": "c9e42c36bef332f7",
+      "approved_hash": null,
+      "description_excerpt": "LTV ratio (as amended in 2021) shall not exceed: (a) 80% in case the credit facility is granted for financing the primary permanent residence of the borrower. (b) 50% in case the credit facility is granted to real estate developing companies for financing the acquisition or the construction of luxurious properties (c) 70% for all other property financing cases."
+    },
+    {
+      "key": "ltv:EE",
+      "family": "ltv",
+      "country": "EE",
+      "measure": null,
+      "kind": "new",
+      "reason": "Present in ESRB, not in gold",
+      "current_hash": "818e346518dc9493",
+      "approved_hash": null,
+      "description_excerpt": "All credit institutions operating in Estonia are subject to a LTV limit of 85% or 90% if guaranteed by KredEx (state 16.06.2025) for new housing loans. Up to 15% of the amount of new housing loans issued in a quarter are allowed to breach the limit(s)."
+    },
+    {
+      "key": "ltv:LV",
+      "family": "ltv",
+      "country": "LV",
+      "measure": null,
+      "kind": "new",
+      "reason": "Present in ESRB, not in gold",
+      "current_hash": "042f1553a4c4f361",
+      "approved_hash": null,
+      "description_excerpt": "Institutions shall develop the policy and set out respective procedures for the issuance of loans for the purchase of a property for a purpose of renting it out (buy-to-let, BTL) or otherwise deriving income from real estate transactions by the borrower. The loan amount in such cases may not exceed 70 percent of the market value of the loan collateral (real estate), and in the creditworthiness assessment income from the real estate shall not account for more than 70 percent of the total income. "
+    },
+    {
+      "key": "ltv:LU",
+      "family": "ltv",
+      "country": "LU",
+      "measure": null,
+      "kind": "new",
+      "reason": "Present in ESRB, not in gold",
+      "current_hash": "68f82cce63a465be",
+      "approved_hash": null,
+      "description_excerpt": "The measure comprises the activation of legally binding LTV limits for new mortgage loans on residential immovable property located in Luxembourg. The measure applies to all lenders in residential real estate. Following the Recommendation of the Systemic Risk Committee (CRS/2020/005), the CSSF activated LTV limits that are differentiated across different categories of borrowers. Three categories are considered, with the following calibration: - LTV limit of 100% for first-time buyers acquiring t"
+    },
+    {
+      "key": "ltv:MT",
+      "family": "ltv",
+      "country": "MT",
+      "measure": null,
+      "kind": "new",
+      "reason": "Present in ESRB, not in gold",
+      "current_hash": "225262fce8bffdb3",
+      "approved_hash": null,
+      "description_excerpt": "Loan-to-value-at-origination (LTV-O) applied differentiating between two categories of borrowers. For Category I Borrowers: a cap of 90% LTV-O with a ‘speed limit’ of 10% on the volume of loans shall apply. For Category II borrowers, the LTV-O ratio shall not exceed 75% LTV-O cap with a ‘speed limit’ of 20% on the volume of loans."
+    },
+    {
+      "key": "ltv:PL",
+      "family": "ltv",
+      "country": "PL",
+      "measure": null,
+      "kind": "new",
+      "reason": "Present in ESRB, not in gold",
+      "current_hash": "669c1a72c22e3b3b",
+      "approved_hash": null,
+      "description_excerpt": "LTV limits: Residential real estate: 2014 - 95% 2015 - 90% 2016 - 85% or 90% if the part above 85% is insured or collateralized with funds on bank account, government or NBP securities >=2017 (target levels) - 80% or 90% if the part above 80% is insured or collateralized with funds on bank account, government, NBP securities or IKE / IKZE (funds accumulated in the third Pillar of retirement program). Commercial real estate: since July 2014 - 75% or 80% if the part above 75% is insured or collate"
+    },
+    {
+      "key": "ltv:PT",
+      "family": "ltv",
+      "country": "PT",
+      "measure": null,
+      "kind": "new",
+      "reason": "Present in ESRB, not in gold",
+      "current_hash": "077474bc3786ebf8",
+      "approved_hash": null,
+      "description_excerpt": "LTV (Loan-to-Value) limits established: • of 90% for credit for own and permanent residence; • of 80% for credit for purposes other than own and permanent residence; • of 100% for credit for purchasing immovable property held by the credit institutions and for property financial leasing agreements. The denominator of this ratio corresponds to the minimum between the purchase price and the appraisal value of the immovable property pledged as collateral."
+    },
+    {
+      "key": "ltv:SK",
+      "family": "ltv",
+      "country": "SK",
+      "measure": null,
+      "kind": "new",
+      "reason": "Present in ESRB, not in gold",
+      "current_hash": "47add21f4e353b39",
+      "approved_hash": null,
+      "description_excerpt": "Tightening of LTV limits for housing loans, whereby two measures apply in unison: (i) the LTV cannot exceed 90% and, (ii) the maximum share of new loans with LTV > 80% cannot exceed 20% (previously 40%). This is subject to a phase-in period. 1 July 2018 - 31 Sept. 2018: 35% 1 Oct. 2018 - 31 Dec. 2018: 30% 1 Jan. 2019 - 30 June 2019: 25% From 1 July 2019 onwards: 20% LTV limits for housing loans (all three apply in parallel): a) LTV cannot exceed 100 % (measure transferred from existing recommend"
+    },
+    {
+      "key": "ltv:SI",
+      "family": "ltv",
+      "country": "SI",
+      "measure": null,
+      "kind": "new",
+      "reason": "Present in ESRB, not in gold",
+      "current_hash": "a9e3040fd7a11296",
+      "approved_hash": null,
+      "description_excerpt": "The Bank of Slovenia has lowered the recommended LTV: The recommended LTV value has been decreased from 80% to 70% for borrowers not buying primary property. For the property to be classified as primary (and eligible for higher LTV up to 80%) it must fulfil three criteria: (1) It must be pledged as collater (2) The loan must be used to purchase, renovate or build this property. (3) The borrower must move his/her permanent address to the property Housing loans with complete government guarantee h"
+    }
+  ],
+  "proposals": [
+    {
+      "family": "dti",
+      "action": "append to data/dti_expert_table.csv after review",
+      "rows": [
+        {
+          "Country": "CZ",
+          "Measure_Code": "DTI",
+          "Implementation_Status": "Active",
+          "Legal_Form": "Recommendation",
+          "Limit_Standard": 7.0,
+          "Limit_FTB": NaN,
+          "Limit_BTL": NaN,
+          "Limit_Green": NaN,
+          "Income_Basis": "Net",
+          "Allowance_Share": "",
+          "Regulation_URL": null,
+          "Notes": null
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "11 new LTV ESRB items (cap 8); listed in the delta report, not auto-extracted."
+  ]
+}

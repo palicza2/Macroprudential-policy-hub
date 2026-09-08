@@ -1,0 +1,15 @@
+Country,Implementation_Status,Legal_Form,Limit_FTB_OOO,Limit_SSB_BTL,Other_Limits,Exception_Quota,Notes
+AT,Active,Binding,90% (OOO),,,,
+BE,Active,Binding,,80% (BTL),,,
+CZ,Active,Recommendation,70% (OOO),,,,
+DK,Active,Binding,95% (OOO),,,,"95% is the maximum LTV, implying a minimum 5% down payment."
+FI,Active,Binding,90% (OOO),,,,
+GR,Active,Binding,80% (FTB),,,,
+HU,Active,Binding,90% (OOO),,,,
+IS,Active,Binding,90% (FTB),,,,
+IE,Active,Binding,90% (FTB),90% (SSB); 70% (BTL),,"15% of FTB lending, 15% of SSB lending, 10% of BTL lending",FTB 90%; SSB 90%; BTL 70%. Exception quotas apply by segment.
+LI,Active,Binding,80% (OOO),,,,
+LT,Active,Binding,85% (FTB),,,,
+NL,Active,Binding,100% (OOO),,,,
+NO,Active,Binding,90% (OOO),,,,
+RO,Active,Binding,,,investment: -10 pp vs own-use,,

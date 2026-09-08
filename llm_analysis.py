@@ -926,19 +926,21 @@ OUTPUT: Write a professional analysis in 3-4 paragraphs, focusing on actionable 
         prompt = f"""TASK: Extract LTV (Loan-to-Value) rule details from the description.
 RETURN FORMAT: JSON object.
 
-EXTRACTION RULES:
-- limit_standard: Standard LTV limit (0-100, e.g., 80.0 for 80%). If multiple standard limits exist (e.g., "80% for owner-occupied, 70% for investment"), return as list [80.0, 70.0]
-- limit_ftb: First-Time Buyer limit if mentioned (0-100, nullable)
-- limit_btl: Buy-to-Let/Investor limit if mentioned (0-100, nullable)
-- exception_quota: Speed limit - percentage of volume allowed to exceed (e.g., "15% of volume")
-- notes: Specific conditions or clarifications. IMPORTANT: If limit_standard is a list, notes MUST explain what each value means (e.g., "80% for owner-occupied properties, 70% for investment properties")
+Do NOT use a single "standard" LTV. Group caps by borrower/use:
+- limit_ftb_ooo: first-time buyer (FTB) and/or owner-occupied (OOO). Display string e.g. "90% (FTB); 80% (OOO)". An unlabeled residential cap is OOO.
+- limit_ssb_btl: second/subsequent buyer (SSB) and/or buy-to-let (BTL). e.g. "90% (SSB); 70% (BTL)".
+- other_limits: other differentiations as keywords with optional % (green, secondary home, FX, commercial). e.g. "green 90%".
+- exception_quota: share of new lending allowed above the cap (NOT an LTV). e.g. "15% of FTB lending".
+- notes: conditions that do not fit the columns.
+
+Never dump every percentage in the text into a limit column. Ignore GDP%, tolerance/volume shares, and values below 40% unless clearly an LTV.
 
 FIELDS (all required, use null for missing):
-- limit_standard (float, list of floats, or null)
-- limit_ftb (float or null)
-- limit_btl (float or null)
+- limit_ftb_ooo (string or null)
+- limit_ssb_btl (string or null)
+- other_limits (string or null)
 - exception_quota (string or null)
-- notes (string or null - MUST explain list meanings if limit_standard is a list)
+- notes (string or null)
 
 INPUT:
 Country: {country}
@@ -979,10 +981,10 @@ Description: {description[:2000]}"""
             f"Country: {r.get('country', '')}\n"
             f"Status: {r.get('implementation_status', '')}\n"
             f"Legal Form: {r.get('legal_form', '')}\n"
-            f"Limit Standard: {r.get('limit_standard', '') or 'MISSING - TRY TO EXTRACT FROM DESCRIPTION'}\n"
-            f"Limit FTB: {r.get('limit_ftb', '') or 'MISSING - TRY TO EXTRACT IF MENTIONED'}\n"
-            f"Limit BTL: {r.get('limit_btl', '') or 'MISSING - TRY TO EXTRACT IF MENTIONED'}\n"
-            f"Exception Quota: {r.get('exception_quota', '') or 'MISSING - TRY TO EXTRACT IF MENTIONED'}\n"
+            f"FTB/OOO: {r.get('limit_ftb_ooo', '') or 'MISSING - EXTRACT FTB OR OWNER-OCCUPIED LTV IF PRESENT'}\n"
+            f"SSB/BTL: {r.get('limit_ssb_btl', '') or 'MISSING - EXTRACT SUBSEQUENT-BUYER OR BUY-TO-LET LTV IF PRESENT'}\n"
+            f"Other limits: {r.get('other_limits', '') or 'MISSING - GREEN/SECONDARY HOME/FX IF MENTIONED'}\n"
+            f"Exception Quota: {r.get('exception_quota', '') or 'MISSING - VOLUME SHARE ABOVE THE CAP IF MENTIONED'}\n"
             f"ESRB Description:\n{descriptions[i] if i < len(descriptions) else ''}"
             for i, r in enumerate(rules)
         ])
@@ -1009,21 +1011,19 @@ RETURN FORMAT: JSON array with one object per rule, same order.
 
 VALIDATION AND FILLING RULES:
 - Verify that each extracted field is explicitly supported by the description.
-- If a field is missing (e.g., limit_standard is null/empty), try to extract it from the description.
-- If a field cannot be verified or found, keep the original value or mark as null.
+- There is no "standard" LTV column. Use FTB/OOO, SSB/BTL, and other_limits.
+- If a field is missing, extract it only when the description supports it.
+- Do not treat portfolio shares (e.g. 15% of new lending) as LTV caps.
+- Unlabeled residential LTV caps belong in limit_ftb_ooo as OOO.
 - confidence must be one of: "high", "medium", "low"
-  - high: All key fields (limit_standard, legal_form) are clearly supported or successfully extracted
-  - medium: Most fields supported but some ambiguous or partially extracted
-  - low: Significant uncertainty or missing key information
-- IMPORTANT: Try to fill missing limit_standard values by extracting percentages from the description (e.g., "80%", "90% LTV").
 - If use_external_search is enabled, you may verify against external sources but must cite them.
 
 FIELDS (all required):
 - country
 - confidence ("high"/"medium"/"low")
-- limit_standard (extract and fill if missing, or correct if wrong, or keep original)
-- limit_ftb (extract and fill if missing, or null)
-- limit_btl (extract and fill if missing, or null)
+- limit_ftb_ooo (string e.g. "90% (FTB)" or null)
+- limit_ssb_btl (string e.g. "70% (BTL)" or null)
+- other_limits (string e.g. "green 90%" or null)
 - exception_quota (extract and fill if missing, or null)
 - legal_form (extract and fill if missing, or correct if wrong, or keep original)
 - notes (extract and fill if missing, or null)
@@ -1107,9 +1107,9 @@ VALIDATION RULES:
 FIELDS (all required):
 - Country
 - confidence ("high"/"medium"/"low")
-- Limit_Standard (verify or correct)
-- Limit_FTB (verify or correct, or null)
-- Limit_BTL (verify or correct, or null)
+- Limit_FTB_OOO (verify or correct, or null)
+- Limit_SSB_BTL (verify or correct, or null)
+- Other_Limits (verify or correct, or null)
 - Exception_Quota (verify or correct, or null)
 - Legal_Form (verify or correct)
 - Implementation_Status (verify or correct)

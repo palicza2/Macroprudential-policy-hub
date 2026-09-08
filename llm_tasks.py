@@ -109,7 +109,7 @@ def build_chart_tasks(
             id="ltv_analysis",
             data=ltv_table_str,
             temp=0.2,
-            prompt="Analyze LTV limits and first-time buyer exemptions with focus on the last 12 months. Emphasize objectives and risks, avoid mechanism explanations. Write ONE paragraph of 4-5 sentences.",
+            prompt="Analyze LTV limits grouped by FTB/owner-occupied vs subsequent buyer/buy-to-let, plus other differentiations (e.g. green). Focus on the last 12 months, objectives and risks; avoid mechanism explanations. Write ONE paragraph of 4-5 sentences.",
         ),
         LLMTask(
             id="news_summary",

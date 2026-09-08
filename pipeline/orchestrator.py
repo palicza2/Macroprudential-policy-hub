@@ -106,7 +106,8 @@ class PipelineOrchestrator:
         ctx.bbm_data = bbm_stage.process(
             ctx.data.get("bbm_df"),
             skip_llm=plan.llm,
-            skip_supabase=plan.supabase,
+            # Gold LTV/DTI CSVs are not in the silver hash; always upsert when enabled.
+            skip_supabase=False,
         )
 
         analysis_inputs = {

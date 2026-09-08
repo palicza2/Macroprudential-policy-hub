@@ -1,94 +1,63 @@
 """
-LTV Table HTML Renderer.
-Renders structured LTV DataFrame into HTML table.
+LTV table HTML renderer.
 """
 
 import pandas as pd
 
+from .ltv_model import migrate_legacy_ltv_columns
+
+
+def _dash_empty(value) -> str:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return "—"
+    text = str(value).strip()
+    if not text or text in {"None", "nan"}:
+        return "—"
+    return text
+
 
 def render_ltv_table_html(df: pd.DataFrame) -> str:
-    """
-    Render LTV DataFrame as HTML table with proper formatting.
-    
-    Args:
-        df: DataFrame with LTV rules
-        
-    Returns:
-        HTML string
-    """
+    """Render LTV DataFrame as HTML with FTB/OOO, SSB/BTL, and other-limit columns."""
     if df is None or df.empty:
         return "<p class='no-data'>No verified LTV details available yet.</p>"
-    
-    df_copy = df.copy()
-    
-    # Format columns for display
-    if "Limit_Standard" in df_copy.columns:
-        def format_limit_standard(x):
-            if pd.isna(x) or x == "" or x is None:
-                return ""
-            # Handle list (stored as string like "80.0%, 90.0%")
-            if isinstance(x, str) and "," in x:
-                return x  # Already formatted as string
-            # Handle list (if still a list)
-            if isinstance(x, list):
-                return ", ".join([f"{v:.1f}%" for v in x])
-            # Handle single float
-            if isinstance(x, (int, float)):
-                return f"{x:.1f}%"
-            return str(x)
-        
-        df_copy["Limit_Standard"] = df_copy["Limit_Standard"].apply(format_limit_standard)
-    
-    if "Limit_FTB" in df_copy.columns:
-        df_copy["Limit_FTB"] = df_copy["Limit_FTB"].apply(
-            lambda x: f"{x:.1f}%" if pd.notna(x) and isinstance(x, (int, float)) else "—"
-        )
-    
-    if "Limit_BTL" in df_copy.columns:
-        df_copy["Limit_BTL"] = df_copy["Limit_BTL"].apply(
-            lambda x: f"{x:.1f}%" if pd.notna(x) and isinstance(x, (int, float)) else "—"
-        )
-    
-    # Format Exception_Quota column (show "—" for empty values)
-    if "Exception_Quota" in df_copy.columns:
-        df_copy["Exception_Quota"] = df_copy["Exception_Quota"].apply(
-            lambda x: str(x) if pd.notna(x) and x and str(x).strip() and str(x).strip() != "None"
-            else "—"
-        )
-    
-    # Format Notes column (show "—" for empty values)
-    if "Notes" in df_copy.columns:
-        df_copy["Notes"] = df_copy["Notes"].apply(
-            lambda x: str(x) if pd.notna(x) and x and str(x).strip() and str(x).strip() != "None"
-            else "—"
-        )
-    
-    # Rename columns for display
-    column_rename = {
+
+    df_copy = migrate_legacy_ltv_columns(df)
+
+    for col in ("Limit_FTB_OOO", "Limit_SSB_BTL", "Other_Limits", "Exception_Quota", "Notes"):
+        if col in df_copy.columns:
+            df_copy[col] = df_copy[col].apply(_dash_empty)
+
+    df_copy = df_copy.rename(columns={
         "Country": "Country",
         "Implementation_Status": "Status",
         "Legal_Form": "Legal Form",
-        "Limit_Standard": "Standard Limit",
-        "Limit_FTB": "FTB Limit",
-        "Limit_BTL": "BTL Limit",
+        "Limit_FTB_OOO": "FTB / OOO",
+        "Limit_SSB_BTL": "SSB / BTL",
+        "Other_Limits": "Other limits",
         "Exception_Quota": "Exception Quota",
         "Notes": "Notes",
-    }
-    
-    df_copy = df_copy.rename(columns=column_rename)
-    
-    # Select and order columns
+    })
+
     display_columns = [
         "Country", "Status", "Legal Form",
-        "Standard Limit", "FTB Limit", "BTL Limit",
-        "Exception Quota", "Notes"
+        "FTB / OOO", "SSB / BTL", "Other limits",
+        "Exception Quota", "Notes",
     ]
-    
-    # Only include columns that exist
-    display_columns = [col for col in display_columns if col in df_copy.columns]
+    display_columns = [c for c in display_columns if c in df_copy.columns]
     df_display = df_copy[display_columns]
-    
-    # Generate HTML
+
     html = df_display.to_html(index=False, classes="display-table ltv-table", escape=False)
-    
+    # Helpful header titles for the short column names
+    html = html.replace(
+        "<th>FTB / OOO</th>",
+        '<th title="First-time buyer (FTB) or owner-occupied (OOO)">FTB / OOO</th>',
+    )
+    html = html.replace(
+        "<th>SSB / BTL</th>",
+        '<th title="Second/subsequent buyer (SSB) or buy-to-let (BTL)">SSB / BTL</th>',
+    )
+    html = html.replace(
+        "<th>Other limits</th>",
+        '<th title="Other differentiations (green, secondary home, FX, …)">Other limits</th>',
+    )
     return html

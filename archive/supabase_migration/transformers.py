@@ -449,26 +449,30 @@ def transform_ltv_data(df: pd.DataFrame) -> List[Dict[str, Any]]:
             logger.warning(f"Skipping LTV row: could not determine ISO2 for {country}")
             continue
         
-        # Limit_standard can be string (e.g., "80.0%, 90.0%") - keep as TEXT
-        limit_standard = row.get("Limit_Standard")
-        if pd.notna(limit_standard):
-            if isinstance(limit_standard, str):
-                limit_standard_str = limit_standard.strip()
-            else:
-                # Convert float to string with "%" suffix
-                limit_standard_str = f"{float(limit_standard):.1f}%"
-        else:
-            limit_standard_str = None
-        
+        from bbm.ltv_model import migrate_legacy_ltv_columns
+
+        row = migrate_legacy_ltv_columns(pd.DataFrame([row])).iloc[0]
+
+        def _text(col: str):
+            val = row.get(col)
+            if val is None or (isinstance(val, float) and pd.isna(val)):
+                return None
+            text = str(val).strip()
+            return text or None
+
         record = {
             "country_iso2": iso2,
-            "implementation_status": str(row.get("Implementation_Status", "")).strip() if pd.notna(row.get("Implementation_Status")) else None,
-            "legal_form": str(row.get("Legal_Form", "")).strip() if pd.notna(row.get("Legal_Form")) else None,
-            "limit_standard": limit_standard_str,
-            "limit_ftb": _safe_float(row.get("Limit_FTB")),
-            "limit_btl": _safe_float(row.get("Limit_BTL")),
-            "exception_quota": str(row.get("Exception_Quota", "")).strip() if pd.notna(row.get("Exception_Quota")) else None,
-            "notes": str(row.get("Notes", "")).strip() if pd.notna(row.get("Notes")) else None,
+            "implementation_status": _text("Implementation_Status"),
+            "legal_form": _text("Legal_Form"),
+            "limit_ftb_ooo": _text("Limit_FTB_OOO"),
+            "limit_ssb_btl": _text("Limit_SSB_BTL"),
+            "other_limits": _text("Other_Limits"),
+            # Legacy TEXT column: keep the primary (FTB/OOO) cap for old readers.
+            "limit_standard": _text("Limit_FTB_OOO"),
+            "limit_ftb": None,
+            "limit_btl": None,
+            "exception_quota": _text("Exception_Quota"),
+            "notes": _text("Notes"),
         }
         
         records.append(record)
