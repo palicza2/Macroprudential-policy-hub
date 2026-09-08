@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-08T22:18:06.503907+00:00",
+  "generated_at": "2026-09-08T23:02:48.980828+00:00",
   "dti": {
     "unchanged": 5,
     "changed": 0,
@@ -168,29 +168,8 @@
       "description_excerpt": "The Bank of Slovenia has lowered the recommended LTV: The recommended LTV value has been decreased from 80% to 70% for borrowers not buying primary property. For the property to be classified as primary (and eligible for higher LTV up to 80%) it must fulfil three criteria: (1) It must be pledged as collater (2) The loan must be used to purchase, renovate or build this property. (3) The borrower must move his/her permanent address to the property Housing loans with complete government guarantee h"
     }
   ],
-  "proposals": [
-    {
-      "family": "dti",
-      "action": "append to data/dti_expert_table.csv after review",
-      "rows": [
-        {
-          "Country": "CZ",
-          "Measure_Code": "DTI",
-          "Implementation_Status": "Active",
-          "Legal_Form": "Recommendation",
-          "Limit_Standard": 7.0,
-          "Limit_FTB": NaN,
-          "Limit_BTL": NaN,
-          "Limit_Green": NaN,
-          "Income_Basis": "Net",
-          "Allowance_Share": "",
-          "Regulation_URL": null,
-          "Notes": null
-        }
-      ]
-    }
-  ],
+  "proposals": [],
   "notes": [
-    "11 new LTV ESRB items (cap 8); listed in the delta report, not auto-extracted."
+    "Skipped re-extract for unchanged new-country proposals: dti:CZ:DTI, dti:DK:LTI, dti:LI:LTI, ltv:BG, ltv:HR, ltv:CY, ltv:EE, ltv:LV, ltv:LU, ltv:MT, ltv:PL, ltv:PT, ltv:SK, ltv:SI"
   ]
 }
