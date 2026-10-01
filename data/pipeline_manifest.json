@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "updated_at": "2026-09-08T23:05:06.751451+00:00",
+  "updated_at": "2026-10-01T12:28:58.736312+00:00",
   "bronze": {
-    "ccyb": "f4d57833629046c7",
+    "ccyb": "b763ae2e2858c53f",
     "measures": "79d7d74140746cc3",
     "capital": "76edd753316dc79d"
   },
   "parser": "6d81de3991f08d1b",
-  "silver": "f88e7c06173c2020",
+  "silver": "83f8e47e7957ac24",
   "viz_code": "5ae638359e12bf87",
   "llm_code": "544e9ee3eec5f194",
   "figures": "8ba0ab8772b1c21c",
-  "supabase_silver": "f88e7c06173c2020",
+  "supabase_silver": "83f8e47e7957ac24",
   "news_fetched_at": "2026-09-08T22:20:29.464754+00:00",
   "skipped": {
     "etl": false,
     "viz": false,
     "llm": false,
     "supabase": false,
-    "news": true
+    "news": false
   }
 }
